@@ -8,6 +8,7 @@ import { db, type GroceryItem, Recipe } from "../lib/db"
 interface Ingredient {
   ingredient: string
   amount: string
+  details: string
 }
 
 interface RecipeCardProps {
@@ -59,40 +60,63 @@ export default function RecipeCard({
   }
 
   return (
-    <Link href={`/recipes/${id}`}>
-      <div className={`relative ${isHero ? "w-full h-full" : "w-full aspect-[3/4]"}`} style={{ backgroundColor }}>
-        <Image src={image || "/placeholder.svg"} alt={title} layout="fill" objectFit="cover" />
-        <div className="absolute inset-0 bg-black bg-opacity-30" />
-        <div className="absolute bottom-0 left-0 right-0 p-4">
-          <h3 className="text-white font-bold text-lg">{title}</h3>
+    <div
+      className={`relative overflow-hidden ${isHero ? "w-full h-full" : "max-w-sm aspect-[9/16]"}`}
+      style={{ backgroundColor }}
+    >
+      <Link href={`/recipes/${id}`} className="block w-full h-full">
+        <Image
+          src={image}
+          alt={title}
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className="object-cover transition-transform duration-300 ease-in-out transform hover:scale-105"
+          onError={(e) => {
+            e.currentTarget.src = "/placeholder.png" // Ensure you have a fallback image
+          }}
+        />
+        <div className="absolute inset-0 flex items-end justify-start">
+          <h2 
+            className="text-white text-lg font-bold px-4 py-3 w-full" 
+            style={{ 
+              textShadow: '0px 0px 5px rgba(0, 0, 0, 0.7)',
+              background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)'
+            }}
+          >
+            {title}
+          </h2>
         </div>
-        {showAddButton && (
-          <button className="absolute top-4 right-4 bg-white rounded-full p-1" onClick={addToCart}>
-            {isAdded ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6 text-green-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-            )}
-          </button>
-        )}
-      </div>
-    </Link>
+      </Link>
+      {showAddButton && (
+        <button
+          className="absolute top-4 right-4 bg-white rounded-full p-1 shadow-md hover:shadow-lg transition-shadow duration-300"
+          onClick={addToCart}
+          aria-label={isAdded ? "Added to cart" : "Add to cart"}
+        >
+          {isAdded ? (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 text-green-500"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 text-gray-700"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          )}
+        </button>
+      )}
+    </div>
   )
 }
 

@@ -1,14 +1,16 @@
 import Dexie, { type Table } from "dexie"
 
+export interface Ingredient {
+  ingredient: string
+  amount: string
+  details: string
+}
+
 export interface Recipe {
   id?: number
   title: string
   image: string
-  ingredients: {
-    amount: string
-    ingredient: string
-    details: string
-  }[]
+  ingredients: Ingredient[]
   steps: string[]
   tags: string[]
 }
@@ -22,19 +24,13 @@ export interface GroceryItem {
   recipeId: number
 }
 
-export interface Ingredient {
-  ingredient: string
-  amount: string
-  details?: string
-}
-
 class Chef3Database extends Dexie {
   recipes!: Table<Recipe, number>
-  groceryItems!: Table<GroceryItem>
+  groceryItems!: Table<GroceryItem, number>
 
   constructor() {
     super("Chef3Database")
-    this.version(1).stores({
+    this.version(2).stores({
       recipes: "++id, title, *tags",
       groceryItems: "++id, name, aisle, purchased, recipeId",
     })
@@ -94,16 +90,12 @@ export async function seedDatabase() {
           title: "Garlic Chili Scorched Rice",
           image: "/placeholder.svg",
           ingredients: [
+            { amount: "2 cups", ingredient: "rice", details: "cooked" },
             { amount: "3-4 tbsp", ingredient: "butter or oil", details: "of choice" },
-            { amount: "1 cup", ingredient: "long grain jasmine rice", details: "" },
-            { amount: "1", ingredient: "egg", details: "" },
             { amount: "2-3 tbsp", ingredient: "garlic chili oil", details: "" },
             { amount: "1 cup", ingredient: "arugula", details: "" },
           ],
           steps: [
-            "If using leftover rice, ensure it is at room temperature. If cooking fresh rice, follow package instructions to cook the rice.",
-            "Heat a cast iron skillet over high heat. Add the butter or oil.",
-            "Once the butter or oil is melted and simmering, add the cooked rice, spreading it evenly across the bottom of the pan.",
             "Reduce heat to medium and cook undisturbed until the bottom is golden brown and crispy. This may take 20-30 minutes. Monitor the rice closely and adjust the heat as needed to prevent burning.",
             "While the rice is searing, heat another skillet over medium-high heat. Add a little oil or butter. Crack the egg into the skillet and cook until the white is set but the yolk is still runny.",
             "Carefully flip the rice in the cast iron skillet so the crispy side is up.",

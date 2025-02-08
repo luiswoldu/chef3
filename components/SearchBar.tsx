@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import SearchView from "./SearchView"
 import { motion, AnimatePresence } from "framer-motion"
+import { Plus } from "lucide-react"
 
 export default function SearchBar() {
   const [isSearching, setIsSearching] = useState(false)
@@ -23,17 +24,9 @@ export default function SearchBar() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleAddRecipe}
-            className="w-[42px] h-[42px] bg-white rounded-full flex items-center justify-center flex-shrink-0"
+            className="w-[42px] h-[42px] bg-green-500 rounded-full flex items-center justify-center flex-shrink-0"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+            <Plus className="h-6 w-6 text-white" />
           </button>
           <motion.div
             className="flex items-center bg-[#333333] bg-opacity-80 rounded-full px-4 py-2 text-gray-400 cursor-pointer"

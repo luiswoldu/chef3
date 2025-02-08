@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { motion } from "framer-motion"
 
 // Define the tabs for the respective app pages
 const tabs = ["home", "explore", "cart"]
@@ -14,7 +15,7 @@ export default function Navigation() {
       className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-md"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="container mx-auto flex justify-around items-center h-16">
+      <div className="container mx-auto flex justify-around items-center h-16 relative">
         {tabs.map((tab) => {
           const isActive =
             (pathname === "/" && tab === "home") ||
@@ -24,11 +25,27 @@ export default function Navigation() {
             <Link
               key={tab}
               href={tab === "home" ? "/" : `/${tab}`}
-              className={`flex flex-col items-center px-4 py-2 text-sm transition-colors ${
-                isActive ? "text-blue-500 font-semibold" : "text-gray-500"
-              }`}
+              className="relative px-7 py-2.5"
             >
-              <span>{tab.charAt(0).toUpperCase() + tab.slice(1)}</span>
+              {isActive && (
+                <motion.div
+                  layoutId="active-pill"
+                  className="absolute inset-0 bg-gray-100 rounded-full"
+                  initial={false}
+                  transition={{
+                    type: "spring",
+                    stiffness: 380,
+                    damping: 30
+                  }}
+                />
+              )}
+              <span
+                className={`relative text-base ${
+                  isActive ? "text-gray-900 font-medium" : "text-gray-600"
+                }`}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </span>
             </Link>
           )
         })}

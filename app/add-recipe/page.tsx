@@ -6,6 +6,7 @@ import { ChevronLeft } from "lucide-react"
 import { db, Recipe } from "../../lib/db"
 import { useToast } from "../../hooks/use-toast"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import Link from "next/link"
 
 export default function AddRecipe() {
@@ -57,7 +58,16 @@ export default function AddRecipe() {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col items-center justify-center mt-20">
+      <div className="flex flex-col items-center justify-center mt-10 space-y-6">
+        <div className="w-full max-w-xs">
+          <Input
+            type="text"
+            placeholder="Recipe Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            className="w-full h-12 rounded-xl bg-blue-50 border-blue-100 focus:border-blue-200 focus:ring-blue-200 text-gray-800 placeholder:text-gray-500"
+          />
+        </div>
         <Button
           variant="outline"
           className="w-full max-w-xs h-12 rounded-full bg-white text-blue-500 border-none shadow-sm"

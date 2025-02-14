@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import Navigation from "../../components/Navigation"
 import { db, type GroceryItem } from "../../lib/db"
+import { Plus } from "lucide-react"
 
 export default function Cart() {
   const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([])
@@ -68,21 +69,21 @@ export default function Cart() {
     <div className="flex flex-col min-h-screen pb-[70px]">
       <div className="p-4">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">Shopping Cart</h1>
-          <button onClick={clearList} className="p-2 bg-red-500 text-white rounded-md">
-            Clear cart
+          <h1 className="text-2xl font-bold pt-[42px]">Shopping Cart</h1>
+          <button onClick={clearList} className="text-red-500 pt-[42px]">
+            Clear
           </button>
         </div>
-        <form onSubmit={addItem} className="flex mb-4">
+        <form onSubmit={addItem} className="relative mb-4">
           <input
             type="text"
             value={newItem}
             onChange={(e) => setNewItem(e.target.value)}
-            placeholder="Add new item"
-            className="flex-grow p-2 border rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Eggs, milk, bread"
+            className="w-full p-2 pl-4 pr-12 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <button type="submit" className="p-2 bg-blue-500 text-white rounded-r-md">
-            Add
+          <button type="submit" className="absolute top-1/2 right-2 transform -translate-y-1/2 flex items-center justify-center bg-[#89cff0] text-white rounded-full p-1">
+            <Plus className="w-6 h-6" />
           </button>
         </form>
       </div>

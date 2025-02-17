@@ -1,17 +1,14 @@
-'use client'
-
 import RecipeDetailClient from '@/components/RecipeDetailClient'
 import Image from 'next/image'
 
-interface RecipeDetailPageProps {
-  params: Promise<{
-    id: string;
-  }>;
+export async function generateStaticParams() {
+  return Array.from({ length: 15 }, (_, i) => ({
+    id: (i + 1).toString(),
+  }))
 }
 
-export default async function RecipeDetailPage({ params }: RecipeDetailPageProps) {
-  const resolvedParams = await params;
-  return <RecipeDetailClient id={resolvedParams.id} />
+export default async function RecipeDetailPage({ params }: { params: { id: string } }) {
+  return <RecipeDetailClient id={params.id} />
 }
 
 const Example = () => (

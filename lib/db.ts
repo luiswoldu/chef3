@@ -43,36 +43,14 @@ class Chef3Database extends Dexie {
 
 export const db = new Chef3Database()
 
-// Add this debug code
-db.recipes.toArray().then(recipes => {
-  console.log("All recipes in database:", recipes)
-  if (recipes.length > 0) {
-    console.log("First recipe details:", {
-      id: recipes[0].id,
-      title: recipes[0].title,
-      caption: recipes[0].caption,
-      hasCaption: 'caption' in recipes[0]
-    })
-  }
-}).catch(error => {
-  console.error("Error fetching recipes:", error)
-})
-
-// After the db initialization
-db.recipes.schema.indexes.forEach(index => {
-  console.log('Database index:', index.name)
-})
-
 export async function seedDatabase() {
   try {
-    // Force clear the database
     await db.recipes.clear()
-    
     const recipes: Recipe[] = [
       {
         id: 1,
         title: "Beef Stir Fry",
-        image: "/placeholder.svg",
+        image: "/placeholder.jpg",
         ingredients: [
           { amount: "1 pound", ingredient: "flank steak", details: "thinly sliced" },
           { amount: "3 cloves", ingredient: "garlic", details: "finely minced" },
@@ -111,7 +89,7 @@ export async function seedDatabase() {
       {
         id: 2,
         title: "Garlic Chili Scorched Rice",
-        image: "/placeholder.svg",
+        image: "/placeholder3.jpg",
         ingredients: [
           { amount: "2 cups", ingredient: "rice", details: "cooked" },
           { amount: "3-4 tbsp", ingredient: "butter or oil", details: "of choice" },
@@ -131,7 +109,7 @@ export async function seedDatabase() {
       {
         id: 3,
         title: "Chopped Bacon Egg & Cheese Bagel",
-        image: "/placeholder.svg",
+        image: "/placeholder4.jpg",
         ingredients: [
           { amount: "4 strips", ingredient: "bacon", details: "" },
           { amount: "3", ingredient: "eggs", details: "" },
@@ -156,13 +134,9 @@ export async function seedDatabase() {
         caption: "If you want a delicious weeknight meal for the family",
       },
     ]
-
+    
     console.log('Seeding recipe with caption:', recipes[0].caption)
     await db.recipes.bulkAdd(recipes)
-    
-    // Verify the seeding
-    const storedRecipe = await db.recipes.get(1)
-    console.log('Stored recipe caption:', storedRecipe?.caption)
     
   } catch (error) {
     console.error("Failed to seed database:", error)

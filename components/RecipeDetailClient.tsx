@@ -19,24 +19,9 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
 
   useEffect(() => {
     async function loadRecipe() {
-      console.log('=== Debug Start ===');
       try {
         const recipeId = typeof id === 'string' ? Number.parseInt(id) : id;
-        console.log('1. Attempting to load recipe with ID:', recipeId);
-
-        // First check database state
-        const dbState = await db.recipes.count();
-        console.log('2. Number of recipes in database:', dbState);
-
-        // Try to get all recipes
-        const allRecipes = await db.recipes.toArray();
-        console.log('3. First recipe in database:', allRecipes[0]);
-        
-        // Now get our specific recipe
         const data = await db.recipes.get(recipeId);
-        console.log('4. Retrieved recipe:', data);
-        console.log('5. Recipe caption:', data?.caption);
-        
         setRecipe(data || null);
         
         // Check if recipe is already in cart
@@ -46,7 +31,6 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
         console.error('Loading error:', error);
         setError('Failed to load recipe.');
       } finally {
-        console.log('=== Debug End ===');
         setLoading(false);
       }
     }

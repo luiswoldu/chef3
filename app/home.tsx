@@ -18,10 +18,15 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen pb-[70px]">
-      <div className="relative h-[56.4vh]">
-        <RecipeCard id="1" title="Beef Stir Fry" image="/placeholder.jpg" isHero />
-        <SearchBar />
+      <div className="relative w-full h-[56.4vh]">
+        <RecipeCard 
+          id="1" 
+          title="Beef Stir Fry" 
+          image={recipes && recipes[0]?.image || '/placeholder.jpg'}
+          isHero 
+        />
       </div>
+      <SearchBar />
       <div className="flex-1 overflow-y-auto">
         <section className="py-4">
           <h2 className="text-xl font-semibold mb-2 px-4">Recents</h2>

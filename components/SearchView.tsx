@@ -38,9 +38,9 @@ export default function SearchView({ onCancel }: SearchViewProps) {
     <div className="fixed inset-0 bg-black z-50">
       <div className="flex flex-col h-full">
         {/* Search Header */}
-        <div className="p-4 flex items-center">
-          <div className="flex-1 flex items-center bg-[#333333] rounded-full px-4 py-2">
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="p-4 flex items-center mt-8">
+          <div className="flex-1 flex items-center bg-[#ffffff]/50 backdrop-blur-[4px] rounded-full px-4 py-2">
+            <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -50,12 +50,12 @@ export default function SearchView({ onCancel }: SearchViewProps) {
             </svg>
             <input
               type="text"
-              className="flex-1 bg-transparent text-white pl-3 focus:outline-none"
+              className="flex-1 bg-transparent text-white pl-3 focus:outline-none placeholder-white"
               placeholder="Search"
               autoFocus
             />
           </div>
-          <button onClick={handleCancel} className="text-white text-lg">
+          <button onClick={handleCancel} className="text-white ml-3">
             Cancel
           </button>
         </div>

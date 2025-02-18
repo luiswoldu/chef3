@@ -78,9 +78,8 @@ export default function RecipeCard({
 />
         <div className="absolute inset-0 flex items-end justify-start">
           <h2 
-            className="text-white text-lg font-bold px-4 py-3 w-full" 
+            className={`text-white leading-[1.1] ${isHero ? 'text-[28px]' : 'text-lg'} font-bold px-4 py-3 w-full`}
             style={{ 
-              textShadow: '0px 0px 5px rgba(0, 0, 0, 0.7)',
               background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)'
             }}
           >
@@ -90,7 +89,7 @@ export default function RecipeCard({
       </Link>
       {showAddButton && (
         <button
-          className="absolute top-4 right-4 bg-white rounded-full p-1 shadow-md hover:shadow-lg transition-shadow duration-300"
+          className={`absolute ${isHero ? 'bottom-4' : 'top-4'} right-4 bg-white rounded-full p-1 shadow-md hover:shadow-lg transition-shadow duration-300`}
           onClick={addToCart}
           aria-label={isAdded ? "Added to cart" : "Add to cart"}
         >

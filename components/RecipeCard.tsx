@@ -29,6 +29,7 @@ export default function RecipeCard({
   showAddButton = true,
 }: RecipeCardProps) {
   const [isAdded, setIsAdded] = useState(false)
+  const imageSrc = image && image.trim() !== "" ? image : "/placeholder2.jpg"
 
   useEffect(() => {
     checkIfAdded()
@@ -65,16 +66,16 @@ export default function RecipeCard({
       style={{ backgroundColor }}
     >
       <Link href={`/recipes/${id}`} className="block w-full h-full">
-        <Image
-          src={image}
-          alt={title}
-          fill
-          sizes="(max-width: 768px) 100vw, 50vw"
-          className="object-cover transition-transform duration-300 ease-in-out transform hover:scale-105"
-          onError={(e) => {
-            e.currentTarget.src = "/placeholder.png" // Ensure you have a fallback image
-          }}
-        />
+      <Image
+      src={imageSrc}
+      alt={title}
+     fill
+     sizes="(max-width: 768px) 100vw, 50vw"
+     className="object-cover transition-transform duration-300 ease-in-out transform hover:scale-105"
+     onError={(e) => {
+    e.currentTarget.src = "/placeholder.png"
+  }}
+/>
         <div className="absolute inset-0 flex items-end justify-start">
           <h2 
             className="text-white text-lg font-bold px-4 py-3 w-full" 

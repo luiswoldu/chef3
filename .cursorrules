@@ -1,0 +1,11 @@
+# Project Overview
+You are building a mobile-first web application that allows users to add recipes, search for recipes by ingredients or tags, and create a grocery list
+
+# Technologies
+You will be using Next.js, React, Tailwind, Supabase, Lucide Icons
+
+#Core functionalities
+1. Display a curated set of recipes and allow users to add recipes by important them through a link
+2. Fetch data from food blogs and instagram reels to format added recipes
+3. Store recipes and let users search for them by ingredients
+4. Allow users to easily share the grocery list to friends  

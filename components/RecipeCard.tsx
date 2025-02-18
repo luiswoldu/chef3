@@ -18,6 +18,7 @@ interface RecipeCardProps {
   isHero?: boolean
   backgroundColor?: string
   showAddButton?: boolean
+  cardType: 'hero' | 'square' | 'thumbnail'
 }
 
 export default function RecipeCard({
@@ -27,6 +28,7 @@ export default function RecipeCard({
   isHero = false,
   backgroundColor = "#f3f4f6", // default gray-100
   showAddButton = true,
+  cardType = 'square', // default to square if not specified
 }: RecipeCardProps) {
   const [isAdded, setIsAdded] = useState(false)
   const imageSrc = image && image.trim() !== "" ? image : "/placeholder2.jpg"
@@ -60,25 +62,46 @@ export default function RecipeCard({
     }
   }
 
+  const getCardStyles = () => {
+    switch (cardType) {
+      case 'hero':
+        return 'w-full h-full'
+      case 'thumbnail':
+        return 'max-w-sm aspect-[1/2]' // 2:1 aspect ratio for thumbnails
+      case 'square':
+        return 'max-w-sm aspect-square' // 1:1 aspect ratio for square cards
+      default:
+        return 'max-w-sm aspect-square'
+    }
+  }
+
   return (
     <div
-      className={`relative overflow-hidden ${isHero ? "w-full h-full" : "max-w-sm aspect-[9/16]"}`}
+      className={`relative overflow-hidden ${getCardStyles()}`}
       style={{ backgroundColor }}
     >
       <Link href={`/recipes/${id}`} className="block w-full h-full">
-      <Image
-      src={imageSrc}
-      alt={title}
-     fill
-     sizes="(max-width: 768px) 100vw, 50vw"
-     className="object-cover transition-transform duration-300 ease-in-out transform hover:scale-105"
-     onError={(e) => {
-    e.currentTarget.src = "/placeholder.png"
-  }}
-/>
+        <Image
+          src={imageSrc}
+          alt={title}
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className={`object-cover transition-transform duration-300 ease-in-out transform hover:scale-105 ${
+            cardType === 'thumbnail' ? 'object-center' : 'object-cover'
+          }`}
+          onError={(e) => {
+            e.currentTarget.src = "/placeholder.png"
+          }}
+        />
         <div className="absolute inset-0 flex items-end justify-start">
           <h2 
-            className={`text-white leading-[1.1] ${isHero ? 'text-[28px]' : 'text-lg'} font-bold px-4 py-3 w-full`}
+            className={`text-white leading-[1.1] ${
+              cardType === 'hero' 
+                ? 'text-[28px]' 
+                : cardType === 'thumbnail'
+                ? 'text-base'
+                : 'text-lg'
+            } font-bold px-4 py-3 w-full`}
             style={{ 
               background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)'
             }}

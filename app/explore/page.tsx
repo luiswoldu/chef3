@@ -78,27 +78,96 @@ export default function Explore() {
             <p>Loading...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-0.5 bg-gray-100">
-            {recipes.length > 0 ? (
-              recipes.map((recipe, index) => (
-                <div 
-                  key={recipe.id} 
-                  className={index === 0 ? "col-span-2" : ""}
-                >
+          <div className="space-y-0.5 bg-gray-100">
+            {/* Hero Card */}
+            {recipes.length > 0 && (
+              <RecipeCard
+                id={recipes[0].id?.toString() ?? ""}
+                title={recipes[0].title}
+                image={recipes[0].image}
+                isHero={true}
+                showAddButton={true}
+                cardType="hero"
+              />
+            )}
+
+            {/* Group 1: 2x2 Grid */}
+            <div className="grid grid-cols-2 gap-0.5">
+              {recipes.slice(1, 5).map((recipe) => (
+                <RecipeCard
+                  key={recipe.id}
+                  id={recipe.id?.toString() ?? ""}
+                  title={recipe.title}
+                  image={recipe.image}
+                  showAddButton={true}
+                  cardType="square"
+                />
+              ))}
+            </div>
+
+            {/* Group 2: Thumbnail + 2 Squares */}
+            <div className="grid grid-cols-2 gap-0.5">
+              <div className="col-span-1">
+                <RecipeCard
+                  id={recipes[5].id?.toString() ?? ""}
+                  title={recipes[5].title}
+                  image={recipes[5].image}
+                  showAddButton={true}
+                  cardType="thumbnail"
+                />
+              </div>
+              <div className="col-span-1 grid grid-rows-2 gap-0.5">
+                {recipes.slice(6, 8).map((recipe) => (
                   <RecipeCard
+                    key={recipe.id}
                     id={recipe.id?.toString() ?? ""}
                     title={recipe.title}
                     image={recipe.image}
-                    isHero={index === 0}
                     showAddButton={true}
+                    cardType="square"
                   />
-                </div>
-              ))
-            ) : (
-              <div className="col-span-2 flex justify-center items-center h-40">
-                <p>No recipes found for {activeCategory}</p>
+                ))}
               </div>
-            )}
+            </div>
+
+            {/* Group 1 Repeated: 2x2 Grid */}
+            <div className="grid grid-cols-2 gap-0.5">
+              {recipes.slice(8, 12).map((recipe) => (
+                <RecipeCard
+                  key={recipe.id}
+                  id={recipe.id?.toString() ?? ""}
+                  title={recipe.title}
+                  image={recipe.image}
+                  showAddButton={true}
+                  cardType="square"
+                />
+              ))}
+            </div>
+
+            {/* Group 3: 2 Squares + Thumbnail */}
+            <div className="grid grid-cols-2 gap-0.5">
+              <div className="col-span-1 grid grid-rows-2 gap-0.5">
+                {recipes.slice(12, 14).map((recipe) => (
+                  <RecipeCard
+                    key={recipe.id}
+                    id={recipe.id?.toString() ?? ""}
+                    title={recipe.title}
+                    image={recipe.image}
+                    showAddButton={true}
+                    cardType="square"
+                  />
+                ))}
+              </div>
+              <div className="col-span-1">
+                <RecipeCard
+                  id={recipes[14].id?.toString() ?? ""}
+                  title={recipes[14].title}
+                  image={recipes[14].image}
+                  showAddButton={true}
+                  cardType="thumbnail"
+                />
+              </div>
+            </div>
           </div>
         )}
       </div>

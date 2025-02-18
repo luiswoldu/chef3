@@ -23,7 +23,8 @@ export default function HomePage() {
           id="1" 
           title="Beef Stir Fry" 
           image={recipes && recipes[0]?.image || '/placeholder.jpg'}
-          isHero 
+          isHero
+          cardType="hero"
         />
       </div>
       <SearchBar />
@@ -33,7 +34,12 @@ export default function HomePage() {
           <div className="flex overflow-x-auto space-x-4 px-4 pb-4">
             {recipes && recipes.slice(1, 5).map((recipe: Recipe) => (
               <div key={recipe.id} className="w-48 flex-shrink-0">
-                <RecipeCard id={recipe.id?.toString() || "2"} title={recipe.title} image={recipe.image} />
+                <RecipeCard 
+                  id={recipe.id?.toString() || "2"} 
+                  title={recipe.title} 
+                  image={recipe.image}
+                  cardType="thumbnail"
+                />
               </div>
             ))}
           </div>
@@ -43,7 +49,12 @@ export default function HomePage() {
           <div className="flex overflow-x-auto space-x-4 px-4 pb-4">
             {[6, 7, 8, 9].map(id => (
               <div key={id} className="w-48 flex-shrink-0">
-                <RecipeCard id={id.toString()} title={`Recipe ${id}`} image="/placeholder.svg" />
+                <RecipeCard 
+                  id={id.toString()} 
+                  title={`Recipe ${id}`} 
+                  image="/placeholder.svg"
+                  cardType="thumbnail"
+                />
               </div>
             ))}
           </div>
@@ -52,7 +63,13 @@ export default function HomePage() {
           <h2 className="text-xl font-semibold mb-2 px-4">All</h2>
           <div className="grid grid-cols-2 gap-4 px-4">
             {[10, 11, 12, 13, 14, 15].map(id => (
-              <RecipeCard key={id} id={id.toString()} title={`Recipe ${id}`} image="/placeholder.svg" />
+              <RecipeCard 
+                key={id} 
+                id={id.toString()} 
+                title={`Recipe ${id}`} 
+                image="/placeholder.svg"
+                cardType="square"
+              />
             ))}
           </div>
         </section>

@@ -25,8 +25,9 @@ export default function Explore() {
         // Ensure we always have 15 cards by padding with empty recipes if needed
         const emptyRecipe: Recipe = {
           id: 0,
-          title: "Add New Recipe",
+          title: "Recipe",
           image: "/placeholder.svg",
+          caption: "",
           tags: [],
           ingredients: [],
           steps: []
@@ -89,7 +90,6 @@ export default function Explore() {
                     title={recipe.title}
                     image={recipe.image}
                     isHero={index === 0}
-                    backgroundColor={getBackgroundColor(index)}
                     showAddButton={true}
                   />
                 </div>
@@ -105,17 +105,5 @@ export default function Explore() {
       <Navigation />
     </div>
   )
-}
-
-function getBackgroundColor(index: number): string {
-  if (index === 0) return "rgb(255, 138, 138)" // Coral for hero
-  
-  const colors = [
-    "rgb(255, 182, 255)", // Pink
-    "rgb(138, 138, 255)", // Purple
-    "rgb(138, 255, 255)", // Mint
-    "rgb(255, 182, 138)", // Light coral
-  ]
-  return colors[(index - 1) % colors.length]
 }
 

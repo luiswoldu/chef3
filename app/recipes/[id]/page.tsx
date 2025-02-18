@@ -7,13 +7,13 @@ export async function generateStaticParams() {
   }))
 }
 
-export default async function RecipeDetailPage({ params }: { params: { id: string } }) {
-  return <RecipeDetailClient id={params.id} />
+interface PageProps {
+  params: {
+    id: string
+  }
 }
 
-const Example = () => (
-  <div style={{ position: 'relative', width: '100%', height: '200px' }}>
-    <Image src="/placeholder.svg" fill alt="Placeholder" />
-  </div>
-)
+export default function RecipeDetailPage({ params }: PageProps) {
+  return <RecipeDetailClient id={params.id} />
+}
 

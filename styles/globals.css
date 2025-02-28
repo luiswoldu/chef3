@@ -98,11 +98,11 @@ body {
   }
 }
 
-@layer base {
+/* @layer base {
   * {
-    @apply border-border;
+    @apply border;
   }
   body {
     @apply bg-background text-foreground;
   }
-}
+} */

@@ -1,20 +1,24 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import Navigation from "../components/Navigation"
 import SearchBar from "../components/SearchBar"
 import RecipeCard from "../components/RecipeCard"
 import { seedDatabase, db, Recipe } from "../lib/db"
 import { useLiveQuery } from "dexie-react-hooks"
+import { getAllRecipes } from "../lib/db-service"
 
 export default function HomePage() {
+  const [recipes, setRecipes] = useState<Recipe[]>([])
+  useEffect(() => {
+    getAllRecipes().then(setRecipes).catch(console.error)
+  }, [])
+
   useEffect(() => {
     seedDatabase().catch(error => {
       console.error("Seeding error:", error);
     });
   }, []);
-
-  const recipes = useLiveQuery(() => db.recipes.toArray(), [])
 
   return (
     <div className="flex flex-col min-h-screen pb-[70px]">

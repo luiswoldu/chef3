@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { Recipe } from '../lib/db'
 import RecipeCard from './RecipeCard'
 import { db } from '../lib/db'
+import { supabase } from '../lib/supabaseClient'
+import { useToast } from '@/hooks/use-toast'
 
 interface RecipeDetailClientProps {
   id: string | number  // Allow for both string and number types
@@ -16,27 +18,41 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAdded, setIsAdded] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     async function loadRecipe() {
       try {
         const recipeId = typeof id === 'string' ? Number.parseInt(id) : id;
-        const data = await db.recipes.get(recipeId);
-        setRecipe(data || null);
         
-        // Check if recipe is already in cart
-        const groceryItems = await db.groceryItems.where("recipeId").equals(recipeId).toArray();
-        setIsAdded(groceryItems.length > 0);
+        // Get recipe
+        const { data: recipeData, error: recipeError } = await supabase
+          .from('recipes')
+          .select('*')
+          .eq('id', recipeId)
+          .single()
+        
+        if (recipeError) throw recipeError
+        setRecipe(recipeData)
+        
+        // Check if recipe is in cart
+        const { data: cartItems, error: cartError } = await supabase
+          .from('grocery_items')
+          .select('id')
+          .eq('recipe_id', recipeId)
+        
+        if (cartError) throw cartError
+        setIsAdded(cartItems.length > 0)
       } catch (error) {
-        console.error('Loading error:', error);
-        setError('Failed to load recipe.');
+        console.error('Loading error:', error)
+        setError('Failed to load recipe.')
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     }
 
-    loadRecipe();
-  }, [id]);
+    loadRecipe()
+  }, [id])
 
   if (loading) {
     return <div>Loading...</div>
@@ -65,17 +81,36 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
       </Link>
       <button 
         onClick={async (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const groceryItems = recipe.ingredients.map((ing) => ({
-            name: ing.ingredient,
-            amount: ing.amount,
-            aisle: "Other",
-            purchased: false,
-            recipeId: typeof id === 'string' ? Number.parseInt(id) : id,
-          }));
-          await db.groceryItems.bulkAdd(groceryItems);
-          setIsAdded(true);
+          e.preventDefault()
+          e.stopPropagation()
+          try {
+            const recipeId = typeof id === 'string' ? Number.parseInt(id) : id
+            const groceryItems = recipe.ingredients.map((ing) => ({
+              name: ing.ingredient,
+              amount: ing.amount,
+              aisle: "Other",
+              purchased: false,
+              recipe_id: recipeId, // Note: Changed from recipeId to recipe_id to match Supabase schema
+            }))
+            
+            const { error } = await supabase
+              .from('grocery_items')
+              .insert(groceryItems)
+            
+            if (error) throw error
+            
+            setIsAdded(true)
+            toast({
+              title: "Added to cart",
+              description: "Ingredients have been added to your shopping list",
+            })
+          } catch (error) {
+            console.error('Error adding to cart:', error)
+            toast({
+              title: "Error",
+              description: "Failed to add ingredients to cart",
+            })
+          }
         }} 
         className="absolute top-4 right-4 z-20 bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-shadow duration-300"
         aria-label={isAdded ? "Added to cart" : "Add to cart"}

@@ -2,20 +2,36 @@
 
 import { useState, useEffect } from "react"
 import Navigation from "../../components/Navigation"
-import { db, type GroceryItem } from "../../lib/db"
+import { type GroceryItem } from "../../lib/db"
 import { Plus } from "lucide-react"
+import { supabase } from "../../lib/supabaseClient"
+import { useToast } from "@/hooks/use-toast"
 
 export default function Cart() {
   const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([])
   const [newItem, setNewItem] = useState("")
+  const { toast } = useToast()
 
   useEffect(() => {
     loadGroceryItems()
   }, [])
 
   async function loadGroceryItems() {
-    const items = await db.groceryItems.toArray()
-    setGroceryItems(sortItems(items))
+    try {
+      const { data, error } = await supabase
+        .from('grocery_items')
+        .select('*')
+        .order('created_at', { ascending: true })
+      
+      if (error) throw error
+      setGroceryItems(sortItems(data || []))
+    } catch (error) {
+      console.error('Error loading grocery items:', error)
+      toast({
+        title: "Error",
+        description: "Failed to load shopping list",
+      })
+    }
   }
 
   function sortItems(items: GroceryItem[]) {
@@ -30,28 +46,67 @@ export default function Cart() {
   async function addItem(e: React.FormEvent) {
     e.preventDefault()
     if (newItem.trim()) {
-      await db.groceryItems.add({
-        name: newItem,
-        amount: "",
-        aisle: "Other",
-        purchased: false,
-      })
-      setNewItem("")
-      loadGroceryItems()
+      try {
+        const { error } = await supabase
+          .from('grocery_items')
+          .insert([{
+            name: newItem,
+            amount: "",
+            aisle: "Other",
+            purchased: false,
+          }])
+        
+        if (error) throw error
+        
+        setNewItem("")
+        loadGroceryItems()
+      } catch (error) {
+        console.error('Error adding item:', error)
+        toast({
+          title: "Error",
+          description: "Failed to add item",
+        })
+      }
     }
   }
 
   async function togglePurchased(id: number) {
     const item = groceryItems.find((item) => item.id === id)
     if (item) {
-      await db.groceryItems.update(id, { purchased: !item.purchased })
-      loadGroceryItems()
+      try {
+        const { error } = await supabase
+          .from('grocery_items')
+          .update({ purchased: !item.purchased })
+          .eq('id', id)
+        
+        if (error) throw error
+        loadGroceryItems()
+      } catch (error) {
+        console.error('Error updating item:', error)
+        toast({
+          title: "Error",
+          description: "Failed to update item",
+        })
+      }
     }
   }
 
   async function clearList() {
-    await db.groceryItems.clear()
-    loadGroceryItems()
+    try {
+      const { error } = await supabase
+        .from('grocery_items')
+        .delete()
+        .neq('id', 0)
+      
+      if (error) throw error
+      loadGroceryItems()
+    } catch (error) {
+      console.error('Error clearing list:', error)
+      toast({
+        title: "Error",
+        description: "Failed to clear shopping list",
+      })
+    }
   }
 
   const groupedItems = groceryItems.reduce(
@@ -79,7 +134,7 @@ export default function Cart() {
             type="text"
             value={newItem}
             onChange={(e) => setNewItem(e.target.value)}
-            placeholder="Eggs, milk, bread"
+            placeholder="Eggs, milk, breaddd"
             className="w-full p-2 pl-4 pr-12 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button type="submit" className="absolute top-1/2 right-2 transform -translate-y-1/2 flex items-center justify-center bg-[#89cff0] text-white rounded-full p-1">

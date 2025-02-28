@@ -48,33 +48,36 @@ export default function AddRecipe() {
   }
 
   return (
-    <div className="min-h-screen bg-white p-4">
-      {/* Header */}
-      <div className="mb-6">
-        <Link href="/" className="inline-flex items-center text-gray-600">
-          <ChevronLeft className="h-5 w-5" />
-          <span className="ml-1">Back</span>
-        </Link>
-      </div>
+    <div className="min-h-screen bg-black p-4">
+      <Link href="/" className="absolute top-4 left-4 z-10 bg-white rounded-full p-2">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="h-6 w-6"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+      </Link>
 
-      {/* Main Content */}
-      <div className="flex flex-col items-center justify-center mt-10">
-        <div className="w-full max-w-xs flex items-center gap-2">
+      <div className="fixed top-[355px] bottom-[405px] left-0 right-0 flex items-center justify-center px-4">
+        <div className="relative w-[224px]">
           <Input
             type="text"
             placeholder="Paste Link"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full h-12 rounded-full bg-blue-50 border-blue-100 focus:border-blue-200 focus:ring-blue-200 text-gray-800 placeholder:text-gray-500"
+            className="w-full h-[54px] rounded-full bg-[#409CFF] border-[#409CFF] focus:border-[#409CFF] focus:ring-[#409CFF] text-white placeholder:text-white text-center pr-12 text-xl placeholder:text-xl placeholder:font-normal"
           />
           <Button
             variant="outline"
             size="icon"
             onClick={handleAddRecipe}
             disabled={loading}
-            className="flex-shrink-0 h-12 w-12 rounded-full bg-blue-500 text-white border-none hover:bg-blue-600"
+            className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-white text-[#409CFF] border-none hover:bg-white/90"
           >
-            <ArrowUp className="h-6 w-6" />
+            <ArrowUp className="h-5 w-5 stroke-[3]" />
           </Button>
         </div>
       </div>

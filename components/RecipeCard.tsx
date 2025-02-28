@@ -97,11 +97,11 @@ export default function RecipeCard({
           <h2 
             className={`text-white leading-[1.1] ${
               cardType === 'hero' 
-                ? 'text-[28px]' 
+                ? 'text-[28px] tracking-[-0.04em] font-extrabold' 
                 : cardType === 'thumbnail'
-                ? 'text-base'
-                : 'text-lg'
-            } font-bold px-4 py-3 w-full`}
+                ? 'text-base font-bold'
+                : 'text-lg font-bold'
+            } px-4 py-3 w-full`}
             style={{ 
               background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)'
             }}

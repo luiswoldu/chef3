@@ -7,7 +7,7 @@ export async function generateStaticParams() {
   }))
 }
 
-interface PageProps {
+type PageProps = {
   params: {
     id: string
   }

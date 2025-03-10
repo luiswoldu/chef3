@@ -1,7 +1,7 @@
 "use client"
 
 import { Inter } from 'next/font/google'
-import '../styles/globals.css'
+import '../app/globals.css'
 import { ToastProvider } from "../components/ui/toast"
 import { Toaster } from "../components/ui/toaster"
 

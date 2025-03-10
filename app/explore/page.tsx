@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Navigation from "../../components/Navigation"
 import RecipeCard from "../../components/RecipeCard"
-import { db, type Recipe } from "../../lib/db"
+import { db, type Recipe } from "../../lib/db" // make sure db is your Supabase client instance
 
 const categories = ["All", "Breakfast", "Lunch", "Dessert"]
 
@@ -16,11 +16,22 @@ export default function Explore() {
     async function loadRecipes() {
       setIsLoading(true)
       try {
-        const allRecipes = await db.recipes.toArray()
-        // If "All" is selected or no recipes exist, create array of 15 items
-        let filteredRecipes = activeCategory === "All" 
-          ? allRecipes
-          : allRecipes.filter(recipe => recipe.tags.includes(activeCategory))
+        // Supabase query: adjust the query to match your schema
+        const { data: allRecipes, error } = await db
+          .from("recipes")
+          .select("*")
+        if (error) throw error
+
+        // Ensure allRecipes is defined (could be null if no data)
+        const recipesData: Recipe[] = allRecipes || []
+
+        // Filter recipes based on activeCategory
+        let filteredRecipes =
+          activeCategory === "All"
+            ? recipesData
+            : recipesData.filter((recipe) =>
+                recipe.tags.includes(activeCategory)
+              )
 
         // Ensure we always have 15 cards by padding with empty recipes if needed
         const emptyRecipe: Recipe = {
@@ -32,7 +43,7 @@ export default function Explore() {
           ingredients: [],
           steps: []
         }
-        
+
         while (filteredRecipes.length < 15) {
           filteredRecipes.push({
             ...emptyRecipe,
@@ -51,7 +62,7 @@ export default function Explore() {
         setIsLoading(false)
       }
     }
-    
+
     loadRecipes()
   }, [activeCategory])
 
@@ -64,7 +75,9 @@ export default function Explore() {
               key={category}
               onClick={() => setActiveCategory(category)}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                activeCategory === category ? "bg-[#DFE0E1] text-gray-800" : "bg-gray-100 text-gray-700"
+                activeCategory === category
+                  ? "bg-[#DFE0E1] text-gray-800"
+                  : "bg-gray-100 text-gray-700"
               }`}
             >
               {category}
@@ -175,4 +188,3 @@ export default function Explore() {
     </div>
   )
 }
-

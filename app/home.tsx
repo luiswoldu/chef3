@@ -1,27 +1,49 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import Navigation from "../components/Navigation"
-import SearchBar from "../components/SearchBar"
-import RecipeCard from "../components/RecipeCard"
-import { seedDatabase, db, Recipe } from "../lib/db"
-import { useLiveQuery } from "dexie-react-hooks"
-import { getAllRecipes } from "../lib/db-service"
+import Navigation from "@/components/Navigation"
+import SearchBar from "@/components/SearchBar"
+import RecipeCard from "@/components/RecipeCard"
+import { Recipe } from "@/types"
+import { getAllRecipes } from "@/lib/db"
 
 export default function HomePage() {
   const [recipes, setRecipes] = useState<Recipe[]>([])
+  const [testStatus, setTestStatus] = useState<string>("")
+  
+  const testConnection = async () => {
+    try {
+      setTestStatus("Testing...")
+      const recipes = await getAllRecipes()
+      console.log("Supabase test result:", recipes)
+      setTestStatus(`Success! Found ${recipes.length} recipes`)
+    } catch (error: any) {
+      console.error("Supabase test error:", error)
+      setTestStatus(`Error: ${error?.message || 'Unknown error occurred'}`)
+    }
+  }
+
   useEffect(() => {
     getAllRecipes().then(setRecipes).catch(console.error)
   }, [])
 
-  useEffect(() => {
-    seedDatabase().catch(error => {
-      console.error("Seeding error:", error);
-    });
-  }, []);
-
   return (
     <div className="flex flex-col min-h-screen pb-[70px]">
+      <div className="fixed top-4 right-4 z-50">
+        <button 
+          onClick={testConnection}
+          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+        >
+          Test Supabase
+        </button>
+        {testStatus && (
+          <div className={`mt-2 p-2 rounded ${
+            testStatus.includes("Success") ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+          }`}>
+            {testStatus}
+          </div>
+        )}
+      </div>
       <div className="relative w-full h-[56.4vh]">
         <RecipeCard 
           id="1" 

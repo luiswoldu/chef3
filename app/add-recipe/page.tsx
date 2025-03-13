@@ -17,7 +17,7 @@ export default function AddRecipe() {
   const [title, setTitle] = useState("")
   const [image, setImage] = useState("")
   const [tags, setTags] = useState<string[]>([])
-  const [ingredients, setIngredients] = useState<Ingredient[]>([])
+  const [ingredients, setIngredients] = useState<string[]>([])
   const [steps, setSteps] = useState<string[]>([])
 
   const handleAddRecipe = async () => {

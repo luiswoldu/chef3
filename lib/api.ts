@@ -1,26 +1,50 @@
-interface ApiRecipe {
-  idMeal: string
-  strMeal: string
-  strMealThumb: string
-  strInstructions: string
-  // Add other fields as needed
+import { Recipe } from '@/types'
+import { createClient } from '@/lib/supabase/client'
+
+export async function fetchRecipeByName(name: string): Promise<Recipe | null> {
+  try {
+    const supabase = createClient()
+    
+    const { data, error } = await supabase
+      .from('recipes')
+      .select(`
+        *,
+        ingredients (*)
+      `)
+      .ilike('title', `%${name}%`)
+      .single()
+    
+    if (error) {
+      console.error('Error fetching recipe:', error)
+      return null
+    }
+
+    return data
+  } catch (error) {
+    console.error('Error fetching recipe:', error)
+    return null
+  }
 }
 
-export async function fetchRecipeByName(name: string) {
+export async function fetchRecipeById(id: string): Promise<Recipe | null> {
   try {
-    const response = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${name}`)
-    const data = await response.json()
-    const recipe = data.meals?.[0]
+    const supabase = createClient()
     
-    if (!recipe) return null
-
-    return {
-      id: recipe.idMeal,
-      title: recipe.strMeal,
-      image: recipe.strMealThumb,
-      instructions: recipe.strInstructions,
-      ingredients: [] // Parse ingredients from API response
+    const { data, error } = await supabase
+      .from('recipes')
+      .select(`
+        *,
+        ingredients (*)
+      `)
+      .eq('id', id)
+      .single()
+    
+    if (error) {
+      console.error('Error fetching recipe:', error)
+      return null
     }
+
+    return data
   } catch (error) {
     console.error('Error fetching recipe:', error)
     return null

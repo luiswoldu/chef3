@@ -3,7 +3,10 @@
 import { useState, useEffect } from "react"
 import Navigation from "../../components/Navigation"
 import RecipeCard from "../../components/RecipeCard"
-import { db, type Recipe } from "../../lib/db" // make sure db is your Supabase client instance
+import { supabase } from "../../lib/supabase/client"
+import type { Database } from "@/types/supabase"
+
+type Recipe = Database['public']['Tables']['recipes']['Row']
 
 const categories = ["All", "Breakfast", "Lunch", "Dessert"]
 
@@ -16,8 +19,7 @@ export default function Explore() {
     async function loadRecipes() {
       setIsLoading(true)
       try {
-        // Supabase query: adjust the query to match your schema
-        const { data: allRecipes, error } = await db
+        const { data: allRecipes, error } = await supabase
           .from("recipes")
           .select("*")
         if (error) throw error
@@ -30,9 +32,12 @@ export default function Explore() {
           activeCategory === "All"
             ? recipesData
             : recipesData.filter((recipe) =>
-                recipe.tags.includes(activeCategory)
+                recipe.tags?.includes(activeCategory)
               )
 
+        // Create a copy of the filtered recipes before padding/modifying
+        const availableRecipes = [...filteredRecipes]
+        
         // Ensure we always have 15 cards by padding with empty recipes if needed
         const emptyRecipe: Recipe = {
           id: 0,
@@ -44,20 +49,21 @@ export default function Explore() {
           steps: []
         }
 
-        while (filteredRecipes.length < 15) {
-          filteredRecipes.push({
+        // Pad the array only if needed for display
+        const paddedRecipes = [...filteredRecipes]
+        while (paddedRecipes.length < 15) {
+          paddedRecipes.push({
             ...emptyRecipe,
-            id: -filteredRecipes.length // Use negative IDs for empty cards
+            id: -(paddedRecipes.length + 1) // Use negative IDs for empty cards
           })
         }
 
-        filteredRecipes = filteredRecipes
-          .slice(0, 15) // Limit to 15 recipes
-          .sort((a, b) => (a.id ?? 0) - (b.id ?? 0))
-
-        setRecipes(filteredRecipes)
+        // Limit to 15 recipes and sort
+        setRecipes(paddedRecipes.slice(0, 15).sort((a, b) => (a.id ?? 0) - (b.id ?? 0)))
       } catch (error) {
         console.error("Error fetching recipes:", error)
+        // Set an empty array if there's an error to prevent undefined access
+        setRecipes([])
       } finally {
         setIsLoading(false)
       }
@@ -95,9 +101,9 @@ export default function Explore() {
             {/* Hero Card */}
             {recipes.length > 0 && (
               <RecipeCard
-                id={recipes[0].id?.toString() ?? ""}
-                title={recipes[0].title}
-                image={recipes[0].image}
+                id={recipes[0]?.id?.toString() ?? ""}
+                title={recipes[0]?.title ?? ""}
+                image={recipes[0]?.image ?? ""}
                 isHero={true}
                 showAddButton={true}
                 cardType="hero"
@@ -105,62 +111,52 @@ export default function Explore() {
             )}
 
             {/* Group 1: 2x2 Grid */}
-            <div className="grid grid-cols-2 gap-0.5">
-              {recipes.slice(1, 5).map((recipe) => (
-                <RecipeCard
-                  key={recipe.id}
-                  id={recipe.id?.toString() ?? ""}
-                  title={recipe.title}
-                  image={recipe.image}
-                  showAddButton={true}
-                  cardType="square"
-                />
-              ))}
-            </div>
+            {recipes.length > 4 && (
+              <div className="grid grid-cols-2 gap-0.5">
+                {recipes.slice(1, 5).map((recipe) => (
+                  <RecipeCard
+                    key={recipe.id ?? `empty-${Math.random()}`}
+                    id={recipe.id?.toString() ?? ""}
+                    title={recipe.title ?? ""}
+                    image={recipe.image ?? ""}
+                    showAddButton={true}
+                    cardType="square"
+                  />
+                ))}
+              </div>
+            )}
 
             {/* Group 2: Thumbnail + 2 Squares */}
-            <div className="grid grid-cols-2 gap-0.5">
-              <div className="col-span-1">
-                <RecipeCard
-                  id={recipes[5].id?.toString() ?? ""}
-                  title={recipes[5].title}
-                  image={recipes[5].image}
-                  showAddButton={true}
-                  cardType="thumbnail"
-                />
-              </div>
-              <div className="col-span-1 grid grid-rows-2 gap-0.5">
-                {recipes.slice(6, 8).map((recipe) => (
+            {recipes.length > 7 && (
+              <div className="grid grid-cols-2 gap-0.5">
+                <div className="col-span-1">
                   <RecipeCard
-                    key={recipe.id}
-                    id={recipe.id?.toString() ?? ""}
-                    title={recipe.title}
-                    image={recipe.image}
+                    id={recipes[5]?.id?.toString() ?? ""}
+                    title={recipes[5]?.title ?? ""}
+                    image={recipes[5]?.image ?? ""}
                     showAddButton={true}
-                    cardType="square"
+                    cardType="thumbnail"
                   />
-                ))}
+                </div>
+                <div className="col-span-1 grid grid-rows-2 gap-0.5">
+                  {recipes.slice(6, 8).map((recipe) => (
+                    <RecipeCard
+                      key={recipe.id}
+                      id={recipe.id?.toString() ?? ""}
+                      title={recipe.title}
+                      image={recipe.image}
+                      showAddButton={true}
+                      cardType="square"
+                    />
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Group 1 Repeated: 2x2 Grid */}
-            <div className="grid grid-cols-2 gap-0.5">
-              {recipes.slice(8, 12).map((recipe) => (
-                <RecipeCard
-                  key={recipe.id}
-                  id={recipe.id?.toString() ?? ""}
-                  title={recipe.title}
-                  image={recipe.image}
-                  showAddButton={true}
-                  cardType="square"
-                />
-              ))}
-            </div>
-
-            {/* Group 3: 2 Squares + Thumbnail */}
-            <div className="grid grid-cols-2 gap-0.5">
-              <div className="col-span-1 grid grid-rows-2 gap-0.5">
-                {recipes.slice(12, 14).map((recipe) => (
+            {recipes.length > 11 && (
+              <div className="grid grid-cols-2 gap-0.5">
+                {recipes.slice(8, 12).map((recipe) => (
                   <RecipeCard
                     key={recipe.id}
                     id={recipe.id?.toString() ?? ""}
@@ -171,16 +167,34 @@ export default function Explore() {
                   />
                 ))}
               </div>
-              <div className="col-span-1">
-                <RecipeCard
-                  id={recipes[14].id?.toString() ?? ""}
-                  title={recipes[14].title}
-                  image={recipes[14].image}
-                  showAddButton={true}
-                  cardType="thumbnail"
-                />
+            )}
+
+            {/* Group 3: 2 Squares + Thumbnail */}
+            {recipes.length > 13 && (
+              <div className="grid grid-cols-2 gap-0.5">
+                <div className="col-span-1 grid grid-rows-2 gap-0.5">
+                  {recipes.slice(12, 14).map((recipe) => (
+                    <RecipeCard
+                      key={recipe.id}
+                      id={recipe.id?.toString() ?? ""}
+                      title={recipe.title}
+                      image={recipe.image}
+                      showAddButton={true}
+                      cardType="square"
+                    />
+                  ))}
+                </div>
+                <div className="col-span-1">
+                  <RecipeCard
+                    id={recipes[14]?.id?.toString() ?? ""}
+                    title={recipes[14]?.title ?? ""}
+                    image={recipes[14]?.image ?? ""}
+                    showAddButton={true}
+                    cardType="thumbnail"
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
       </div>

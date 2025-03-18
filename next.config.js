@@ -1,9 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',  // Required for static site generation
-  basePath: process.env.NODE_ENV === 'development' ? '' : '/chef3', // Only use basePath in production
   images: {
-    unoptimized: true, // Required for static export
+    domains: ['images.unsplash.com', 'uvluxhonljpmzdezzept.supabase.co'],
   },
 }
 

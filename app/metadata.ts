@@ -1,4 +1,4 @@
 export const metadata = {
-  title: 'Chef3',
+  title: 'Hands',
   description: 'Your personal recipe and shopping assistant',
 } 

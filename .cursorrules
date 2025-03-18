@@ -9,3 +9,5 @@ You will be using Next.js, React, Tailwind, Supabase, Lucide Icons
 2. Fetch data from food blogs and instagram reels to format added recipes
 3. Store recipes and let users search for them by ingredients
 4. Allow users to easily share the grocery list to friends  
+
+How to use API model (insert model for recipe extraction)

@@ -3,7 +3,8 @@
 import { useState, useEffect, MouseEvent } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { db, type GroceryItem, Recipe } from "../lib/db"
+import { supabase } from "@/lib/supabase/client"
+import type { Recipe } from "@/types"
 
 interface Ingredient {
   ingredient: string
@@ -38,27 +39,39 @@ export default function RecipeCard({
   }, [])
 
   const checkIfAdded = async () => {
-    const recipe = await db.recipes.get(Number.parseInt(id))
-    if (recipe) {
-      const groceryItems = await db.groceryItems.where("recipeId").equals(Number.parseInt(id)).toArray()
-      setIsAdded(groceryItems.length > 0)
+    try {
+      const { data: recipe, error } = await supabase
+        .from('recipes')
+        .select('*')
+        .eq('id', id)
+        .single()
+      
+      if (error) {
+        console.error('Error checking recipe:', error)
+        return
+      }
+      
+      setIsAdded(!!recipe)
+    } catch (error) {
+      console.error('Error in checkIfAdded:', error)
     }
   }
 
   const addToCart = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
-    e.stopPropagation()
-    const recipe = await db.recipes.get(Number.parseInt(id))
-    if (recipe) {
-      const groceryItems: GroceryItem[] = recipe.ingredients.map((ing: Ingredient) => ({
-        name: ing.ingredient,
-        amount: ing.amount,
-        aisle: "Other",
-        purchased: false,
-        recipeId: Number.parseInt(id),
-      }))
-      await db.groceryItems.bulkAdd(groceryItems)
+    try {
+      const { error } = await supabase
+        .from('recipes')
+        .insert([{ id: Number(id), title, image }])
+      
+      if (error) {
+        console.error('Error adding recipe:', error)
+        return
+      }
+      
       setIsAdded(true)
+    } catch (error) {
+      console.error('Error in addToCart:', error)
     }
   }
 

@@ -3,11 +3,24 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Recipe } from '../lib/db'
+import type { Database } from '@/types/supabase'
 import RecipeCard from './RecipeCard'
-import { db } from '../lib/db'
-import { supabase } from '../lib/supabaseClient'
+import { supabase } from '@/lib/supabase/client'
 import { useToast } from '@/hooks/use-toast'
+
+// Define ingredient interface that matches what we get from the database
+interface RecipeIngredient {
+  id: number;
+  recipe_id: number;
+  ingredient: string;
+  amount: string;
+  details: string;
+}
+
+// Use the database types
+type Recipe = Database['public']['Tables']['recipes']['Row'] & {
+  ingredients?: RecipeIngredient[];
+}
 
 interface RecipeDetailClientProps {
   id: string | number  // Allow for both string and number types
@@ -28,7 +41,10 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
         // Get recipe
         const { data: recipeData, error: recipeError } = await supabase
           .from('recipes')
-          .select('*')
+          .select(`
+            *,
+            ingredients (*)
+          `)
           .eq('id', recipeId)
           .single()
         
@@ -85,12 +101,17 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           e.stopPropagation()
           try {
             const recipeId = typeof id === 'string' ? Number.parseInt(id) : id
-            const groceryItems = recipe.ingredients.map((ing) => ({
+            
+            if (!recipe.ingredients || recipe.ingredients.length === 0) {
+              throw new Error('No ingredients found for this recipe')
+            }
+            
+            const groceryItems = recipe.ingredients.map((ing: RecipeIngredient) => ({
               name: ing.ingredient,
               amount: ing.amount,
               aisle: "Other",
               purchased: false,
-              recipe_id: recipeId, // Note: Changed from recipeId to recipe_id to match Supabase schema
+              recipe_id: recipeId,
             }))
             
             const { error } = await supabase
@@ -151,9 +172,9 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           <h1 className="text-2xl font-bold">{recipe.title}</h1>
         </div>
         <div className="flex flex-wrap gap-2 mb-4">
-          {recipe.tags.map((tag) => (
+          {recipe.tags && recipe.tags.map((tag: string, i: number) => (
             <span 
-              key={tag} 
+              key={`${tag}-${i}`} 
               className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-[#DFE0E1] text-gray-800"
             >
               {tag}
@@ -168,8 +189,8 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
         <section className="mb-6">
           <h2 className="text-xl font-semibold mb-2">Ingredients</h2>
           <div className="rounded-lg">
-            {recipe.ingredients.map((ingredient, index) => (
-              <div key={index} className="bg-white p-3 rounded-md shadow mb-2">
+            {recipe.ingredients && recipe.ingredients.map((ingredient: RecipeIngredient, index: number) => (
+              <div key={ingredient.id || index} className="bg-white p-3 rounded-md shadow mb-2">
                 <p className="font-medium">{ingredient.ingredient}</p>
                 <p className="text-sm text-gray-600">
                   {ingredient.amount} {ingredient.details}
@@ -181,7 +202,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
         <section>
           <h2 className="text-xl font-semibold mb-2">Steps</h2>
           <ol className="list-decimal list-inside space-y-4">
-            {recipe.steps.map((step, index) => (
+            {recipe.steps && recipe.steps.map((step: string, index: number) => (
               <li key={index} className="pl-2">
                 {step}
               </li>

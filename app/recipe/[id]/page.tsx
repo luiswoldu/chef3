@@ -1,16 +1,10 @@
-import dynamic from 'next/dynamic'
+import RecipeDetailClient from '@/components/RecipeDetailClient'
 
-const RecipeDetailClient = dynamic(() => import('@/components/RecipeDetailClient'), {
-  ssr: false
-})
-
-type Props = {
-  params: {
-    id: string
-  }
-  searchParams: { [key: string]: string | string[] | undefined }
-}
-
-export default async function RecipePage({ params }: Props) {
-  return <RecipeDetailClient id={params.id} />
+export default async function RecipePage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
+  return <RecipeDetailClient id={id} />
 } 

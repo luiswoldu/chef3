@@ -93,7 +93,7 @@ export default function RecipeCard({
       className={`relative overflow-hidden ${getCardStyles()}`}
       style={{ backgroundColor }}
     >
-      <Link href={`/recipes/${id}`} className="block w-full h-full">
+      <Link href={`/recipe/${id}`} className="block w-full h-full">
         <Image
           src={imageSrc}
           alt={title}

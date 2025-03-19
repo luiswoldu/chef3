@@ -1,11 +1,16 @@
-import RecipeDetailClient from '@/components/RecipeDetailClient'
+import dynamic from 'next/dynamic'
 
-interface PageProps {
+const RecipeDetailClient = dynamic(() => import('@/components/RecipeDetailClient'), {
+  ssr: false
+})
+
+type Props = {
   params: {
     id: string
   }
+  searchParams: { [key: string]: string | string[] | undefined }
 }
 
-export default function RecipePage({ params }: PageProps) {
+export default async function RecipePage({ params }: Props) {
   return <RecipeDetailClient id={params.id} />
 } 

@@ -48,7 +48,16 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           .eq('id', recipeId)
           .single()
         
-        if (recipeError) throw recipeError
+        if (recipeError) {
+          if (recipeError.code === 'PGRST116') {
+            setError('Recipe not found')
+            setRecipe(null)
+          } else {
+            throw recipeError
+          }
+          return
+        }
+        
         setRecipe(recipeData)
         
         // Check if recipe is in cart

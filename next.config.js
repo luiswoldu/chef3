@@ -1,7 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['images.unsplash.com', 'uvluxhonljpmzdezzept.supabase.co'],
+    domains: [
+      'www.themediterraneandish.com',
+      'themediterraneandish.com',
+      'images.unsplash.com',
+      'images.pexels.com',
+      'images.unsplash.com',
+      'images.pexels.com',
+      'images.unsplash.com',
+      'images.pexels.com',
+      'images.unsplash.com',
+      'images.pexels.com',
+      'images.unsplash.com',
+      'images.pexels.com',
+    ],
   },
 }
 

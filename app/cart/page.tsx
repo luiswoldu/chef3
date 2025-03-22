@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import Navigation from "../../components/Navigation"
-import { type GroceryItem } from "../../lib/db"
+import { type GroceryItem } from "@/types/index"
 import { Plus } from "lucide-react"
 import { supabase } from "../../lib/supabaseClient"
 import { useToast } from "@/hooks/use-toast"

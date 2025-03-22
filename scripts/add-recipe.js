@@ -22,7 +22,9 @@ const recipe = {
     "Pour the oyster sauce, sherry, sugar and soy sauce to the wok with stir fried vegetables and cook for 1 to 2 minutes stirring constantly.",
     "Add the boiled broccoli and carrots to the wok along with the cooked beef and mix until combined.",
     "Serve the beef stir fry with jasmine rice and add on optional garnishes of sliced green onions and sesame seeds."
-  ]
+  ],
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString()
 };
 
 // Ingredients data (to be added after recipe creation)

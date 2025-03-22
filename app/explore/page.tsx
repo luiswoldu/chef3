@@ -43,10 +43,12 @@ export default function Explore() {
           id: 0,
           title: "Recipe",
           image: "/placeholder.svg",
-          caption: "",
+          caption: "Add your own recipe",
           tags: [],
           ingredients: [],
-          steps: []
+          steps: [],
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         }
 
         // Pad the array only if needed for display

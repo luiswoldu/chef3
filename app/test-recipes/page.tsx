@@ -17,7 +17,9 @@ export default function TestRecipesPage() {
     caption: 'Delicious Korean-inspired rice dish with a crispy bottom and spicy garlic flavors',
     tags: ['Korean', 'Spicy', 'Rice Dish'],
     steps: ['Cook rice according to package instructions', 'Mix with garlic and chili sauce', 'Press into hot pan and let bottom get crispy', 'Serve hot with toppings'],
-    ingredients: []
+    ingredients: [],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
   })
 
   useEffect(() => {
@@ -35,7 +37,18 @@ export default function TestRecipesPage() {
           return
         }
         
-        setRecipeCount(tableData[0]?.count || 0)
+        // Get count of recipes
+        const { count, error: countError } = await supabase
+          .from('recipes')
+          .select('*', { count: 'exact', head: true })
+          .returns<{ count: number }>()
+        
+        if (countError) {
+          console.error('Error getting recipe count:', countError)
+          setRecipeCount(0)
+        } else {
+          setRecipeCount(count || 0)
+        }
         
         // List all tables
         const { data: tablesData, error: tablesError } = await supabase

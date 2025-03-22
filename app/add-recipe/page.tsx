@@ -9,6 +9,37 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 
+// Define interfaces for type safety
+interface ExtractedRecipe {
+  title: string
+  image: string
+  caption: string
+  tags: string[]
+  steps: string[]
+  created_at: string
+}
+
+interface Ingredient {
+  name: string
+  amount: string
+  details: string
+  created_at: string
+}
+
+interface GroceryItem {
+  name: string
+  amount: string
+  aisle: string
+  purchased: boolean
+  created_at: string
+}
+
+interface RecipeData {
+  recipe: ExtractedRecipe
+  ingredients: Ingredient[]
+  groceryItems: GroceryItem[]
+}
+
 // Add supported platforms
 const SUPPORTED_PLATFORMS = [
   {
@@ -49,13 +80,7 @@ export default function AddRecipe() {
   const [loading, setLoading] = useState(false)
   const [url, setUrl] = useState("")
   const [isModalVisible, setIsModalVisible] = useState(false)
-  const [recipeData, setRecipeData] = useState<null | {
-    title: string
-    image: string
-    tags: string[]
-    ingredients: string[]
-    steps: string[]
-  }>(null)
+  const [extractedRecipe, setExtractedRecipe] = useState<RecipeData | null>(null)
   const [sheetHeight, setSheetHeight] = useState('min(85vh, 800px)')
   const sheetRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{
@@ -66,7 +91,7 @@ export default function AddRecipe() {
 
   // Add animation effect when recipe data is loaded
   useEffect(() => {
-    if (recipeData) {
+    if (extractedRecipe) {
       // Short delay to trigger animation
       const timer = setTimeout(() => {
         setIsModalVisible(true)
@@ -75,19 +100,19 @@ export default function AddRecipe() {
     } else {
       setIsModalVisible(false)
     }
-  }, [recipeData])
+  }, [extractedRecipe])
 
   // Handle closing modal with escape key
   useEffect(() => {
     const handleEscapeKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && recipeData && !loading) {
-        setRecipeData(null)
+      if (e.key === 'Escape' && extractedRecipe && !loading) {
+        setExtractedRecipe(null)
       }
     }
     
     window.addEventListener('keydown', handleEscapeKey)
     return () => window.removeEventListener('keydown', handleEscapeKey)
-  }, [recipeData, loading])
+  }, [extractedRecipe, loading])
 
   // Handle sheet resizing
   useEffect(() => {
@@ -217,7 +242,7 @@ export default function AddRecipe() {
   }
 
   // Recipe extraction API call
-  const extractRecipeFromUrl = async (url: string) => {
+  const extractRecipeFromUrl = async (url: string): Promise<RecipeData> => {
     try {
       // Fetch the HTML content of the URL
       const response = await fetch(`/api/fetch-url?url=${encodeURIComponent(url)}`, {
@@ -242,7 +267,9 @@ export default function AddRecipe() {
       }
       
       // Try to find Recipe schema in JSON-LD blocks
-      let recipeData = null
+      let recipeData: ExtractedRecipe | null = null
+      let ingredients: Ingredient[] = []
+      let groceryItems: GroceryItem[] = []
       
       for (const match of jsonLdMatches) {
         try {
@@ -273,19 +300,45 @@ export default function AddRecipe() {
             // Use the first recipe found
             const recipe = recipes[0]
             
-            // Map recipe properties
+            // Validate and clean image URL
+            let imageUrl = recipe.image || ''
+            if (Array.isArray(recipe.image)) {
+              imageUrl = recipe.image[0] || ''
+            }
+            
+            // If no image URL is found, try to extract from HTML
+            if (!imageUrl) {
+              const imgRegex = /<img[^>]+src="([^">]+)"/g
+              const imgMatch = html.match(imgRegex)
+              if (imgMatch) {
+                const srcMatch = imgMatch[0].match(/src="([^">]+)"/)
+                if (srcMatch) {
+                  imageUrl = srcMatch[1]
+                }
+              }
+            }
+
+            // Ensure image URL is absolute
+            if (imageUrl && !imageUrl.startsWith('http')) {
+              try {
+                const urlObj = new URL(url)
+                imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`
+              } catch (e) {
+                console.warn('Failed to make image URL absolute:', e)
+              }
+            }
+
+            // Map recipe properties with validation
             recipeData = {
-              title: recipe.name || '',
-              image: recipe.image || (Array.isArray(recipe.image) ? recipe.image[0] : ''),
+              title: recipe.name || recipe.headline || '',
+              image: imageUrl || '/placeholder.svg', // Fallback to placeholder if no image
+              caption: recipe.description || '',
               tags: recipe.keywords 
                 ? (typeof recipe.keywords === 'string' 
                   ? recipe.keywords.split(',').map((k: string) => k.trim()) 
                   : Array.isArray(recipe.keywords) 
                     ? recipe.keywords 
                     : [])
-                : [],
-              ingredients: Array.isArray(recipe.recipeIngredient) 
-                ? recipe.recipeIngredient 
                 : [],
               steps: Array.isArray(recipe.recipeInstructions) 
                 ? recipe.recipeInstructions.map((step: any) => 
@@ -294,14 +347,46 @@ export default function AddRecipe() {
                       : step.text || step.description || '')
                 : typeof recipe.recipeInstructions === 'string'
                   ? [recipe.recipeInstructions]
-                  : []
+                  : [],
+              created_at: new Date().toISOString()
             }
-            
-            break
+
+            // Map ingredients with validation
+            ingredients = Array.isArray(recipe.recipeIngredient)
+              ? recipe.recipeIngredient.map((ingredient: string) => {
+                  // Try to parse amount and name from ingredient string
+                  const match = ingredient.match(/^([\d\s/]+)?\s*(.+)$/);
+                  if (match) {
+                    const [, amount, name] = match;
+                    return {
+                      name: name.trim(),
+                      amount: amount ? amount.trim() : '',
+                      details: '',
+                      created_at: new Date().toISOString()
+                    };
+                  }
+                  return {
+                    name: ingredient.trim(),
+                    amount: '',
+                    details: '',
+                    created_at: new Date().toISOString()
+                  };
+                })
+              : [];
+
+            // Map ingredients to grocery items
+            groceryItems = ingredients.map((ingredient: Ingredient) => ({
+              name: ingredient.name,
+              amount: ingredient.amount,
+              aisle: '', // This will be set by the user later
+              purchased: false,
+              created_at: new Date().toISOString()
+            }));
+
+            break; // Exit the loop once we've found and processed a valid recipe
           }
         } catch (err) {
           console.error('Error parsing JSON-LD block:', err)
-          // Continue to the next JSON-LD block
           continue
         }
       }
@@ -310,37 +395,36 @@ export default function AddRecipe() {
       if (!recipeData) {
         throw new Error("No recipe schema found in the page's JSON-LD data")
       }
-      
-      return recipeData
+
+      return {
+        recipe: recipeData,
+        ingredients,
+        groceryItems
+      };
     } catch (error: unknown) {
       console.error('Recipe extraction error:', error)
       throw new Error(`Failed to extract recipe: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 
-  const handleUrlSubmit = async () => {
-    const validation = validateUrl(url)
-    
-    if (!validation.isValid) {
-      toast({
-        title: "Invalid URL",
-        description: validation.message,
-      })
-      return
-    }
+  const handleExtractRecipe = async () => {
+    if (!url) return
 
     setLoading(true)
     try {
       const data = await extractRecipeFromUrl(url)
-      setRecipeData(data)
+      if (data) {
+        setExtractedRecipe(data)
+      }
       toast({
         title: "Recipe Found",
-        description: `Successfully extracted recipe from ${validation.platform}.`,
+        description: "We've extracted the recipe details. Please review and save.",
       })
     } catch (error) {
+      console.error('Error extracting recipe:', error)
       toast({
         title: "Error",
-        description: "Failed to extract recipe from URL.",
+        description: "Failed to extract recipe. Please check the URL and try again.",
       })
     } finally {
       setLoading(false)
@@ -348,22 +432,59 @@ export default function AddRecipe() {
   }
 
   const handleSaveRecipe = async () => {
-    if (!recipeData) return
+    if (!extractedRecipe) return
 
     setLoading(true)
     try {
-      const { error } = await supabase
+      // Insert recipe and get the generated ID
+      const { data: recipeData, error: recipeError } = await supabase
         .from('recipes')
-        .insert([recipeData])
+        .insert([{
+          title: extractedRecipe.recipe.title,
+          image: extractedRecipe.recipe.image,
+          caption: extractedRecipe.recipe.caption,
+          tags: extractedRecipe.recipe.tags,
+          steps: extractedRecipe.recipe.steps,
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single()
       
-      if (error) throw error
+      if (recipeError) throw recipeError
+      if (!recipeData) throw new Error('Failed to create recipe')
+
+      // Insert ingredients with recipe_id
+      const ingredientsWithRecipeId = extractedRecipe.ingredients.map(ingredient => ({
+        ...ingredient,
+        recipe_id: recipeData.id
+      }))
+
+      const { error: ingredientsError } = await supabase
+        .from('ingredients')
+        .insert(ingredientsWithRecipeId)
+
+      if (ingredientsError) throw ingredientsError
+
+      // Insert grocery items with recipe_id
+      const groceryItemsWithRecipeId = extractedRecipe.groceryItems.map(item => ({
+        ...item,
+        recipe_id: recipeData.id
+      }))
+
+      const { error: groceryItemsError } = await supabase
+        .from('grocery_items')
+        .insert(groceryItemsWithRecipeId)
+
+      if (groceryItemsError) throw groceryItemsError
 
       toast({
-        title: "Recipe Saved",
-        description: "Your recipe has been saved successfully.",
+        title: "Success",
+        description: "Recipe saved successfully!",
       })
-      router.push("/")
+      
+      router.push('/explore')
     } catch (error) {
+      console.error('Error saving recipe:', error)
       toast({
         title: "Error",
         description: "Failed to save recipe. Please try again.",
@@ -397,7 +518,7 @@ export default function AddRecipe() {
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={handleUrlSubmit}
+                  onClick={handleExtractRecipe}
                   disabled={loading || !url}
                   className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30"
                 >
@@ -412,7 +533,7 @@ export default function AddRecipe() {
           </div>
               </div>
 
-              {recipeData && (
+              {extractedRecipe && (
           <div 
             className="fixed inset-x-0 bottom-0 z-40"
             aria-modal="true"
@@ -420,7 +541,7 @@ export default function AddRecipe() {
             aria-labelledby="recipe-modal-title"
             onClick={(e) => {
               if (e.target === e.currentTarget && !loading) {
-                setRecipeData(null)
+                setExtractedRecipe(null)
               }
             }}
           >
@@ -432,11 +553,11 @@ export default function AddRecipe() {
               }`}
             >
               <div className="relative">
-                  {recipeData.image && (
+                  {extractedRecipe.recipe.image && (
                   <div className="w-full h-36 overflow-hidden">
                     <img 
-                      src={recipeData.image} 
-                      alt={recipeData.title}
+                      src={extractedRecipe.recipe.image} 
+                      alt={extractedRecipe.recipe.title}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -445,7 +566,7 @@ export default function AddRecipe() {
                 <div className="flex items-center justify-between px-4 h-14 border-b border-gray-200">
                   <Button
                     variant="link"
-                    onClick={() => setRecipeData(null)}
+                    onClick={() => setExtractedRecipe(null)}
                     disabled={loading}
                     className="text-gray-600 hover:text-gray-900 p-0 h-auto font-normal"
                   >
@@ -467,24 +588,15 @@ export default function AddRecipe() {
                 
                 <div className="p-4">
                   <h3 id="recipe-modal-title" className="font-bold text-xl text-gray-900 mb-3">
-                    {recipeData.title}
+                    {extractedRecipe.recipe.title}
                   </h3>
                   
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {recipeData.tags.slice(0, 3).map((tag, i) => (
+                    {extractedRecipe.recipe.tags.slice(0, 3).map((tag, i) => (
                       <span key={i} className="px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700">
                         {tag}
                       </span>
                     ))}
-                    {recipeData.tags.length > 3 && (
-                      <span className="px-2 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
-                        +{recipeData.tags.length - 3} more
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="text-sm text-gray-600">
-                    {recipeData.steps.length} steps · {recipeData.ingredients.length} ingredients
                   </div>
                 </div>
 
@@ -494,10 +606,10 @@ export default function AddRecipe() {
                       Ingredients
                     </h4>
                     <ul className="space-y-2">
-                      {recipeData.ingredients.map((ingredient, i) => (
+                      {extractedRecipe.ingredients.map((ingredient, i) => (
                         <li key={i} className="flex items-start text-gray-700">
                           <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 mr-2"></span>
-                          {ingredient}
+                          {ingredient.name}
                         </li>
                       ))}
                     </ul>
@@ -505,10 +617,10 @@ export default function AddRecipe() {
 
                   <div>
                     <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2 mb-3">
-                      Step-by-Step Instructions
+                      Steps
                     </h4>
                     <ol className="space-y-3">
-                      {recipeData.steps.map((step, i) => (
+                      {extractedRecipe.recipe.steps.map((step, i) => (
                         <li key={i} className="text-gray-700">
                           <div className="flex items-start">
                             <span className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mr-3 mt-0.5 text-sm font-semibold">

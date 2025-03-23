@@ -26,12 +26,12 @@ export default function HomePage() {
           return
         }
         
-        setRecipes(allRecipes || [])
+        setRecipes(allRecipes as Recipe[] || [])
         
         // Select a random recipe from the first 5 recipes for the hero section
         if (allRecipes && allRecipes.length > 0) {
           const randomIndex = Math.floor(Math.random() * Math.min(5, allRecipes.length))
-          setHeroRecipe(allRecipes[randomIndex])
+          setHeroRecipe(allRecipes[randomIndex] as Recipe)
         }
       } catch (error) {
         console.error("Error in loadRecipes:", error)
@@ -72,7 +72,7 @@ export default function HomePage() {
           <h2 className="text-xl font-semibold mb-2 px-4">Recents</h2>
           <div className="flex overflow-x-auto space-x-4 px-4 pb-4">
             {recipes && recipes.length > 0 ? (
-              recipes.slice(0, 5).map((recipe: any) => (
+              recipes.slice(0, 5).map((recipe: Recipe) => (
                 <div key={recipe.id} className="w-48 flex-shrink-0">
                   <RecipeCard 
                     id={recipe.id?.toString() || "0"} 
@@ -94,7 +94,7 @@ export default function HomePage() {
           <section className="py-4">
             <h2 className="text-xl font-semibold mb-2 px-4">Uniquely Yours</h2>
             <div className="flex overflow-x-auto space-x-4 px-4 pb-4">
-              {recipes.slice(5, 9).map((recipe: any) => (
+              {recipes.slice(5, 9).map((recipe: Recipe) => (
                 <div key={`unique-${recipe.id}`} className="w-48 flex-shrink-0">
                   <RecipeCard 
                     id={recipe.id.toString()} 
@@ -112,7 +112,7 @@ export default function HomePage() {
           <section className="py-4">
             <h2 className="text-xl font-semibold mb-2 px-4">All</h2>
             <div className="grid grid-cols-2 gap-4 px-4">
-              {recipes.slice(9, 15).map((recipe: any) => (
+              {recipes.slice(9, 15).map((recipe: Recipe) => (
                 <RecipeCard 
                   key={`all-${recipe.id}`} 
                   id={recipe.id.toString()} 

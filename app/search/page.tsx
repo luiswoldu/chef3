@@ -44,7 +44,7 @@ export default function SearchResults() {
             key={recipe.id}
             id={recipe.id.toString()}
             title={recipe.title}
-            image={recipe.image_url || ''}
+            image={recipe.image || ''}
             cardType="square"
           />
         ))}

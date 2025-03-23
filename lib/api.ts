@@ -1,9 +1,9 @@
 import { Recipe } from '@/types'
-import { createClient } from '@/lib/supabase/client'
+import { getSupabaseClient } from '@/lib/supabase/client'
 
 export async function fetchRecipeByName(name: string): Promise<Recipe | null> {
   try {
-    const supabase = createClient()
+    const supabase = getSupabaseClient()
     
     const { data, error } = await supabase
       .from('recipes')
@@ -28,7 +28,7 @@ export async function fetchRecipeByName(name: string): Promise<Recipe | null> {
 
 export async function fetchRecipeById(id: string): Promise<Recipe | null> {
   try {
-    const supabase = createClient()
+    const supabase = getSupabaseClient()
     
     const { data, error } = await supabase
       .from('recipes')

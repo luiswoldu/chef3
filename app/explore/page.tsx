@@ -35,36 +35,15 @@ export default function Explore() {
                 recipe.tags?.includes(activeCategory)
               )
 
-        // Create a copy of the filtered recipes before padding/modifying
-        const availableRecipes = [...filteredRecipes]
-        
-        // Ensure we always have 15 cards by padding with empty recipes if needed
-        const emptyRecipe: Recipe = {
-          id: 0,
-          title: "Recipe",
-          image: "/placeholder.svg",
-          caption: "Add your own recipe",
-          tags: [],
-          ingredients: [],
-          steps: [],
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
+        // Sort recipes by creation date (newest first)
+        filteredRecipes.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
 
-        // Pad the array only if needed for display
-        const paddedRecipes = [...filteredRecipes]
-        while (paddedRecipes.length < 15) {
-          paddedRecipes.push({
-            ...emptyRecipe,
-            id: -(paddedRecipes.length + 1) // Use negative IDs for empty cards
-          })
-        }
-
-        // Limit to 15 recipes and sort
-        setRecipes(paddedRecipes.slice(0, 15).sort((a, b) => (a.id ?? 0) - (b.id ?? 0)))
+        // Limit to 15 recipes
+        setRecipes(filteredRecipes.slice(0, 15))
       } catch (error) {
         console.error("Error fetching recipes:", error)
-        // Set an empty array if there's an error to prevent undefined access
         setRecipes([])
       } finally {
         setIsLoading(false)
@@ -98,29 +77,32 @@ export default function Explore() {
           <div className="flex justify-center items-center h-full">
             <p>Loading...</p>
           </div>
+        ) : recipes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-gray-500">
+            <p>No recipes found</p>
+            <p className="text-sm mt-2">Try a different category or add some recipes</p>
+          </div>
         ) : (
           <div className="space-y-0.5 bg-gray-100">
             {/* Hero Card */}
-            {recipes.length > 0 && (
-              <RecipeCard
-                id={recipes[0]?.id?.toString() ?? ""}
-                title={recipes[0]?.title ?? ""}
-                image={recipes[0]?.image ?? ""}
-                isHero={true}
-                showAddButton={true}
-                cardType="hero"
-              />
-            )}
+            <RecipeCard
+              id={recipes[0]?.id?.toString() ?? ""}
+              title={recipes[0]?.title ?? ""}
+              image={recipes[0]?.image ?? "/placeholder.svg"}
+              isHero={true}
+              showAddButton={true}
+              cardType="hero"
+            />
 
             {/* Group 1: 2x2 Grid */}
             {recipes.length > 4 && (
               <div className="grid grid-cols-2 gap-0.5">
                 {recipes.slice(1, 5).map((recipe) => (
                   <RecipeCard
-                    key={recipe.id ?? `empty-${Math.random()}`}
+                    key={recipe.id}
                     id={recipe.id?.toString() ?? ""}
                     title={recipe.title ?? ""}
-                    image={recipe.image ?? ""}
+                    image={recipe.image ?? "/placeholder.svg"}
                     showAddButton={true}
                     cardType="square"
                   />
@@ -135,7 +117,7 @@ export default function Explore() {
                   <RecipeCard
                     id={recipes[5]?.id?.toString() ?? ""}
                     title={recipes[5]?.title ?? ""}
-                    image={recipes[5]?.image ?? ""}
+                    image={recipes[5]?.image ?? "/placeholder.svg"}
                     showAddButton={true}
                     cardType="thumbnail"
                   />
@@ -145,8 +127,8 @@ export default function Explore() {
                     <RecipeCard
                       key={recipe.id}
                       id={recipe.id?.toString() ?? ""}
-                      title={recipe.title}
-                      image={recipe.image}
+                      title={recipe.title ?? ""}
+                      image={recipe.image ?? "/placeholder.svg"}
                       showAddButton={true}
                       cardType="square"
                     />
@@ -162,8 +144,8 @@ export default function Explore() {
                   <RecipeCard
                     key={recipe.id}
                     id={recipe.id?.toString() ?? ""}
-                    title={recipe.title}
-                    image={recipe.image}
+                    title={recipe.title ?? ""}
+                    image={recipe.image ?? "/placeholder.svg"}
                     showAddButton={true}
                     cardType="square"
                   />
@@ -179,8 +161,8 @@ export default function Explore() {
                     <RecipeCard
                       key={recipe.id}
                       id={recipe.id?.toString() ?? ""}
-                      title={recipe.title}
-                      image={recipe.image}
+                      title={recipe.title ?? ""}
+                      image={recipe.image ?? "/placeholder.svg"}
                       showAddButton={true}
                       cardType="square"
                     />
@@ -190,7 +172,7 @@ export default function Explore() {
                   <RecipeCard
                     id={recipes[14]?.id?.toString() ?? ""}
                     title={recipes[14]?.title ?? ""}
-                    image={recipes[14]?.image ?? ""}
+                    image={recipes[14]?.image ?? "/placeholder.svg"}
                     showAddButton={true}
                     cardType="thumbnail"
                   />

@@ -29,6 +29,7 @@ interface Ingredient {
 interface GroceryItem {
   name: string
   amount: string
+  details: string
   aisle: string
   purchased: boolean
   created_at: string
@@ -352,32 +353,60 @@ export default function AddRecipe() {
             }
 
             // Map ingredients with validation
-            ingredients = Array.isArray(recipe.recipeIngredient)
-              ? recipe.recipeIngredient.map((ingredient: string) => {
-                  // Try to parse amount and name from ingredient string
-                  const match = ingredient.match(/^([\d\s/]+)?\s*(.+)$/);
-                  if (match) {
-                    const [, amount, name] = match;
+            ingredients = await Promise.all(
+              (Array.isArray(recipe.recipeIngredient) ? recipe.recipeIngredient : [])
+                .map(async (ingredient: string) => {
+                  try {
+                    // Call our new ingredient parsing API
+                    const response = await fetch('/api/parse-ingredient', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({ ingredient }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error('Failed to parse ingredient');
+                    }
+
+                    const parsed = await response.json();
+                    
+                    // Only include the details, not alternatives
                     return {
-                      name: name.trim(),
-                      amount: amount ? amount.trim() : '',
+                      name: parsed.name || ingredient.trim(),
+                      amount: parsed.amount || '',
+                      details: parsed.details || '',
+                      created_at: new Date().toISOString()
+                    };
+                  } catch (error) {
+                    console.error('Error parsing ingredient:', error);
+                    // Fallback to basic parsing if API parsing fails
+                    const match = ingredient.match(/^([\d\s/]+)?\s*(.+)$/);
+                    if (match) {
+                      const [, amount, name] = match;
+                      return {
+                        name: name.trim(),
+                        amount: amount ? amount.trim() : '',
+                        details: '',
+                        created_at: new Date().toISOString()
+                      };
+                    }
+                    return {
+                      name: ingredient.trim(),
+                      amount: '',
                       details: '',
                       created_at: new Date().toISOString()
                     };
                   }
-                  return {
-                    name: ingredient.trim(),
-                    amount: '',
-                    details: '',
-                    created_at: new Date().toISOString()
-                  };
                 })
-              : [];
+            );
 
-            // Map ingredients to grocery items
+            // Map ingredients to grocery items with more detailed information
             groceryItems = ingredients.map((ingredient: Ingredient) => ({
               name: ingredient.name,
               amount: ingredient.amount,
+              details: ingredient.details,
               aisle: '', // This will be set by the user later
               purchased: false,
               created_at: new Date().toISOString()
@@ -467,8 +496,13 @@ export default function AddRecipe() {
 
       // Insert grocery items with recipe_id
       const groceryItemsWithRecipeId = extractedRecipe.groceryItems.map(item => ({
-        ...item,
-        recipe_id: recipeData.id
+        recipe_id: recipeData.id,
+        name: item.name,
+        amount: item.amount,
+        details: item.details,
+        aisle: '', // This will be set by the user later
+        purchased: false,
+        created_at: new Date().toISOString()
       }))
 
       const { error: groceryItemsError } = await supabase
@@ -609,7 +643,15 @@ export default function AddRecipe() {
                       {extractedRecipe.ingredients.map((ingredient, i) => (
                         <li key={i} className="flex items-start text-gray-700">
                           <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 mr-2"></span>
-                          {ingredient.name}
+                          <div className="flex-1">
+                            <span className="font-medium">{ingredient.name}</span>
+                            {ingredient.amount && (
+                              <span className="text-gray-500 ml-2">{ingredient.amount}</span>
+                            )}
+                            {ingredient.details && (
+                              <span className="text-gray-500 block text-sm mt-0.5">{ingredient.details}</span>
+                            )}
+                          </div>
                         </li>
                       ))}
                     </ul>

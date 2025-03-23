@@ -11,42 +11,8 @@ import { supabase } from "@/lib/supabase/client"
 
 export default function HomePage() {
   const [recipes, setRecipes] = useState<Recipe[]>([])
-  const [testStatus, setTestStatus] = useState<string>("")
-  const [debugInfo, setDebugInfo] = useState<any>(null)
+  const [heroRecipe, setHeroRecipe] = useState<Recipe | null>(null)
   
-  const testConnection = async () => {
-    try {
-      setTestStatus("Testing...")
-      console.log("[DEBUG] Starting test connection...")
-      console.log("[DEBUG] Supabase client state:", supabase)
-      
-      const recipes = await getAllRecipes()
-      console.log("[DEBUG] getAllRecipes result:", recipes)
-      setTestStatus(`Success! Found ${recipes.length} recipes`)
-      
-      // Also try direct query
-      console.log("[DEBUG] Attempting direct query...")
-      const { data, error } = await supabase
-        .from('recipes')
-        .select('*')
-      
-      if (error) {
-        console.error("[DEBUG] Direct query error:", error)
-        setTestStatus(`Error with direct query: ${error.message}`)
-        setDebugInfo({ type: 'query', error })
-      } else {
-        console.log("[DEBUG] Direct query result:", data)
-        setTestStatus(`Success! Direct query found ${data?.length || 0} recipes`)
-        setDebugInfo({ type: 'query', data })
-      }
-    } catch (error: any) {
-      console.error("[DEBUG] Supabase test error:", error)
-      console.error("[DEBUG] Error stack:", error.stack)
-      setTestStatus(`Error: ${error?.message || 'Unknown error occurred'}`)
-      setDebugInfo({ type: 'test', error: error?.message || 'Unknown error' })
-    }
-  }
-
   useEffect(() => {
     // Fetch recipes
     async function loadRecipes() {
@@ -60,8 +26,13 @@ export default function HomePage() {
           return
         }
         
-        console.log("Loaded recipes:", allRecipes)
         setRecipes(allRecipes || [])
+        
+        // Select a random recipe from the first 5 recipes for the hero section
+        if (allRecipes && allRecipes.length > 0) {
+          const randomIndex = Math.floor(Math.random() * Math.min(5, allRecipes.length))
+          setHeroRecipe(allRecipes[randomIndex])
+        }
       } catch (error) {
         console.error("Error in loadRecipes:", error)
       }
@@ -72,33 +43,28 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen pb-[70px]">
-      <div className="fixed top-4 right-4 z-50">
-        <button 
-          onClick={testConnection}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-        >
-          Test Supabase
-        </button>
-        {testStatus && (
-          <div className={`mt-2 p-2 rounded ${
-            testStatus.includes("Success") ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-          }`}>
-            {testStatus}
-          </div>
-        )}
-        {debugInfo && (
-          <div className="mt-2 bg-gray-100 p-2 rounded max-h-40 overflow-auto text-xs">
-            <pre>{JSON.stringify(debugInfo, null, 2)}</pre>
-          </div>
-        )}
-      </div>
       <div className="relative w-full h-[56.4vh] bg-gradient-to-b from-gray-900 to-gray-800">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center text-white px-4">
-            <h1 className="text-4xl font-bold mb-4">Discover Amazing Recipes</h1>
-            <p className="text-lg text-gray-200">Find, save, and share your favorite recipes</p>
+        {heroRecipe ? (
+          <Link href={`/recipe/${heroRecipe.id}`} className="absolute inset-0">
+            <div className="relative w-full h-full">
+              <img 
+                src={heroRecipe.image || '/placeholder.svg'} 
+                alt={heroRecipe.title}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
+                <h2 className="text-3xl font-bold">{heroRecipe.title}</h2>
+              </div>
+            </div>
+          </Link>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center text-white px-4">
+              <p className="text-lg text-gray-200">Loading hero recipe...</p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
       <SearchBar />
       <div className="flex-1 overflow-y-auto">
@@ -106,12 +72,12 @@ export default function HomePage() {
           <h2 className="text-xl font-semibold mb-2 px-4">Recents</h2>
           <div className="flex overflow-x-auto space-x-4 px-4 pb-4">
             {recipes && recipes.length > 0 ? (
-              recipes.map((recipe: any) => (
+              recipes.slice(0, 5).map((recipe: any) => (
                 <div key={recipe.id} className="w-48 flex-shrink-0">
                   <RecipeCard 
                     id={recipe.id?.toString() || "0"} 
                     title={recipe.title || "Untitled Recipe"} 
-                    image={recipe.image || ''}
+                    image={recipe.image || '/placeholder.svg'}
                     cardType="thumbnail"
                   />
                 </div>
@@ -128,7 +94,7 @@ export default function HomePage() {
           <section className="py-4">
             <h2 className="text-xl font-semibold mb-2 px-4">Uniquely Yours</h2>
             <div className="flex overflow-x-auto space-x-4 px-4 pb-4">
-              {recipes.slice(0, 4).map((recipe: any) => (
+              {recipes.slice(5, 9).map((recipe: any) => (
                 <div key={`unique-${recipe.id}`} className="w-48 flex-shrink-0">
                   <RecipeCard 
                     id={recipe.id.toString()} 
@@ -146,7 +112,7 @@ export default function HomePage() {
           <section className="py-4">
             <h2 className="text-xl font-semibold mb-2 px-4">All</h2>
             <div className="grid grid-cols-2 gap-4 px-4">
-              {recipes.slice(0, 6).map((recipe: any) => (
+              {recipes.slice(9, 15).map((recipe: any) => (
                 <RecipeCard 
                   key={`all-${recipe.id}`} 
                   id={recipe.id.toString()} 

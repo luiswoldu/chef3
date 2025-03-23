@@ -12,9 +12,11 @@ import { useToast } from '@/hooks/use-toast'
 interface RecipeIngredient {
   id: number;
   recipe_id: number;
-  ingredient: string;
+  name: string;
   amount: string;
   details: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Use the database types
@@ -116,7 +118,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
             }
             
             const groceryItems = recipe.ingredients.map((ing: RecipeIngredient) => ({
-              name: ing.ingredient,
+              name: ing.name,
               amount: ing.amount,
               aisle: "Other",
               purchased: false,
@@ -200,7 +202,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           <div className="rounded-lg">
             {recipe.ingredients && recipe.ingredients.map((ingredient: RecipeIngredient, index: number) => (
               <div key={ingredient.id || index} className="bg-white p-3 rounded-md shadow mb-2">
-                <p className="font-medium">{ingredient.ingredient}</p>
+                <p className="font-medium">{ingredient.name}</p>
                 <p className="text-sm text-gray-600">
                   {ingredient.amount} {ingredient.details}
                 </p>

@@ -81,3 +81,15 @@ export async function updateGroceryItem(id: number, purchased: boolean): Promise
   
   if (error) throw error
 }
+
+export async function searchRecipesFullText(query: string): Promise<Recipe[]> {
+  const { data, error } = await supabase
+    .rpc("search_recipes_by_title", { query })
+
+  if (error) {
+    console.error("Error fetching search results:", error)
+    return []
+  }
+
+  return data as Recipe[]
+}

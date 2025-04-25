@@ -6,3 +6,42 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOi
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
 export const getSupabaseClient = () => supabase 
+
+export type SearchResults = {
+  recipes: { id: number; title: string }[];
+  ingredients: { id: number; name: string }[];
+};
+
+export async function fullTextSearch(query: string): Promise<SearchResults> {
+  const q = query.trim();
+  if (!q) {
+    return { recipes: [], ingredients: [] };
+  }
+
+  // Fire both queries in parallel
+  const [recipeRes, ingredientRes] = await Promise.all([
+    supabase
+      .from('recipes')
+      .select('id, title')
+      .textSearch('title_tsv', q, {
+        config: 'english',
+        type: 'plain',    // you can also try 'websearch'
+      }),
+
+    supabase
+      .from('ingredients')
+      .select('id, name')
+      .textSearch('name_tsv', q, {
+        config: 'english',
+        type: 'plain',
+      }),
+  ]);
+
+  if (recipeRes.error) throw recipeRes.error;
+  if (ingredientRes.error) throw ingredientRes.error;
+
+  return {
+    recipes: recipeRes.data,
+    ingredients: ingredientRes.data,
+  };
+} 

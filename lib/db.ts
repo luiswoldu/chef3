@@ -83,13 +83,16 @@ export async function updateGroceryItem(id: number, purchased: boolean): Promise
 }
 
 export async function searchRecipesFullText(query: string): Promise<Recipe[]> {
-  const { data, error } = await supabase
-    .rpc("search_recipes_by_title", { query })
+  // Commented out client-side RPC call
+  // const { data, error } = await supabase
+  //   .rpc("search_recipes_by_title", { query })
 
-  if (error) {
-    console.error("Error fetching search results:", error)
-    return []
-  }
+  // if (error) {
+  //   console.error("Error fetching search results:", error)
+  //   return []
+  // }
 
-  return data as Recipe[]
+  // TODO: Replace with server-side implementation
+  console.log("Search functionality being updated, returning empty results for now")
+  return []
 }

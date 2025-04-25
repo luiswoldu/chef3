@@ -1,14 +1,15 @@
 "use client"
 
-import { ChevronRight, Loader2, Search } from "lucide-react"
+import { ChevronRight, Loader2, Search, X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { supabase } from "@/lib/supabase/client"
+import { fullTextSearch } from "@/lib/supabase/client"
 
 interface SearchItem {
+  id: string
   name: string
   category: string
-  type: string
+  type: string  // used for routing; e.g. 'recipe' or 'ingredient'
 }
 
 interface SearchViewProps {
@@ -17,63 +18,65 @@ interface SearchViewProps {
 
 export default function SearchView({ onCancel }: SearchViewProps) {
   const router = useRouter()
-  const [recentSearches, setRecentSearches] = useState<SearchItem[]>([])
-  const [isLoading, setIsLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const [searchingInProgress, setSearchingInProgress] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchResults, setSearchResults] = useState<{
+    recipes: SearchItem[],
+    ingredients: SearchItem[]
+  }>({
+    recipes: [],
+    ingredients: []
+  })
 
+  // Debounced full-text search
   useEffect(() => {
-    const fetchRecentSearches = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('search_history')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(4)
-
-        if (error) {
-          console.error('Error fetching recent searches:', error)
-          return
-        }
-
-        if (data) {
-          setRecentSearches(data)
-        }
-      } catch (error) {
-        console.error('Error in fetchRecentSearches:', error)
-      } finally {
-        setIsLoading(false)
+    const handler = setTimeout(async () => {
+      if (!searchQuery.trim()) {
+        setSearchResults({ recipes: [], ingredients: [] })
+        setIsSearching(false)
+        return
       }
-    }
 
-    fetchRecentSearches()
-  }, [])
+      setIsSearching(true)
+      try {
+        const { recipes, ingredients } = await fullTextSearch(searchQuery)
+        
+        setSearchResults({
+          recipes: recipes.map(r => ({ 
+            id: r.id.toString(), 
+            name: r.title, 
+            category: 'Recipe', 
+            type: 'recipe' 
+          })),
+          ingredients: ingredients.map(i => ({ 
+            id: i.id.toString(), 
+            name: i.name, 
+            category: 'Ingredient', 
+            type: 'ingredients' 
+          }))
+        })
+      } catch (err) {
+        console.error('Search error:', err)
+      } finally {
+        setIsSearching(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(handler)
+  }, [searchQuery])
 
   const handleSearch = async (query: string) => {
     if (!query.trim()) return
-    
-    try {
-      setSearchingInProgress(true)
-      
-      // Save the search to history
-      await supabase
-        .from('search_history')
-        .insert([
-          { 
-            name: query,
-            category: 'Search',
-            type: 'Query',
-            created_at: new Date().toISOString()
-          }
-        ])
 
-      // Navigate to search results
+    try {
       router.push(`/search?q=${encodeURIComponent(query)}`)
     } catch (error) {
-      console.error('Error saving search:', error)
-      // Still navigate even if saving fails
-      router.push(`/search?q=${encodeURIComponent(query)}`)
+      console.error('Error navigating to search:', error)
     }
+  }
+
+  const handleClear = () => {
+    setSearchQuery('')
   }
 
   const handleCancel = () => {
@@ -91,11 +94,11 @@ export default function SearchView({ onCancel }: SearchViewProps) {
     }
   }
 
-  const handleSearchButtonClick = () => {
-    if (searchQuery.trim()) {
-      handleSearch(searchQuery.trim())
-    }
+  const handleItemClick = (item: SearchItem) => {
+    router.push(`/${item.type}/${item.id}`)
   }
+
+  const hasResults = searchResults.recipes.length > 0 || searchResults.ingredients.length > 0
 
   return (
     <div className="fixed inset-0 bg-black z-50">
@@ -103,7 +106,7 @@ export default function SearchView({ onCancel }: SearchViewProps) {
         {/* Search Header */}
         <div className="p-4 flex items-center mt-8">
           <div className="flex-1 flex items-center bg-[#ffffff]/50 backdrop-blur-[4px] rounded-full px-4 py-2">
-            {searchingInProgress ? (
+            {isSearching ? (
               <Loader2 className="w-5 h-5 text-white animate-spin" />
             ) : (
               <Search className="w-5 h-5 text-white" />
@@ -116,66 +119,88 @@ export default function SearchView({ onCancel }: SearchViewProps) {
               value={searchQuery}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              disabled={searchingInProgress}
             />
-            {searchQuery.trim() && !searchingInProgress && (
+            {searchQuery.trim() && (
               <button
-                onClick={handleSearchButtonClick}
-                className="ml-2 bg-green-500 text-white px-3 py-1 rounded-full text-sm"
+                onClick={handleClear}
+                className="ml-2 text-white"
+                aria-label="Clear search"
               >
-                Search
+                <X className="h-5 w-5" />
               </button>
             )}
           </div>
-          <button 
-            onClick={handleCancel} 
+          <button
+            onClick={handleCancel}
             className="text-white ml-3"
-            disabled={searchingInProgress}
           >
             Cancel
           </button>
         </div>
 
-        {/* Recent Searches */}
-        <div className="flex-1 overflow-auto px-4">
-          <h2 className="text-white text-4xl font-bold mb-6">Recent</h2>
-          {isLoading ? (
-            <div className="space-y-6">
-              {[...Array(4)].map((_, index) => (
-                <div key={index} className="w-full flex items-center justify-between text-left animate-pulse">
-                  <div className="w-3/4">
-                    <div className="h-6 bg-gray-700 rounded mb-2"></div>
-                    <div className="h-4 bg-gray-700 rounded w-1/2"></div>
-                  </div>
-                  <div className="h-6 w-6 bg-gray-700 rounded"></div>
-                </div>
-              ))}
+        {/* Results Content */}
+        <div className="flex-1 overflow-auto px-4 pb-4">
+          {isSearching ? (
+            <div className="flex justify-center items-center h-32">
+              <Loader2 className="h-8 w-8 text-white animate-spin" />
             </div>
-          ) : recentSearches.length > 0 ? (
-            <div className="space-y-6">
-              {recentSearches.map((item, index) => (
-                <button
-                  key={index}
-                  className="w-full flex items-center justify-between text-left"
-                  onClick={() => handleSearch(item.name)}
-                  disabled={searchingInProgress}
-                >
+          ) : searchQuery.trim() ? (
+            hasResults ? (
+              <div className="space-y-8">
+                {/* Ingredients Section */}
+                {searchResults.ingredients.length > 0 && (
                   <div>
-                    <h3 className="text-white text-xl mb-1">{item.name}</h3>
-                    <p className="text-gray-400">
-                      {item.category} • {item.type}
-                    </p>
+                    <h2 className="text-white text-xl font-semibold mb-4">Ingredients</h2>
+                    <div className="space-y-4">
+                      {searchResults.ingredients.map((ingredient, idx) => (
+                        <button
+                          key={`ingredient-${idx}`}
+                          className="w-full flex items-center justify-between text-left p-3 bg-zinc-900/50 rounded-lg hover:bg-zinc-800/50"
+                          onClick={() => handleItemClick(ingredient)}
+                        >
+                          <div>
+                            <h3 className="text-white text-lg">{ingredient.name}</h3>
+                          </div>
+                          <ChevronRight className="text-gray-400 h-5 w-5" />
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <ChevronRight className="text-gray-400 h-6 w-6" />
-                </button>
-              ))}
-            </div>
+                )}
+
+                {/* Recipes Section */}
+                {searchResults.recipes.length > 0 && (
+                  <div>
+                    <h2 className="text-white text-xl font-semibold mb-4">Recipes</h2>
+                    <div className="space-y-4">
+                      {searchResults.recipes.map((recipe, idx) => (
+                        <button
+                          key={`recipe-${idx}`}
+                          className="w-full flex items-center justify-between text-left p-3 bg-zinc-900/50 rounded-lg hover:bg-zinc-800/50"
+                          onClick={() => handleItemClick(recipe)}
+                        >
+                          <div>
+                            <h3 className="text-white text-lg">{recipe.name}</h3>
+                          </div>
+                          <ChevronRight className="text-gray-400 h-5 w-5" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64">
+                <p className="text-gray-400 text-center">No results for "{searchQuery.trim()}"</p>
+              </div>
+            )
           ) : (
-            <p className="text-gray-400">No recent searches</p>
+            <div className="flex flex-col items-center justify-center h-64">
+              <p className="text-gray-400 text-center">Type to search recipes and ingredients</p>
+            </div>
           )}
         </div>
       </div>
     </div>
   )
 }
-

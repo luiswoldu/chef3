@@ -2,6 +2,7 @@
 
 import { ChevronRight, Loader2, Search, X } from "lucide-react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { useEffect, useState } from "react"
 import { fullTextSearch } from "@/lib/supabase/client"
 
@@ -153,16 +154,16 @@ export default function SearchView({ onCancel }: SearchViewProps) {
                     <h2 className="text-white text-xl font-semibold mb-4">Ingredients</h2>
                     <div className="space-y-4">
                       {searchResults.ingredients.map((ingredient, idx) => (
-                        <button
+                        <Link
                           key={`ingredient-${idx}`}
-                          className="w-full flex items-center justify-between text-left p-3 bg-zinc-900/50 rounded-lg hover:bg-zinc-800/50"
-                          onClick={() => handleItemClick(ingredient)}
+                          href={`/search/ingredient/${encodeURIComponent(ingredient.name)}`}
+                          className="w-full flex items-center justify-between text-left p-3 bg-zinc-900/50 rounded-lg hover:bg-zinc-800/50 block"
                         >
                           <div>
                             <h3 className="text-white text-lg">{ingredient.name}</h3>
                           </div>
                           <ChevronRight className="text-gray-400 h-5 w-5" />
-                        </button>
+                        </Link>
                       ))}
                     </div>
                   </div>

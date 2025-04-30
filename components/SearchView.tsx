@@ -1,12 +1,16 @@
 "use client"
 
-import { ChevronRight } from "lucide-react"
+import { ChevronRight, Loader2, Search, X } from "lucide-react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { useEffect, useState } from "react"
+import { fullTextSearch } from "@/lib/supabase/client"
 
 interface SearchItem {
+  id: string
   name: string
   category: string
-  type: string
+  type: string  // used for routing; e.g. 'recipe' or 'ingredient'
 }
 
 interface SearchViewProps {
@@ -15,18 +19,65 @@ interface SearchViewProps {
 
 export default function SearchView({ onCancel }: SearchViewProps) {
   const router = useRouter()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isSearching, setIsSearching] = useState(false)
+  const [searchResults, setSearchResults] = useState<{
+    recipes: SearchItem[],
+    ingredients: SearchItem[]
+  }>({
+    recipes: [],
+    ingredients: []
+  })
 
-  // This would typically come from a database or local storage
-  const recentSearches: SearchItem[] = [
-    { name: "Cilantro", category: "Ingredient", type: "Herb" },
-    { name: "Red chili pepper", category: "Ingredient", type: "Spice" },
-    { name: "Soybeans", category: "Ingredient", type: "Protein" },
-    { name: "Mango", category: "Ingredient", type: "Fruit" },
-  ]
+  // Debounced full-text search
+  useEffect(() => {
+    const handler = setTimeout(async () => {
+      if (!searchQuery.trim()) {
+        setSearchResults({ recipes: [], ingredients: [] })
+        setIsSearching(false)
+        return
+      }
 
-  const handleSearch = (query: string) => {
-    // Implement search logic here
-    router.push(`/search?q=${encodeURIComponent(query)}`)
+      setIsSearching(true)
+      try {
+        const { recipes, ingredients } = await fullTextSearch(searchQuery)
+        
+        setSearchResults({
+          recipes: recipes.map(r => ({ 
+            id: r.id.toString(), 
+            name: r.title, 
+            category: 'Recipe', 
+            type: 'recipe' 
+          })),
+          ingredients: ingredients.map(i => ({ 
+            id: i.id.toString(), 
+            name: i.name, 
+            category: 'Ingredient', 
+            type: 'ingredients' 
+          }))
+        })
+      } catch (err) {
+        console.error('Search error:', err)
+      } finally {
+        setIsSearching(false)
+      }
+    }, 300)
+
+    return () => clearTimeout(handler)
+  }, [searchQuery])
+
+  const handleSearch = async (query: string) => {
+    if (!query.trim()) return
+
+    try {
+      router.push(`/search?q=${encodeURIComponent(query)}`)
+    } catch (error) {
+      console.error('Error navigating to search:', error)
+    }
+  }
+
+  const handleClear = () => {
+    setSearchQuery('')
   }
 
   const handleCancel = () => {
@@ -34,55 +85,123 @@ export default function SearchView({ onCancel }: SearchViewProps) {
     router.push("/")
   }
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchQuery(e.target.value)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      handleSearch(searchQuery.trim())
+    }
+  }
+
+  const handleItemClick = (item: SearchItem) => {
+    router.push(`/${item.type}/${item.id}`)
+  }
+
+  const hasResults = searchResults.recipes.length > 0 || searchResults.ingredients.length > 0
+
   return (
     <div className="fixed inset-0 bg-black z-50">
       <div className="flex flex-col h-full">
         {/* Search Header */}
-        <div className="p-4 flex items-center">
-          <div className="flex-1 flex items-center bg-[#333333] rounded-full px-4 py-2">
-            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-              />
-            </svg>
+        <div className="p-4 flex items-center mt-8">
+          <div className="flex-1 flex items-center bg-[#ffffff]/50 backdrop-blur-[4px] rounded-full px-4 py-2">
+            {isSearching ? (
+              <Loader2 className="w-5 h-5 text-white animate-spin" />
+            ) : (
+              <Search className="w-5 h-5 text-white" />
+            )}
             <input
               type="text"
-              className="flex-1 bg-transparent text-white pl-3 focus:outline-none"
-              placeholder="Search"
+              className="flex-1 bg-transparent text-white pl-3 focus:outline-none placeholder-white"
+              placeholder="Search recipes or ingredients"
               autoFocus
+              value={searchQuery}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
             />
+            {searchQuery.trim() && (
+              <button
+                onClick={handleClear}
+                className="ml-2 text-white"
+                aria-label="Clear search"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            )}
           </div>
-          <button onClick={handleCancel} className="text-white text-lg">
+          <button
+            onClick={handleCancel}
+            className="text-white ml-3"
+          >
             Cancel
           </button>
         </div>
 
-        {/* Recent Searches */}
-        <div className="flex-1 overflow-auto px-4">
-          <h2 className="text-white text-4xl font-bold mb-6">Recent</h2>
-          <div className="space-y-6">
-            {recentSearches.map((item, index) => (
-              <button
-                key={index}
-                className="w-full flex items-center justify-between text-left"
-                onClick={() => handleSearch(item.name)}
-              >
-                <div>
-                  <h3 className="text-white text-xl mb-1">{item.name}</h3>
-                  <p className="text-gray-400">
-                    {item.category} • {item.type}
-                  </p>
-                </div>
-                <ChevronRight className="text-gray-400 h-6 w-6" />
-              </button>
-            ))}
-          </div>
+        {/* Results Content */}
+        <div className="flex-1 overflow-auto px-4 pb-4">
+          {isSearching ? (
+            <div className="flex justify-center items-center h-32">
+              <Loader2 className="h-8 w-8 text-white animate-spin" />
+            </div>
+          ) : searchQuery.trim() ? (
+            hasResults ? (
+              <div className="space-y-8">
+                {/* Ingredients Section */}
+                {searchResults.ingredients.length > 0 && (
+                  <div>
+                    <h2 className="text-white text-xl font-semibold mb-4">Ingredients</h2>
+                    <div className="space-y-4">
+                      {searchResults.ingredients.map((ingredient, idx) => (
+                        <Link
+                          key={`ingredient-${idx}`}
+                          href={`/search/ingredient/${encodeURIComponent(ingredient.name)}`}
+                          className="w-full flex items-center justify-between text-left p-3 bg-zinc-900/50 rounded-lg hover:bg-zinc-800/50 block"
+                        >
+                          <div>
+                            <h3 className="text-white text-lg">{ingredient.name}</h3>
+                          </div>
+                          <ChevronRight className="text-gray-400 h-5 w-5" />
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Recipes Section */}
+                {searchResults.recipes.length > 0 && (
+                  <div>
+                    <h2 className="text-white text-xl font-semibold mb-4">Recipes</h2>
+                    <div className="space-y-4">
+                      {searchResults.recipes.map((recipe, idx) => (
+                        <button
+                          key={`recipe-${idx}`}
+                          className="w-full flex items-center justify-between text-left p-3 bg-zinc-900/50 rounded-lg hover:bg-zinc-800/50"
+                          onClick={() => handleItemClick(recipe)}
+                        >
+                          <div>
+                            <h3 className="text-white text-lg">{recipe.name}</h3>
+                          </div>
+                          <ChevronRight className="text-gray-400 h-5 w-5" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-64">
+                <p className="text-gray-400 text-center">No results for "{searchQuery.trim()}"</p>
+              </div>
+            )
+          ) : (
+            <div className="flex flex-col items-center justify-center h-64">
+              <p className="text-gray-400 text-center">Type to search recipes and ingredients</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
 }
-

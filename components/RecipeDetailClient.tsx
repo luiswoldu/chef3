@@ -3,9 +3,26 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { Recipe } from '../lib/db'
+import type { Database } from '@/types/supabase'
 import RecipeCard from './RecipeCard'
-import { db } from '../lib/db'
+import { supabase } from '@/lib/supabase/client'
+import { useToast } from '@/hooks/use-toast'
+
+// Define ingredient interface that matches what we get from the database
+interface RecipeIngredient {
+  id: number;
+  recipe_id: number;
+  name: string;
+  amount: string;
+  details: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Use the database types
+type Recipe = Database['public']['Tables']['recipes']['Row'] & {
+  ingredients?: RecipeIngredient[];
+}
 
 interface RecipeDetailClientProps {
   id: string | number  // Allow for both string and number types
@@ -16,43 +33,53 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAdded, setIsAdded] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     async function loadRecipe() {
-      console.log('=== Debug Start ===');
       try {
         const recipeId = typeof id === 'string' ? Number.parseInt(id) : id;
-        console.log('1. Attempting to load recipe with ID:', recipeId);
-
-        // First check database state
-        const dbState = await db.recipes.count();
-        console.log('2. Number of recipes in database:', dbState);
-
-        // Try to get all recipes
-        const allRecipes = await db.recipes.toArray();
-        console.log('3. First recipe in database:', allRecipes[0]);
         
-        // Now get our specific recipe
-        const data = await db.recipes.get(recipeId);
-        console.log('4. Retrieved recipe:', data);
-        console.log('5. Recipe caption:', data?.caption);
+        // Get recipe
+        const { data: recipeData, error: recipeError } = await supabase
+          .from('recipes')
+          .select(`
+            *,
+            ingredients (*)
+          `)
+          .eq('id', recipeId)
+          .single()
         
-        setRecipe(data || null);
+        if (recipeError) {
+          if (recipeError.code === 'PGRST116') {
+            setError('Recipe not found')
+            setRecipe(null)
+          } else {
+            throw recipeError
+          }
+          return
+        }
         
-        // Check if recipe is already in cart
-        const groceryItems = await db.groceryItems.where("recipeId").equals(recipeId).toArray();
-        setIsAdded(groceryItems.length > 0);
+        setRecipe(recipeData)
+        
+        // Check if recipe is in cart
+        const { data: cartItems, error: cartError } = await supabase
+          .from('grocery_items')
+          .select('id')
+          .eq('recipe_id', recipeId)
+        
+        if (cartError) throw cartError
+        setIsAdded(cartItems.length > 0)
       } catch (error) {
-        console.error('Loading error:', error);
-        setError('Failed to load recipe.');
+        console.error('Loading error:', error)
+        setError('Failed to load recipe.')
       } finally {
-        console.log('=== Debug End ===');
-        setLoading(false);
+        setLoading(false)
       }
     }
 
-    loadRecipe();
-  }, [id]);
+    loadRecipe()
+  }, [id])
 
   if (loading) {
     return <div>Loading...</div>
@@ -81,17 +108,41 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
       </Link>
       <button 
         onClick={async (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const groceryItems = recipe.ingredients.map((ing) => ({
-            name: ing.ingredient,
-            amount: ing.amount,
-            aisle: "Other",
-            purchased: false,
-            recipeId: typeof id === 'string' ? Number.parseInt(id) : id,
-          }));
-          await db.groceryItems.bulkAdd(groceryItems);
-          setIsAdded(true);
+          e.preventDefault()
+          e.stopPropagation()
+          try {
+            const recipeId = typeof id === 'string' ? Number.parseInt(id) : id
+            
+            if (!recipe.ingredients || recipe.ingredients.length === 0) {
+              throw new Error('No ingredients found for this recipe')
+            }
+            
+            const groceryItems = recipe.ingredients.map((ing: RecipeIngredient) => ({
+              name: ing.name,
+              amount: ing.amount,
+              aisle: "Other",
+              purchased: false,
+              recipe_id: recipeId,
+            }))
+            
+            const { error } = await supabase
+              .from('grocery_items')
+              .insert(groceryItems)
+            
+            if (error) throw error
+            
+            setIsAdded(true)
+            toast({
+              title: "Added to cart",
+              description: "Ingredients have been added to your shopping list",
+            })
+          } catch (error) {
+            console.error('Error adding to cart:', error)
+            toast({
+              title: "Error",
+              description: "Failed to add ingredients to cart",
+            })
+          }
         }} 
         className="absolute top-4 right-4 z-20 bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-shadow duration-300"
         aria-label={isAdded ? "Added to cart" : "Add to cart"}
@@ -132,9 +183,9 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           <h1 className="text-2xl font-bold">{recipe.title}</h1>
         </div>
         <div className="flex flex-wrap gap-2 mb-4">
-          {recipe.tags.map((tag) => (
+          {recipe.tags && recipe.tags.map((tag: string, i: number) => (
             <span 
-              key={tag} 
+              key={`${tag}-${i}`} 
               className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-[#DFE0E1] text-gray-800"
             >
               {tag}
@@ -149,9 +200,9 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
         <section className="mb-6">
           <h2 className="text-xl font-semibold mb-2">Ingredients</h2>
           <div className="rounded-lg">
-            {recipe.ingredients.map((ingredient, index) => (
-              <div key={index} className="bg-white p-3 rounded-md shadow mb-2">
-                <p className="font-medium">{ingredient.ingredient}</p>
+            {recipe.ingredients && recipe.ingredients.map((ingredient: RecipeIngredient, index: number) => (
+              <div key={ingredient.id || index} className="bg-white p-3 rounded-md shadow mb-2">
+                <p className="font-medium">{ingredient.name}</p>
                 <p className="text-sm text-gray-600">
                   {ingredient.amount} {ingredient.details}
                 </p>
@@ -162,7 +213,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
         <section>
           <h2 className="text-xl font-semibold mb-2">Steps</h2>
           <ol className="list-decimal list-inside space-y-4">
-            {recipe.steps.map((step, index) => (
+            {recipe.steps && recipe.steps.map((step: string, index: number) => (
               <li key={index} className="pl-2">
                 {step}
               </li>

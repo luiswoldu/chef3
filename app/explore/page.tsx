@@ -3,7 +3,10 @@
 import { useState, useEffect } from "react"
 import Navigation from "../../components/Navigation"
 import RecipeCard from "../../components/RecipeCard"
-import { db, type Recipe } from "../../lib/db"
+import { supabase } from "../../lib/supabase/client"
+import type { Database } from "@/types/supabase"
+
+type Recipe = Database['public']['Tables']['recipes']['Row']
 
 const categories = ["All", "Breakfast", "Lunch", "Dessert"]
 
@@ -16,42 +19,37 @@ export default function Explore() {
     async function loadRecipes() {
       setIsLoading(true)
       try {
-        const allRecipes = await db.recipes.toArray()
-        // If "All" is selected or no recipes exist, create array of 15 items
-        let filteredRecipes = activeCategory === "All" 
-          ? allRecipes
-          : allRecipes.filter(recipe => recipe.tags.includes(activeCategory))
+        const { data: allRecipes, error } = await supabase
+          .from("recipes")
+          .select("*")
+        if (error) throw error
 
-        // Ensure we always have 15 cards by padding with empty recipes if needed
-        const emptyRecipe: Recipe = {
-          id: 0,
-          title: "Recipe",
-          image: "/placeholder.svg",
-          caption: "",
-          tags: [],
-          ingredients: [],
-          steps: []
-        }
-        
-        while (filteredRecipes.length < 15) {
-          filteredRecipes.push({
-            ...emptyRecipe,
-            id: -filteredRecipes.length // Use negative IDs for empty cards
-          })
-        }
+        // Ensure allRecipes is defined (could be null if no data)
+        const recipesData: Recipe[] = allRecipes || []
 
-        filteredRecipes = filteredRecipes
-          .slice(0, 15) // Limit to 15 recipes
-          .sort((a, b) => (a.id ?? 0) - (b.id ?? 0))
+        // Filter recipes based on activeCategory
+        let filteredRecipes =
+          activeCategory === "All"
+            ? recipesData
+            : recipesData.filter((recipe) =>
+                recipe.tags?.includes(activeCategory)
+              )
 
-        setRecipes(filteredRecipes)
+        // Sort recipes by creation date (newest first)
+        filteredRecipes.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+
+        // Limit to 15 recipes
+        setRecipes(filteredRecipes.slice(0, 15))
       } catch (error) {
         console.error("Error fetching recipes:", error)
+        setRecipes([])
       } finally {
         setIsLoading(false)
       }
     }
-    
+
     loadRecipes()
   }, [activeCategory])
 
@@ -64,7 +62,9 @@ export default function Explore() {
               key={category}
               onClick={() => setActiveCategory(category)}
               className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-                activeCategory === category ? "bg-[#DFE0E1] text-gray-800" : "bg-gray-100 text-gray-700"
+                activeCategory === category
+                  ? "bg-[#DFE0E1] text-gray-800"
+                  : "bg-gray-100 text-gray-700"
               }`}
             >
               {category}
@@ -77,26 +77,106 @@ export default function Explore() {
           <div className="flex justify-center items-center h-full">
             <p>Loading...</p>
           </div>
+        ) : recipes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-gray-500">
+            <p>No recipes found</p>
+            <p className="text-sm mt-2">Try a different category or add some recipes</p>
+          </div>
         ) : (
-          <div className="grid grid-cols-2 gap-0.5 bg-gray-100">
-            {recipes.length > 0 ? (
-              recipes.map((recipe, index) => (
-                <div 
-                  key={recipe.id} 
-                  className={index === 0 ? "col-span-2" : ""}
-                >
+          <div className="space-y-0.5 bg-gray-100">
+            {/* Hero Card */}
+            <RecipeCard
+              id={recipes[0]?.id?.toString() ?? ""}
+              title={recipes[0]?.title ?? ""}
+              image={recipes[0]?.image ?? "/placeholder.svg"}
+              isHero={true}
+              showAddButton={true}
+              cardType="hero"
+            />
+
+            {/* Group 1: 2x2 Grid */}
+            {recipes.length > 4 && (
+              <div className="grid grid-cols-2 gap-0.5">
+                {recipes.slice(1, 5).map((recipe) => (
                   <RecipeCard
+                    key={recipe.id}
                     id={recipe.id?.toString() ?? ""}
-                    title={recipe.title}
-                    image={recipe.image}
-                    isHero={index === 0}
+                    title={recipe.title ?? ""}
+                    image={recipe.image ?? "/placeholder.svg"}
                     showAddButton={true}
+                    cardType="square"
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Group 2: Thumbnail + 2 Squares */}
+            {recipes.length > 7 && (
+              <div className="grid grid-cols-2 gap-0.5">
+                <div className="col-span-1">
+                  <RecipeCard
+                    id={recipes[5]?.id?.toString() ?? ""}
+                    title={recipes[5]?.title ?? ""}
+                    image={recipes[5]?.image ?? "/placeholder.svg"}
+                    showAddButton={true}
+                    cardType="thumbnail"
                   />
                 </div>
-              ))
-            ) : (
-              <div className="col-span-2 flex justify-center items-center h-40">
-                <p>No recipes found for {activeCategory}</p>
+                <div className="col-span-1 grid grid-rows-2 gap-0.5">
+                  {recipes.slice(6, 8).map((recipe) => (
+                    <RecipeCard
+                      key={recipe.id}
+                      id={recipe.id?.toString() ?? ""}
+                      title={recipe.title ?? ""}
+                      image={recipe.image ?? "/placeholder.svg"}
+                      showAddButton={true}
+                      cardType="square"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Group 1 Repeated: 2x2 Grid */}
+            {recipes.length > 11 && (
+              <div className="grid grid-cols-2 gap-0.5">
+                {recipes.slice(8, 12).map((recipe) => (
+                  <RecipeCard
+                    key={recipe.id}
+                    id={recipe.id?.toString() ?? ""}
+                    title={recipe.title ?? ""}
+                    image={recipe.image ?? "/placeholder.svg"}
+                    showAddButton={true}
+                    cardType="square"
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* Group 3: 2 Squares + Thumbnail */}
+            {recipes.length > 13 && (
+              <div className="grid grid-cols-2 gap-0.5">
+                <div className="col-span-1 grid grid-rows-2 gap-0.5">
+                  {recipes.slice(12, 14).map((recipe) => (
+                    <RecipeCard
+                      key={recipe.id}
+                      id={recipe.id?.toString() ?? ""}
+                      title={recipe.title ?? ""}
+                      image={recipe.image ?? "/placeholder.svg"}
+                      showAddButton={true}
+                      cardType="square"
+                    />
+                  ))}
+                </div>
+                <div className="col-span-1">
+                  <RecipeCard
+                    id={recipes[14]?.id?.toString() ?? ""}
+                    title={recipes[14]?.title ?? ""}
+                    image={recipes[14]?.image ?? "/placeholder.svg"}
+                    showAddButton={true}
+                    cardType="thumbnail"
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -106,4 +186,3 @@ export default function Explore() {
     </div>
   )
 }
-

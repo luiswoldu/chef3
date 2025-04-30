@@ -1,82 +1,684 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, ArrowUp } from "lucide-react"
-import { db, Recipe } from "../../lib/db"
+import { ChevronLeft, ArrowUp, Loader2 } from "lucide-react"
+import { supabase } from "../../lib/supabase/client"
 import { useToast } from "../../hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
 
+// Define interfaces for type safety
+interface ExtractedRecipe {
+  title: string
+  image: string
+  caption: string
+  tags: string[]
+  steps: string[]
+  created_at: string
+}
+
+interface Ingredient {
+  name: string
+  amount: string
+  details: string
+  created_at: string
+}
+
+interface GroceryItem {
+  name: string
+  amount: string
+  details: string
+  aisle: string
+  purchased: boolean
+  created_at: string
+}
+
+interface RecipeData {
+  recipe: ExtractedRecipe
+  ingredients: Ingredient[]
+  groceryItems: GroceryItem[]
+}
+
+// Add supported platforms
+const SUPPORTED_PLATFORMS = [
+  {
+    domain: 'themediterraneandish.com',
+    pattern: /^https?:\/\/(www\.)?themediterraneandish\.com\/[a-zA-Z0-9-]+(\/)?$/,
+    name: 'The Mediterranean Dish'
+  },
+  {
+    domain: 'instagram.com',
+    pattern: /^https?:\/\/(www\.)?instagram\.com\/p\/[A-Za-z0-9_-]+/,
+    name: 'Instagram'
+  },
+  {
+    domain: 'facebook.com',
+    pattern: /^https?:\/\/(www\.)?facebook\.com\/[A-Za-z0-9_-]+/,
+    name: 'Facebook'
+  },
+  {
+    domain: 'tiktok.com',
+    pattern: /^https?:\/\/(www\.)?tiktok\.com\/@[A-Za-z0-9_-]+\/video\/[0-9]+/,
+    name: 'TikTok'
+  },
+  {
+    domain: 'youtube.com',
+    pattern: /^https?:\/\/(www\.)?youtube\.com\/watch\?v=[A-Za-z0-9_-]+/,
+    name: 'YouTube'
+  },
+  {
+    domain: 'allrecipes.com',
+    pattern: /^https?:\/\/(www\.)?allrecipes\.com\/recipe\/[0-9]+/,
+    name: 'AllRecipes'
+  }
+]
+
 export default function AddRecipe() {
   const router = useRouter()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
+  const [url, setUrl] = useState("")
+  const [isModalVisible, setIsModalVisible] = useState(false)
+  const [extractedRecipe, setExtractedRecipe] = useState<RecipeData | null>(null)
+  const [sheetHeight, setSheetHeight] = useState('min(85vh, 800px)')
+  const sheetRef = useRef<HTMLDivElement>(null)
+  const dragRef = useRef<{
+    startY: number;
+    startHeight: number;
+    isDragging: boolean;
+  }>({ startY: 0, startHeight: 0, isDragging: false })
 
-  const [title, setTitle] = useState("")
-  const [image, setImage] = useState("")
-  const [tags, setTags] = useState<string[]>([])
-  const [ingredients, setIngredients] = useState<Ingredient[]>([])
-  const [steps, setSteps] = useState<string[]>([])
+  // Add animation effect when recipe data is loaded
+  useEffect(() => {
+    if (extractedRecipe) {
+      // Short delay to trigger animation
+      const timer = setTimeout(() => {
+        setIsModalVisible(true)
+      }, 50)
+      return () => clearTimeout(timer)
+    } else {
+      setIsModalVisible(false)
+    }
+  }, [extractedRecipe])
 
-  const handleAddRecipe = async () => {
+  // Handle closing modal with escape key
+  useEffect(() => {
+    const handleEscapeKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && extractedRecipe && !loading) {
+        setExtractedRecipe(null)
+      }
+    }
+    
+    window.addEventListener('keydown', handleEscapeKey)
+    return () => window.removeEventListener('keydown', handleEscapeKey)
+  }, [extractedRecipe, loading])
+
+  // Handle sheet resizing
+  useEffect(() => {
+    const sheet = sheetRef.current
+    if (!sheet) return
+
+    const handleTouchStart = (e: Event) => {
+      const touchEvent = e as TouchEvent
+      const touch = touchEvent.touches[0]
+      startDragging(touch.clientY)
+    }
+
+    const handleMouseDown = (e: Event) => {
+      const mouseEvent = e as MouseEvent
+      if (mouseEvent.button !== 0) return // Only handle left click
+      startDragging(mouseEvent.clientY)
+    }
+
+    const handleTouchMove = (e: Event) => {
+      const touchEvent = e as TouchEvent
+      const touch = touchEvent.touches[0]
+      handleDragging(touch.clientY)
+    }
+
+    const handleMouseMove = (e: Event) => {
+      const mouseEvent = e as MouseEvent
+      handleDragging(mouseEvent.clientY)
+    }
+
+    const handleTouchEnd = () => stopDragging()
+    const handleMouseUp = () => stopDragging()
+
+    const startDragging = (clientY: number) => {
+      dragRef.current = {
+        startY: clientY,
+        startHeight: sheet.offsetHeight,
+        isDragging: true
+      }
+    }
+
+    const handleDragging = (clientY: number) => {
+      if (!dragRef.current.isDragging) return
+
+      const delta = dragRef.current.startY - clientY
+      const newHeight = dragRef.current.startHeight + delta
+      const windowHeight = window.innerHeight
+      
+      // Define detents (snap points)
+      const detents = [
+        windowHeight * 0.25,  // 25% of screen height (minimum)
+        windowHeight * 0.5,   // 50% of screen height (medium)
+        windowHeight * 0.85   // 85% of screen height (maximum)
+      ]
+
+      // Find nearest detent
+      const nearestDetent = detents.reduce((prev, curr) => {
+        return Math.abs(curr - newHeight) < Math.abs(prev - newHeight) ? curr : prev
+      })
+
+      // Only snap to detent if we're close enough (within 20px)
+      const snapThreshold = 20
+      if (Math.abs(nearestDetent - newHeight) < snapThreshold) {
+        setSheetHeight(`${(nearestDetent / windowHeight) * 100}vh`)
+      } else {
+        // Constrain height between min and max detents
+        const constrainedHeight = Math.max(
+          Math.min(newHeight, detents[2]),
+          detents[0]
+        )
+        setSheetHeight(`${(constrainedHeight / windowHeight) * 100}vh`)
+      }
+    }
+
+    const stopDragging = () => {
+      dragRef.current.isDragging = false
+    }
+
+    // Add grabber event listeners
+    const grabber = sheet.querySelector('[data-grabber]')
+    if (grabber) {
+      grabber.addEventListener('touchstart', handleTouchStart as EventListener)
+      grabber.addEventListener('mousedown', handleMouseDown as EventListener)
+      
+      window.addEventListener('touchmove', handleTouchMove as EventListener)
+      window.addEventListener('mousemove', handleMouseMove as EventListener)
+      window.addEventListener('touchend', handleTouchEnd)
+      window.addEventListener('mouseup', handleMouseUp)
+    }
+
+    return () => {
+      if (grabber) {
+        grabber.removeEventListener('touchstart', handleTouchStart as EventListener)
+        grabber.removeEventListener('mousedown', handleMouseDown as EventListener)
+      }
+      window.removeEventListener('touchmove', handleTouchMove as EventListener)
+      window.removeEventListener('mousemove', handleMouseMove as EventListener)
+      window.removeEventListener('touchend', handleTouchEnd)
+      window.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [])
+
+  const validateUrl = (url: string) => {
+    try {
+      const urlObj = new URL(url)
+      const platform = SUPPORTED_PLATFORMS.find(platform => 
+        urlObj.hostname.includes(platform.domain) && 
+        platform.pattern.test(url)
+      )
+      
+      if (!platform) {
+        return {
+          isValid: false,
+          message: 'URL must be from a supported platform'
+        }
+      }
+
+      return {
+        isValid: true,
+        platform: platform.name
+      }
+    } catch {
+      return {
+        isValid: false,
+        message: 'Please enter a valid URL'
+      }
+    }
+  }
+
+  // Recipe extraction API call
+  const extractRecipeFromUrl = async (url: string): Promise<RecipeData> => {
+    try {
+      // Fetch the HTML content of the URL
+      const response = await fetch(`/api/fetch-url?url=${encodeURIComponent(url)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch URL: ${response.statusText}`)
+      }
+      
+      const html = await response.text()
+      
+      // Extract JSON-LD data
+      const jsonLdRegex = /<script[^>]*type=['"]application\/ld\+json['"][^>]*>([\s\S]*?)<\/script>/gmi
+      const jsonLdMatches = Array.from(html.matchAll(jsonLdRegex))
+      
+      if (jsonLdMatches.length === 0) {
+        throw new Error("No JSON-LD data found on the page")
+      }
+      
+      // Try to find Recipe schema in JSON-LD blocks
+      let recipeData: ExtractedRecipe | null = null
+      let ingredients: Ingredient[] = []
+      let groceryItems: GroceryItem[] = []
+      
+      for (const match of jsonLdMatches) {
+        try {
+          const jsonContent = match[1].trim()
+          const parsedData = JSON.parse(jsonContent)
+          
+          // Handle both direct Recipe objects and @graph arrays containing Recipe objects
+          const recipes = []
+          
+          if (Array.isArray(parsedData)) {
+            recipes.push(...parsedData.filter(item => 
+              item['@type'] === 'Recipe' || 
+              (Array.isArray(item['@type']) && item['@type'].includes('Recipe'))
+            ))
+          } else if (parsedData['@graph'] && Array.isArray(parsedData['@graph'])) {
+            recipes.push(...parsedData['@graph'].filter(item => 
+              item['@type'] === 'Recipe' || 
+              (Array.isArray(item['@type']) && item['@type'].includes('Recipe'))
+            ))
+          } else if (
+            parsedData['@type'] === 'Recipe' || 
+            (Array.isArray(parsedData['@type']) && parsedData['@type'].includes('Recipe'))
+          ) {
+            recipes.push(parsedData)
+          }
+          
+          if (recipes.length > 0) {
+            // Use the first recipe found
+            const recipe = recipes[0]
+            
+            // Validate and clean image URL
+            let imageUrl = recipe.image || ''
+            if (Array.isArray(recipe.image)) {
+              imageUrl = recipe.image[0] || ''
+            }
+            
+            // If no image URL is found, try to extract from HTML
+            if (!imageUrl) {
+              const imgRegex = /<img[^>]+src="([^">]+)"/g
+              const imgMatch = html.match(imgRegex)
+              if (imgMatch) {
+                const srcMatch = imgMatch[0].match(/src="([^">]+)"/)
+                if (srcMatch) {
+                  imageUrl = srcMatch[1]
+                }
+              }
+            }
+
+            // Ensure image URL is absolute
+            if (imageUrl && !imageUrl.startsWith('http')) {
+              try {
+                const urlObj = new URL(url)
+                imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`
+              } catch (e) {
+                console.warn('Failed to make image URL absolute:', e)
+              }
+            }
+
+            // Map recipe properties with validation
+            recipeData = {
+              title: recipe.name || recipe.headline || '',
+              image: imageUrl || '/placeholder.svg', // Fallback to placeholder if no image
+              caption: recipe.description || '',
+              tags: recipe.keywords 
+                ? (typeof recipe.keywords === 'string' 
+                  ? recipe.keywords.split(',').map((k: string) => k.trim()) 
+                  : Array.isArray(recipe.keywords) 
+                    ? recipe.keywords 
+                    : [])
+                : [],
+              steps: Array.isArray(recipe.recipeInstructions) 
+                ? recipe.recipeInstructions.map((step: any) => 
+                    typeof step === 'string' 
+                      ? step 
+                      : step.text || step.description || '')
+                : typeof recipe.recipeInstructions === 'string'
+                  ? [recipe.recipeInstructions]
+                  : [],
+              created_at: new Date().toISOString()
+            }
+
+            // Map ingredients with validation
+            ingredients = await Promise.all(
+              (Array.isArray(recipe.recipeIngredient) ? recipe.recipeIngredient : [])
+                .map(async (ingredient: string) => {
+                  try {
+                    // Call our new ingredient parsing API
+                    const response = await fetch('/api/parse-ingredient', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({ ingredient }),
+                    });
+
+                    if (!response.ok) {
+                      throw new Error('Failed to parse ingredient');
+                    }
+
+                    const parsed = await response.json();
+                    
+                    // Only include the details, not alternatives
+                    return {
+                      name: parsed.name || ingredient.trim(),
+                      amount: parsed.amount || '',
+                      details: parsed.details || '',
+                      created_at: new Date().toISOString()
+                    };
+                  } catch (error) {
+                    console.error('Error parsing ingredient:', error);
+                    // Fallback to basic parsing if API parsing fails
+                    const match = ingredient.match(/^([\d\s/]+)?\s*(.+)$/);
+                    if (match) {
+                      const [, amount, name] = match;
+                      return {
+                        name: name.trim(),
+                        amount: amount ? amount.trim() : '',
+                        details: '',
+                        created_at: new Date().toISOString()
+                      };
+                    }
+                    return {
+                      name: ingredient.trim(),
+                      amount: '',
+                      details: '',
+                      created_at: new Date().toISOString()
+                    };
+                  }
+                })
+            );
+
+            // Map ingredients to grocery items with more detailed information
+            groceryItems = ingredients.map((ingredient: Ingredient) => ({
+              name: ingredient.name,
+              amount: ingredient.amount,
+              details: ingredient.details,
+              aisle: '', // This will be set by the user later
+              purchased: false,
+              created_at: new Date().toISOString()
+            }));
+
+            break; // Exit the loop once we've found and processed a valid recipe
+          }
+        } catch (err) {
+          console.error('Error parsing JSON-LD block:', err)
+          continue
+        }
+      }
+      
+      // Fallback: If no recipe data was found in JSON-LD
+      if (!recipeData) {
+        throw new Error("No recipe schema found in the page's JSON-LD data")
+      }
+
+      return {
+        recipe: recipeData,
+        ingredients,
+        groceryItems
+      };
+    } catch (error: unknown) {
+      console.error('Recipe extraction error:', error)
+      throw new Error(`Failed to extract recipe: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
+  const handleExtractRecipe = async () => {
+    if (!url) return
+
     setLoading(true)
     try {
-      await db.recipes.add({
-        title,
-        image,
-        tags,
-        ingredients,
-        steps,
-      })
+      const data = await extractRecipeFromUrl(url)
+      if (data) {
+        setExtractedRecipe(data)
+      }
       toast({
-        title: "Recipe Added",
-        description: `You have successfully added "${title}".`,
+        title: "Recipe Found",
+        description: "We've extracted the recipe details. Please review and save.",
       })
-      router.push("/")
     } catch (error) {
+      console.error('Error extracting recipe:', error)
       toast({
         title: "Error",
-        description: "Unable to add recipe. Please try again.",
-        variant: "destructive",
+        description: "Failed to extract recipe. Please check the URL and try again.",
       })
-      console.error("Error adding recipe:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSaveRecipe = async () => {
+    if (!extractedRecipe) return
+
+    setLoading(true)
+    try {
+      // Insert recipe and get the generated ID
+      const { data: recipeData, error: recipeError } = await supabase
+        .from('recipes')
+        .insert([{
+          title: extractedRecipe.recipe.title,
+          image: extractedRecipe.recipe.image,
+          caption: extractedRecipe.recipe.caption,
+          tags: extractedRecipe.recipe.tags,
+          steps: extractedRecipe.recipe.steps,
+          created_at: new Date().toISOString()
+        }])
+        .select()
+        .single()
+      
+      if (recipeError) throw recipeError
+      if (!recipeData) throw new Error('Failed to create recipe')
+
+      // Insert ingredients with recipe_id
+      const ingredientsWithRecipeId = extractedRecipe.ingredients.map(ingredient => ({
+        ...ingredient,
+        recipe_id: recipeData.id
+      }))
+
+      const { error: ingredientsError } = await supabase
+        .from('ingredients')
+        .insert(ingredientsWithRecipeId)
+
+      if (ingredientsError) throw ingredientsError
+
+      // Insert grocery items with recipe_id
+      const groceryItemsWithRecipeId = extractedRecipe.groceryItems.map(item => ({
+        recipe_id: recipeData.id,
+        name: item.name,
+        amount: item.amount,
+        details: item.details,
+        aisle: '', // This will be set by the user later
+        purchased: false,
+        created_at: new Date().toISOString()
+      }))
+
+      const { error: groceryItemsError } = await supabase
+        .from('grocery_items')
+        .insert(groceryItemsWithRecipeId)
+
+      if (groceryItemsError) throw groceryItemsError
+
+      toast({
+        title: "Success",
+        description: "Recipe saved successfully!",
+      })
+      
+      router.push('/explore')
+    } catch (error) {
+      console.error('Error saving recipe:', error)
+      toast({
+        title: "Error",
+        description: "Failed to save recipe. Please try again.",
+      })
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-white p-4">
-      {/* Header */}
-      <div className="mb-6">
-        <Link href="/" className="inline-flex items-center text-gray-600">
-          <ChevronLeft className="h-5 w-5" />
-          <span className="ml-1">Back</span>
-        </Link>
-      </div>
+    <div className="fixed inset-0 bg-black z-50">
+      <Link href="/" className="absolute top-4 left-4 z-10">
+        <ChevronLeft className="h-6 w-6 text-white" />
+      </Link>
 
-      {/* Main Content */}
-      <div className="flex flex-col items-center justify-center mt-10">
-        <div className="w-full max-w-xs flex items-center gap-2">
-          <Input
-            type="text"
-            placeholder="Paste Link"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full h-12 rounded-full bg-blue-50 border-blue-100 focus:border-blue-200 focus:ring-blue-200 text-gray-800 placeholder:text-gray-500"
-          />
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={handleAddRecipe}
-            disabled={loading}
-            className="flex-shrink-0 h-12 w-12 rounded-full bg-blue-500 text-white border-none hover:bg-blue-600"
+      <div className="flex flex-col h-full pt-16 px-4">
+        <div className="max-w-md mx-auto w-full relative z-50">
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg shadow p-6">
+            <h2 className="text-2xl font-bold mb-6 text-white">Import Recipe</h2>
+          
+            <div className="space-y-4">
+              <div className="relative">
+                <Input
+                  type="url"
+                  placeholder="Paste recipe URL here"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  className="pr-12 bg-white/20 text-white placeholder:text-white/70"
+                  disabled={loading}
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleExtractRecipe}
+                  disabled={loading || !url}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-white" />
+                  ) : (
+                    <ArrowUp className="h-4 w-4 text-white" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+              </div>
+
+              {extractedRecipe && (
+          <div 
+            className="fixed inset-x-0 bottom-0 z-40"
+            aria-modal="true"
+            role="dialog"
+            aria-labelledby="recipe-modal-title"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !loading) {
+                setExtractedRecipe(null)
+              }
+            }}
           >
-            <ArrowUp className="h-6 w-6" />
-          </Button>
-        </div>
+            <div 
+              ref={sheetRef}
+              style={{ height: sheetHeight }}
+              className={`mx-auto bg-white rounded-t-[20px] shadow-lg w-full max-w-2xl transform transition-all duration-300 ease-out mt-[10px] sm:mt-[30px] overflow-y-auto overscroll-contain ${
+                isModalVisible ? 'translate-y-0' : 'translate-y-full'
+              }`}
+            >
+              <div className="relative">
+                  {extractedRecipe.recipe.image && (
+                  <div className="w-full h-36 overflow-hidden">
+                    <img 
+                      src={extractedRecipe.recipe.image} 
+                      alt={extractedRecipe.recipe.title}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between px-4 h-14 border-b border-gray-200">
+                  <Button
+                    variant="link"
+                    onClick={() => setExtractedRecipe(null)}
+                    disabled={loading}
+                    className="text-gray-600 hover:text-gray-900 p-0 h-auto font-normal"
+                  >
+                    Cancel
+                  </Button>
+
+                  <Button
+                    onClick={handleSaveRecipe}
+                    disabled={loading}
+                    variant="link"
+                    className="text-emerald-600 hover:text-emerald-700 p-0 h-auto font-medium"
+                  >
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : null}
+                    Save
+                  </Button>
+                </div>
+                
+                <div className="p-4">
+                  <h3 id="recipe-modal-title" className="font-bold text-xl text-gray-900 mb-3">
+                    {extractedRecipe.recipe.title}
+                  </h3>
+                  
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {extractedRecipe.recipe.tags.slice(0, 3).map((tag, i) => (
+                      <span key={i} className="px-2 py-0.5 text-xs rounded-full bg-emerald-100 text-emerald-700">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-200 p-4 space-y-6">
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2 mb-3">
+                      Ingredients
+                    </h4>
+                    <ul className="space-y-2">
+                      {extractedRecipe.ingredients.map((ingredient, i) => (
+                        <li key={i} className="flex items-start text-gray-700">
+                          <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 mt-2 mr-2"></span>
+                          <div className="flex-1">
+                            <span className="font-medium">{ingredient.name}</span>
+                            {ingredient.amount && (
+                              <span className="text-gray-500 ml-2">{ingredient.amount}</span>
+                            )}
+                            {ingredient.details && (
+                              <span className="text-gray-500 block text-sm mt-0.5">{ingredient.details}</span>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div>
+                    <h4 className="text-lg font-semibold text-gray-900 border-b border-gray-200 pb-2 mb-3">
+                      Steps
+                    </h4>
+                    <ol className="space-y-3">
+                      {extractedRecipe.recipe.steps.map((step, i) => (
+                        <li key={i} className="text-gray-700">
+                          <div className="flex items-start">
+                            <span className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mr-3 mt-0.5 text-sm font-semibold">
+                              {i + 1}
+                            </span>
+                            <span>{step}</span>
+                          </div>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

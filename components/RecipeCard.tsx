@@ -3,7 +3,8 @@
 import { useState, useEffect, MouseEvent } from "react"
 import Image from "next/image"
 import Link from "next/link"
-import { db, type GroceryItem, Recipe } from "../lib/db"
+import { supabase } from "@/lib/supabase/client"
+import type { Recipe } from "@/types"
 
 interface Ingredient {
   ingredient: string
@@ -18,6 +19,7 @@ interface RecipeCardProps {
   isHero?: boolean
   backgroundColor?: string
   showAddButton?: boolean
+  cardType: 'hero' | 'square' | 'thumbnail'
 }
 
 export default function RecipeCard({
@@ -27,6 +29,7 @@ export default function RecipeCard({
   isHero = false,
   backgroundColor = "#f3f4f6", // default gray-100
   showAddButton = true,
+  cardType = 'square', // default to square if not specified
 }: RecipeCardProps) {
   const [isAdded, setIsAdded] = useState(false)
   const imageSrc = image && image.trim() !== "" ? image : "/placeholder2.jpg"
@@ -36,51 +39,83 @@ export default function RecipeCard({
   }, [])
 
   const checkIfAdded = async () => {
-    const recipe = await db.recipes.get(Number.parseInt(id))
-    if (recipe) {
-      const groceryItems = await db.groceryItems.where("recipeId").equals(Number.parseInt(id)).toArray()
-      setIsAdded(groceryItems.length > 0)
+    try {
+      const { data: recipe, error } = await supabase
+        .from('recipes')
+        .select('*')
+        .eq('id', id)
+        .single()
+      
+      if (error) {
+        console.error('Error checking recipe:', error)
+        return
+      }
+      
+      setIsAdded(!!recipe)
+    } catch (error) {
+      console.error('Error in checkIfAdded:', error)
     }
   }
 
   const addToCart = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
-    e.stopPropagation()
-    const recipe = await db.recipes.get(Number.parseInt(id))
-    if (recipe) {
-      const groceryItems: GroceryItem[] = recipe.ingredients.map((ing: Ingredient) => ({
-        name: ing.ingredient,
-        amount: ing.amount,
-        aisle: "Other",
-        purchased: false,
-        recipeId: Number.parseInt(id),
-      }))
-      await db.groceryItems.bulkAdd(groceryItems)
+    try {
+      const { error } = await supabase
+        .from('recipes')
+        .insert([{ id: Number(id), title, image }])
+      
+      if (error) {
+        console.error('Error adding recipe:', error)
+        return
+      }
+      
       setIsAdded(true)
+    } catch (error) {
+      console.error('Error in addToCart:', error)
+    }
+  }
+
+  const getCardStyles = () => {
+    switch (cardType) {
+      case 'hero':
+        return 'w-full h-full'
+      case 'thumbnail':
+        return 'max-w-sm aspect-[1/2]' // 2:1 aspect ratio for thumbnails
+      case 'square':
+        return 'max-w-sm aspect-square' // 1:1 aspect ratio for square cards
+      default:
+        return 'max-w-sm aspect-square'
     }
   }
 
   return (
     <div
-      className={`relative overflow-hidden ${isHero ? "w-full h-full" : "max-w-sm aspect-[9/16]"}`}
+      className={`relative overflow-hidden ${getCardStyles()}`}
       style={{ backgroundColor }}
     >
-      <Link href={`/recipes/${id}`} className="block w-full h-full">
-      <Image
-      src={imageSrc}
-      alt={title}
-     fill
-     sizes="(max-width: 768px) 100vw, 50vw"
-     className="object-cover transition-transform duration-300 ease-in-out transform hover:scale-105"
-     onError={(e) => {
-    e.currentTarget.src = "/placeholder.png"
-  }}
-/>
+      <Link href={`/recipe/${id}`} className="block w-full h-full">
+        <Image
+          src={imageSrc}
+          alt={title}
+          fill
+          sizes="(max-width: 768px) 100vw, 50vw"
+          className={`object-cover transition-transform duration-300 ease-in-out transform hover:scale-105 ${
+            cardType === 'thumbnail' ? 'object-center' : 'object-cover'
+          }`}
+          onError={(e) => {
+            e.currentTarget.src = "/placeholder.png"
+          }}
+        />
         <div className="absolute inset-0 flex items-end justify-start">
           <h2 
-            className="text-white text-lg font-bold px-4 py-3 w-full" 
+            className={`text-white leading-[1.1] ${
+              cardType === 'hero' 
+                ? 'text-[28px] tracking-[-0.04em] font-extrabold' 
+                : cardType === 'thumbnail'
+                ? 'text-base font-bold'
+                : 'text-lg font-bold'
+            } px-4 py-3 w-full`}
             style={{ 
-              textShadow: '0px 0px 5px rgba(0, 0, 0, 0.7)',
               background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)'
             }}
           >
@@ -90,7 +125,7 @@ export default function RecipeCard({
       </Link>
       {showAddButton && (
         <button
-          className="absolute top-4 right-4 bg-white rounded-full p-1 shadow-md hover:shadow-lg transition-shadow duration-300"
+          className={`absolute ${isHero ? 'bottom-4' : 'top-4'} right-4 bg-white rounded-full p-1 shadow-md hover:shadow-lg transition-shadow duration-300`}
           onClick={addToCart}
           aria-label={isAdded ? "Added to cart" : "Add to cart"}
         >

@@ -43,6 +43,16 @@ module.exports = {
           foreground: "hsl(var(--card-foreground))",
         },
       },
+      keyframes: {
+        shimmer: {
+          "0%": { backgroundColor: "hsl(var(--muted))" },
+          "50%": { backgroundColor: "hsl(var(--muted-foreground))" },
+          "100%": { backgroundColor: "hsl(var(--muted))" },
+        },
+      },
+      animation: {
+        shimmer: "shimmer 2s ease-in-out infinite",
+      },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",

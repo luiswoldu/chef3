@@ -1,23 +1,9 @@
 import { getRecipesByIngredient } from '@/lib/supabase/server'
 import RecipeCard from '@/components/RecipeCard'
-import { Metadata } from 'next'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 
-type Props = {
-  params: {
-    slug: string
-  }
-}
-
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  return {
-    title: `Recipes with ${decodeURIComponent(params.slug)} | Chef3`,
-    description: `Find recipes that include ${decodeURIComponent(params.slug)}`,
-  }
-}
-
-export default async function IngredientSearchPage({ params }: Props) {
+export default async function Page({ params }: { params: any }) {
   const decodedIngredient = decodeURIComponent(params.slug)
   const recipes = await getRecipesByIngredient(decodedIngredient)
 
@@ -62,4 +48,11 @@ export default async function IngredientSearchPage({ params }: Props) {
       )}
     </div>
   )
+}
+
+export function generateMetadata({ params }: { params: any }) {
+  return {
+    title: `Recipes with ${decodeURIComponent(params.slug)} | Chef3`,
+    description: `Find recipes that include ${decodeURIComponent(params.slug)}`,
+  }
 } 

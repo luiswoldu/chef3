@@ -60,8 +60,8 @@ export default function HomePage() {
           </Link>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center text-white px-4">
-              <p className="text-lg text-gray-200">Loading hero recipe...</p>
+            <div className="w-full h-full bg-gray-700 animate-pulse rounded-md overflow-hidden">
+              <div className="w-2/3 h-8 bg-gray-600 absolute bottom-6 left-6 rounded-md animate-shimmer"></div>
             </div>
           </div>
         )}

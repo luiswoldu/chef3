@@ -152,7 +152,7 @@ export default function Cart() {
                   <button
                     onClick={() => item.id && togglePurchased(item.id)}
                     className={`w-[38px] h-[38px] rounded-full mr-4 flex-shrink-0 flex items-center justify-center border-2 ${
-                      item.purchased ? "bg-green-500 border-green-500" : "border-gray-300"
+                      item.purchased ? "bg-[#6CD401] border-[#6CD401]" : "border-gray-300"
                     }`}
                   >
                     {item.purchased && (

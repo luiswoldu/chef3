@@ -137,7 +137,7 @@ export default function Cart() {
             placeholder="Eggs, milk, breaddd"
             className="w-full p-2 pl-4 pr-12 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
-          <button type="submit" className="absolute top-1/2 right-2 transform -translate-y-1/2 flex items-center justify-center bg-[#89cff0] text-white rounded-full p-1">
+          <button type="submit" className={`absolute top-1/2 right-2 transform -translate-y-1/2 flex items-center justify-center rounded-full p-1 ${newItem.trim() ? 'bg-[#FCD609]' : 'bg-[#DFE0E0]'} text-white`}>
             <Plus className="w-6 h-6" />
           </button>
         </form>

@@ -124,7 +124,7 @@ export default function Cart() {
     <div className="flex flex-col min-h-screen pb-[70px]">
       <div className="p-4">
         <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold pt-[42px]">Shopping Cart</h1>
+          <h1 className="text-3xl font-bold pt-[42px]">Shopping List</h1>
           <button onClick={clearList} className="text-red-500 pt-[42px]">
             Clear
           </button>
@@ -148,7 +148,7 @@ export default function Cart() {
             <h2 className="text-lg font-semibold mb-2 px-4">{aisle}</h2>
             <ul>
               {items.map((item) => (
-                <li key={item.id} className="flex items-start p-4 border-b">
+                <li key={item.id} className="flex items-center py-2 px-4">
                   <button
                     onClick={() => item.id && togglePurchased(item.id)}
                     className={`w-[38px] h-[38px] rounded-full mr-4 flex-shrink-0 flex items-center justify-center border-2 ${

@@ -83,8 +83,12 @@ export default function HomePage() {
                 </div>
               ))
             ) : (
-              <div className="w-full text-center py-8 text-gray-500">
-                No recipes found. Visit the <Link href="/test-recipes" className="text-blue-500 hover:underline">Recipe Tester</Link> to add recipes.
+              <div className="flex space-x-4">
+                {[...Array(3)].map((_, index) => (
+                  <div key={index} className="w-48 h-40 flex-shrink-0 rounded-lg bg-gray-700 animate-pulse overflow-hidden">
+                    <div className="w-2/3 h-4 bg-gray-600 absolute bottom-3 left-3 rounded-md animate-shimmer"></div>
+                  </div>
+                ))}
               </div>
             )}
           </div>

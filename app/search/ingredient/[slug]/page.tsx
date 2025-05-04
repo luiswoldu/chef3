@@ -3,8 +3,9 @@ import RecipeCard from '@/components/RecipeCard'
 import Link from 'next/link'
 import { ChevronLeft } from 'lucide-react'
 
-export default async function Page({ params }: { params: any }) {
-  const decodedIngredient = decodeURIComponent(params.slug)
+export default async function Page({ params }: { params: Promise<{ slug: string }> }) {
+  const resolvedParams = await params
+  const decodedIngredient = decodeURIComponent(resolvedParams.slug)
   const recipes = await getRecipesByIngredient(decodedIngredient)
 
   return (
@@ -50,9 +51,10 @@ export default async function Page({ params }: { params: any }) {
   )
 }
 
-export function generateMetadata({ params }: { params: any }) {
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const resolvedParams = await params
   return {
-    title: `Recipes with ${decodeURIComponent(params.slug)} | Chef3`,
-    description: `Find recipes that include ${decodeURIComponent(params.slug)}`,
+    title: `Recipes with ${decodeURIComponent(resolvedParams.slug)} | Chef3`,
+    description: `Find recipes that include ${decodeURIComponent(resolvedParams.slug)}`,
   }
 } 

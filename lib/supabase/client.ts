@@ -23,18 +23,12 @@ export async function fullTextSearch(query: string): Promise<SearchResults> {
     supabase
       .from('recipes')
       .select('id, title')
-      .textSearch('title_tsv', q, {
-        config: 'english',
-        type: 'plain',    // you can also try 'websearch'
-      }),
+      .ilike('title', `${q}%`),
 
     supabase
       .from('ingredients')
       .select('id, name')
-      .textSearch('name_tsv', q, {
-        config: 'english',
-        type: 'plain',
-      }),
+      .ilike('name', `${q}%`),
   ]);
 
   if (recipeRes.error) throw recipeRes.error;

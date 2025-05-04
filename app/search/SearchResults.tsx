@@ -5,6 +5,7 @@ import RecipeCard from "../../components/RecipeCard"
 import { useEffect, useState } from "react"
 import type { Recipe } from "@/types"
 import { Loader2 } from "lucide-react"
+import { supabase } from "@/lib/supabase/client"
 
 export default function SearchResults() {
   const searchParams = useSearchParams()
@@ -18,19 +19,21 @@ export default function SearchResults() {
       
       if (query) {
         try {
-          // Removing client-side RPC call
-          // const recipesData = await searchRecipesFullText(query)
+          // Using ILIKE for server-side search with trailing wildcard
+          const { data: recipesData, error } = await supabase
+            .from('recipes')
+            .select('*')
+            .ilike('title', `${query}%`)
           
-          // Placeholder until server-side search is implemented
-          const recipesData: Recipe[] = []
-          setResults(recipesData)
-          
-          // TODO: Replace with server-side API route call
-          // const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`)
-          // const data = await response.json()
-          // setResults(data)
+          if (error) {
+            console.error('Supabase query error:', error)
+            setResults([])
+          } else {
+            setResults(recipesData as Recipe[] || [])
+          }
         } catch (error) {
           console.error('Error in searchRecipes:', error)
+          setResults([])
         } finally {
           setIsLoading(false)
         }

@@ -29,7 +29,7 @@ export default function SearchView({ onCancel }: SearchViewProps) {
     ingredients: []
   })
 
-  // Debounced full-text search
+  // Debounced full-text search with a shorter timeout
   useEffect(() => {
     const handler = setTimeout(async () => {
       if (!searchQuery.trim()) {
@@ -61,7 +61,7 @@ export default function SearchView({ onCancel }: SearchViewProps) {
       } finally {
         setIsSearching(false)
       }
-    }, 300)
+    }, 200) // Reduced from 300ms to 200ms for faster feedback
 
     return () => clearTimeout(handler)
   }, [searchQuery])

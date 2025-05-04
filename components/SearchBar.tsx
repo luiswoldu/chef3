@@ -26,7 +26,8 @@ export default function SearchBar() {
         <div className="flex items-center gap-3 mt-6">
           <button
             onClick={handleAddRecipe}
-            className="w-[42px] h-[42px] bg-green-500 rounded-full flex items-center justify-center flex-shrink-0"
+            className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-r"
+            style={{ background: "linear-gradient(90deg, #A6E964 0%, #6CD401 100%)" }}
           >
             <Plus className="h-6 w-6 text-white" />
           </button>

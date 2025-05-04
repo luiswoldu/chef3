@@ -43,7 +43,7 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen pb-[70px]">
-      <div className="relative w-full h-[56.4vh] bg-gradient-to-b from-gray-900 to-gray-800">
+      <div className="relative w-full h-[56.4vh] bg-gradient-to-b from-gray-500 to-gray-600">
         {heroRecipe ? (
           <Link href={`/recipe/${heroRecipe.id}`} className="absolute inset-0">
             <div className="relative w-full h-full">

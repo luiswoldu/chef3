@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Navigation from "../../components/Navigation"
 import { type GroceryItem } from "@/types/index"
-import { Plus } from "lucide-react"
+import { Plus, PencilLine } from "lucide-react"
 import { supabase } from "../../lib/supabaseClient"
 import { useToast } from "@/hooks/use-toast"
 
@@ -123,10 +123,10 @@ export default function Cart() {
   return (
     <div className="flex flex-col min-h-screen pb-[70px]">
       <div className="p-4">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center mb-4 pr-2">
           <h1 className="text-3xl font-bold pt-[42px]">Shopping List</h1>
-          <button onClick={clearList} className="text-red-500 pt-[42px]">
-            Clear
+          <button onClick={clearList} className="pt-[42px]">
+            <PencilLine className="w-6 h-6 text-[#8A8A8A]" />
           </button>
         </div>
         <form onSubmit={addItem} className="relative mb-4">
@@ -134,7 +134,7 @@ export default function Cart() {
             type="text"
             value={newItem}
             onChange={(e) => setNewItem(e.target.value)}
-            placeholder="Eggs, milk, breaddd"
+            placeholder="New grocery item"
             className="w-full p-2 pl-4 pr-12 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button type="submit" className={`absolute top-1/2 right-2 transform -translate-y-1/2 flex items-center justify-center rounded-full p-1 ${newItem.trim() ? 'bg-[#FCD609]' : 'bg-[#DFE0E0]'} text-white`}>

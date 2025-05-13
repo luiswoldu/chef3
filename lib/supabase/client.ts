@@ -38,4 +38,42 @@ export async function fullTextSearch(query: string): Promise<SearchResults> {
     recipes: recipeRes.data,
     ingredients: ingredientRes.data,
   };
+}
+
+export async function signUpAndOnboard({ 
+  email, 
+  password, 
+  firstName, 
+  username 
+}: {
+  email: string;
+  password: string;
+  firstName: string;
+  username: string;
+}) {
+  // 1) sign up the user
+  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    email,
+    password,
+  });
+  
+  if (signUpError) throw signUpError;
+
+  const user = signUpData.user;
+  if (!user) throw new Error('No user returned from signUp');
+
+  // 2) insert into profiles
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .insert({
+      id: user.id,
+      first_name: firstName,
+      username: username,
+      email: user.email,
+    });
+
+  if (profileError) throw profileError;
+
+  // 3) return the user object
+  return user;
 } 

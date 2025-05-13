@@ -5,8 +5,6 @@ import Navigation from "@/components/Navigation"
 import SearchBar from "@/components/SearchBar"
 import RecipeCard from "@/components/RecipeCard"
 import type { Recipe } from "@/types"
-import { getAllRecipes } from "@/lib/db"
-import Link from "next/link"
 import { supabase } from "@/lib/supabase/client"
 
 export default function HomePage() {
@@ -45,7 +43,7 @@ export default function HomePage() {
     <div className="flex flex-col min-h-screen pb-[70px]">
       <div className="relative w-full h-[56.4vh] bg-gradient-to-b from-gray-500 to-gray-600">
         {heroRecipe ? (
-          <Link href={`/recipe/${heroRecipe.id}`} className="absolute inset-0">
+          <div className="absolute inset-0">
             <div className="relative w-full h-full">
               <img 
                 src={heroRecipe.image || '/placeholder.svg'} 
@@ -57,7 +55,7 @@ export default function HomePage() {
                 <h2 className="text-3xl font-bold">{heroRecipe.title}</h2>
               </div>
             </div>
-          </Link>
+          </div>
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-full h-full bg-gray-700 animate-pulse rounded-md overflow-hidden">
@@ -132,5 +130,4 @@ export default function HomePage() {
       <Navigation />
     </div>
   )
-}
-
+} 

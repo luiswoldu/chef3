@@ -41,7 +41,7 @@ export default function Navigation() {
               )}
               <span
                 className={`relative text-base ${
-                  isActive ? "text-gray-900 font-medium" : "text-gray-600"
+                  isActive ? "text-gray-900 tracking-tight font-bold" : "text-gray-600 font-semibold"
                 }`}
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}

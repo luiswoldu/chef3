@@ -1,20 +1,48 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import Navigation from "../../components/Navigation"
 import { type GroceryItem } from "@/types/index"
-import { Plus, PencilLine } from "lucide-react"
+import { Plus, User } from "lucide-react"
 import { supabase } from "../../lib/supabaseClient"
 import { useToast } from "@/hooks/use-toast"
+import Image from "next/image"
 
 export default function Cart() {
   const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([])
   const [newItem, setNewItem] = useState("")
+  const [userAvatar, setUserAvatar] = useState<string | null>(null)
   const { toast } = useToast()
+  const router = useRouter()
 
   useEffect(() => {
     loadGroceryItems()
+    loadUserAvatar()
   }, [])
+
+  const handleProfileClick = () => {
+    router.push('/profile')
+  }
+
+  async function loadUserAvatar() {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', user.id)
+          .single()
+        
+        if (profile?.avatar_url) {
+          setUserAvatar(profile.avatar_url)
+        }
+      }
+    } catch (error) {
+      console.error('Error loading user avatar:', error)
+    }
+  }
 
   async function loadGroceryItems() {
     try {
@@ -125,9 +153,22 @@ export default function Cart() {
       <div className="p-4">
         <div className="flex justify-between items-center mb-4 pr-2">
           <h1 className="text-3xl font-bold pt-[42px]">Shopping List</h1>
-          <button onClick={clearList} className="pt-[42px]">
-            <PencilLine className="w-6 h-6 text-[#8A8A8A]" />
-          </button>
+          <div 
+            className="w-[34px] h-[34px] rounded-full overflow-hidden mt-[42px] cursor-pointer bg-gray-200 flex items-center justify-center" 
+            onClick={handleProfileClick}
+          >
+            {userAvatar ? (
+              <Image
+                src={userAvatar}
+                alt="User avatar"
+                width={34}
+                height={34}
+                className="object-cover w-full h-full"
+              />
+            ) : (
+              <User className="w-5 h-5 text-gray-500" />
+            )}
+          </div>
         </div>
         <form onSubmit={addItem} className="relative mb-4">
           <input
@@ -135,12 +176,18 @@ export default function Cart() {
             value={newItem}
             onChange={(e) => setNewItem(e.target.value)}
             placeholder="New grocery item"
-            className="w-full p-2 pl-4 pr-12 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full p-2 pl-4 pr-12 border rounded-full focus:outline-none placeholder:text-[#9F9F9F]"
           />
-          <button type="submit" className={`absolute top-1/2 right-2 transform -translate-y-1/2 flex items-center justify-center rounded-full p-1 ${newItem.trim() ? 'bg-[#FCD609]' : 'bg-[#DFE0E0]'} text-white`}>
-            <Plus className="w-6 h-6" />
+          <button type="submit" className={`absolute top-1/2 right-2 transform -translate-y-1/2 flex items-center justify-center rounded-full p-1 border border-[#DFE0E1] bg-transparent`}>
+            <Plus className={`w-6 h-6 ${newItem.trim() ? 'text-black' : 'text-[#B2B2B2]'}`} />
           </button>
         </form>
+        <button 
+          onClick={clearList} 
+          className="text-[#8A8A8A] text-sm mb-4"
+        >
+          Clear all items
+        </button>
       </div>
       <div className="flex-grow overflow-auto">
         {Object.entries(groupedItems).map(([aisle, items]) => (

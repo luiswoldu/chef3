@@ -79,7 +79,6 @@ export default function Profile() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) throw new Error('No user found')
 
-      // Call our secure API endpoint to delete the user
       const response = await fetch('/api/delete-user', {
         method: 'DELETE',
         headers: {
@@ -88,22 +87,28 @@ export default function Profile() {
         body: JSON.stringify({ userId: user.id }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.message || 'Failed to delete account')
+        console.error("Error deleting account:", data)
+        toast({
+          title: "Error",
+          description: `Failed: ${data.error}`,
+        })
+        return
       }
 
       // Sign out the user locally
       await supabase.auth.signOut()
-
+      
       toast({
-        title: "Account Deleted",
-        description: "Your account has been successfully deleted",
+        title: "Success",
+        description: "Account deleted successfully!",
       })
       
       router.push('/login')
     } catch (error) {
-      console.error('Error deleting account:', error)
+      console.error('Network or JSON error:', error)
       toast({
         title: "Error",
         description: "Failed to delete account. Please try again.",

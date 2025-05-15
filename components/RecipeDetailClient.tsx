@@ -3,10 +3,14 @@
 import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { Dialog, Transition } from '@headlessui/react'
+import { Fragment } from 'react'
 import type { Database } from '@/types/supabase'
 import RecipeCard from './RecipeCard'
 import { supabase } from '@/lib/supabase/client'
 import { useToast } from '@/hooks/use-toast'
+import { useRouter } from 'next/navigation'
+import { MoreHorizontal, Share2, Edit2, Trash2 } from 'lucide-react'
 
 // Define ingredient interface that matches what we get from the database
 interface RecipeIngredient {
@@ -33,7 +37,9 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isAdded, setIsAdded] = useState(false)
+  const [isOptionsOpen, setIsOptionsOpen] = useState(false)
   const { toast } = useToast()
+  const router = useRouter()
 
   useEffect(() => {
     async function loadRecipe() {
@@ -80,6 +86,57 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
 
     loadRecipe()
   }, [id])
+
+  const handleDelete = async () => {
+    try {
+      const recipeId = typeof id === 'string' ? parseInt(id) : id
+
+      // First delete grocery items
+      const { error: groceryError } = await supabase
+        .from('grocery_items')
+        .delete()
+        .eq('recipe_id', recipeId)
+
+      if (groceryError) {
+        throw new Error('Failed to delete grocery items: ' + groceryError.message)
+      }
+
+      // Then delete ingredients
+      const { error: ingredientsError } = await supabase
+        .from('ingredients')
+        .delete()
+        .eq('recipe_id', recipeId)
+
+      if (ingredientsError) {
+        throw new Error('Failed to delete ingredients: ' + ingredientsError.message)
+      }
+
+      // Finally delete the recipe
+      const { error: recipeError } = await supabase
+        .from('recipes')
+        .delete()
+        .eq('id', recipeId)
+
+      if (recipeError) {
+        throw new Error('Failed to delete recipe: ' + recipeError.message)
+      }
+
+      toast({
+        title: "Recipe deleted",
+        description: "The recipe and all related items have been successfully deleted",
+      })
+      
+      router.push('/')
+    } catch (error) {
+      console.error('Error in deletion process:', error)
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to delete recipe and related items"
+      })
+    } finally {
+      setIsOptionsOpen(false)
+    }
+  }
 
   if (loading) {
     return <div>Loading...</div>
@@ -144,7 +201,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
             })
           }
         }} 
-        className="absolute top-4 right-4 z-20 bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-shadow duration-300"
+        className="absolute top-4 right-24 z-20 bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-shadow duration-300"
         aria-label={isAdded ? "Added to cart" : "Add to cart"}
       >
         {isAdded ? (
@@ -168,6 +225,13 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
           </svg>
         )}
+      </button>
+      <button
+        onClick={() => setIsOptionsOpen(true)}
+        className="absolute top-4 right-4 z-20 bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-shadow duration-300"
+        aria-label="More options"
+      >
+        <MoreHorizontal className="h-6 w-6 text-gray-700" />
       </button>
       <div className="relative w-full h-[56.4vh]">
         <Image 
@@ -221,6 +285,78 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           </ol>
         </section>
       </div>
+
+      <Transition.Root show={isOptionsOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={setIsOptionsOpen}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/30 transition-opacity" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex min-h-full items-end justify-center text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 translate-y-4"
+                enterTo="opacity-100 translate-y-0"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 translate-y-0"
+                leaveTo="opacity-0 translate-y-4"
+              >
+                <Dialog.Panel className="w-full transform rounded-t-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <div className="space-y-4">
+                    <button 
+                      className="flex items-center gap-2 w-full py-2 hover:bg-gray-100 rounded-md"
+                      onClick={() => {
+                        // Implement share functionality
+                        if (navigator.share) {
+                          navigator.share({
+                            title: recipe?.title,
+                            text: recipe?.caption,
+                            url: window.location.href,
+                          })
+                        }
+                        setIsOptionsOpen(false)
+                      }}
+                    >
+                      <Share2 className="h-5 w-5" /> Share
+                    </button>
+                    <button 
+                      className="flex items-center gap-2 w-full py-2 hover:bg-gray-100 rounded-md"
+                      onClick={() => {
+                        router.push(`/recipes/${id}/edit`)
+                        setIsOptionsOpen(false)
+                      }}
+                    >
+                      <Edit2 className="h-5 w-5" /> Edit
+                    </button>
+                    <button
+                      className="flex items-center gap-2 w-full py-2 text-red-600 hover:bg-red-50 rounded-md"
+                      onClick={handleDelete}
+                    >
+                      <Trash2 className="h-5 w-5" /> Delete
+                    </button>
+                    <button 
+                      className="mt-2 w-full py-2 bg-gray-200 rounded-md"
+                      onClick={() => setIsOptionsOpen(false)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition.Root>
     </div>
   )
 } 

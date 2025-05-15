@@ -9,13 +9,34 @@ const supabaseAdmin = createClient(
 
 export async function DELETE(request: Request) {
   try {
+    // Ensure request is JSON
+    const contentType = request.headers.get('content-type')
+    if (!contentType || !contentType.includes('application/json')) {
+      return new NextResponse(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Content-Type must be application/json' 
+        }),
+        { 
+          status: 415,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      )
+    }
+
     // Get the user's ID from the request
     const { userId } = await request.json()
     
     if (!userId) {
-      return NextResponse.json(
-        { success: false, error: 'User ID is required' },
-        { status: 400 }
+      return new NextResponse(
+        JSON.stringify({ 
+          success: false, 
+          error: 'User ID is required' 
+        }),
+        { 
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        }
       )
     }
 
@@ -26,9 +47,16 @@ export async function DELETE(request: Request) {
       .eq('id', userId)
 
     if (profileError) {
-      return NextResponse.json(
-        { success: false, error: 'Failed to delete user profile', details: profileError.message },
-        { status: 500 }
+      return new NextResponse(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Failed to delete user profile', 
+          details: profileError.message 
+        }),
+        { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
       )
     }
 
@@ -38,22 +66,41 @@ export async function DELETE(request: Request) {
     )
 
     if (deleteError) {
-      return NextResponse.json(
-        { success: false, error: 'Failed to delete user account', details: deleteError.message },
-        { status: 500 }
+      return new NextResponse(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Failed to delete user account', 
+          details: deleteError.message 
+        }),
+        { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
       )
     }
 
-    return NextResponse.json({ success: true, message: 'User deleted successfully' })
+    return new NextResponse(
+      JSON.stringify({ 
+        success: true, 
+        message: 'User deleted successfully' 
+      }),
+      { 
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    )
   } catch (error) {
     console.error('Error deleting user:', error)
-    return NextResponse.json(
-      { 
+    return new NextResponse(
+      JSON.stringify({ 
         success: false, 
         error: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error occurred'
-      },
-      { status: 500 }
+      }),
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
     )
   }
 }

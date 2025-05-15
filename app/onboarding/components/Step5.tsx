@@ -17,40 +17,32 @@ interface Step5Props {
 export default function Step5({ onComplete, formData }: Step5Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(false);
 
   const handleFinish = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      // 1. Create the Auth user
+      // 1. Create the Auth user and send confirmation email
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
-      });
-
-      if (signUpError || !authData.user) {
-        throw new Error(signUpError?.message || 'Failed to create account');
-      }
-
-      // 2. Insert profile data
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: authData.user.id,
+        options: {
+          data: {
             first_name: formData.firstName,
             username: formData.username,
-            email: formData.email,
           },
-        ]);
+          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`
+        }
+      });
 
-      if (profileError) {
-        throw new Error(profileError.message);
+      if (signUpError) {
+        throw new Error(signUpError.message);
       }
 
-      // 3. Complete onboarding
-      onComplete();
+      // Show success message
+      setEmailSent(true);
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
@@ -58,6 +50,20 @@ export default function Step5({ onComplete, formData }: Step5Props) {
       setLoading(false);
     }
   };
+
+  if (emailSent) {
+    return (
+      <div className="flex flex-col items-center space-y-6 p-6">
+        <h2 className="text-2xl font-bold text-gray-900">Check your email!</h2>
+        <p className="text-gray-600 text-center">
+          We've sent a confirmation link to {formData.email}. Please click the link to verify your email address and complete your registration.
+        </p>
+        <p className="text-sm text-gray-500">
+          After confirming your email, you'll be able to start using Chef3!
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center space-y-6 p-6">

@@ -1,13 +1,15 @@
 "use client"
 
-import { useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useState } from "react"
 import RecipeCard from "../../components/RecipeCard"
-import { useEffect, useState } from "react"
 import type { Recipe } from "@/types"
 import { Loader2 } from "lucide-react"
 import { supabase } from "@/lib/supabase/client"
 
-export default function SearchResults() {
+// Component that uses useSearchParams
+function SearchResultsContent() {
+  // Import useSearchParams inside the component that uses it
+  const { useSearchParams } = require("next/navigation")
   const searchParams = useSearchParams()
   const query = searchParams?.get("q") || ""
   const [results, setResults] = useState<Recipe[]>([])
@@ -46,7 +48,7 @@ export default function SearchResults() {
   }, [query])
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <>
       <h1 className="text-2xl font-bold mb-6">Search Results for "{query}"</h1>
       
       {isLoading ? (
@@ -69,6 +71,26 @@ export default function SearchResults() {
           {results.length === 0 && <p className="text-gray-500 text-center mt-8">No results found for "{query}"</p>}
         </>
       )}
+    </>
+  )
+}
+
+// Loading fallback for Suspense
+function SearchLoader() {
+  return (
+    <div className="flex justify-center items-center h-64">
+      <Loader2 className="h-10 w-10 text-green-500 animate-spin" />
+      <span className="ml-2">Loading search results...</span>
+    </div>
+  )
+}
+
+export default function SearchResults() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <Suspense fallback={<SearchLoader />}>
+        <SearchResultsContent />
+      </Suspense>
     </div>
   )
 } 

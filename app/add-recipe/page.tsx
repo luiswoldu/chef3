@@ -536,38 +536,34 @@ export default function AddRecipe() {
 
       <div className="flex flex-col h-full pt-16 px-4">
         <div className="max-w-md mx-auto w-full relative z-50">
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg shadow p-6">
-            <h2 className="text-2xl font-bold mb-6 text-white">Import Recipe</h2>
-          
-            <div className="space-y-4">
-              <div className="relative">
-                <Input
-                  type="url"
-                  placeholder="Paste recipe URL here"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  className="pr-12 bg-white/20 text-white placeholder:text-white/70"
-                  disabled={loading}
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleExtractRecipe}
-                  disabled={loading || !url}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/20 hover:bg-white/30"
-                >
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-white" />
-                  ) : (
-                    <ArrowUp className="h-4 w-4 text-white" />
-                  )}
-                </Button>
-              </div>
-            </div>
+          <div className="relative">
+            <Input
+              type="url"
+              placeholder="Paste Link"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              className="pr-12 bg-[#343434] text-white placeholder:text-white/30 rounded-full focus:ring-0 border-0 focus:border-0 h-[3.3125rem] text-xl"
+              disabled={loading}
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleExtractRecipe}
+              disabled={loading || !url}
+              className={`absolute right-2 top-1/2 -translate-y-1/2 border-0 rounded-full ${
+                url ? 'bg-gradient-to-r from-[#6ED308] to-[#A5E765]' : 'bg-white/30'
+              }`}
+            >
+              {loading ? (
+                <Loader2 className="h-14 w-14 animate-spin text-white" />
+              ) : (
+                <ArrowUp className="h-14 w-14 text-white" />
+              )}
+            </Button>
           </div>
-              </div>
+        </div>
 
-              {extractedRecipe && (
+        {extractedRecipe && (
           <div 
             className="fixed inset-x-0 bottom-0 z-40"
             aria-modal="true"

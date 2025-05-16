@@ -104,7 +104,7 @@ export default function Login() {
             </Link>
           </p>
           <p className="mt-2 text-black/60">
-            <Link href="/signup" className="text-primary hover:underline">
+            <Link href="/onboarding" className="text-primary hover:underline">
               No account yet? Sign Up
             </Link>
           </p>

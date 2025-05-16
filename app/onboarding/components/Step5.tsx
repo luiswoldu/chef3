@@ -41,6 +41,25 @@ export default function Step5({ onComplete, formData }: Step5Props) {
         throw new Error(signUpError.message);
       }
 
+      if (!authData.user) {
+        throw new Error('No user returned from signup');
+      }
+
+      // 2. Immediately create profile with same UUID
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert({
+          id: authData.user.id,
+          first_name: formData.firstName,
+          username: formData.username,
+          email: formData.email,
+        });
+
+      if (profileError) {
+        console.error('Profile creation error:', profileError);
+        throw new Error('Failed to create user profile');
+      }
+
       // Show success message
       setEmailSent(true);
       
@@ -57,9 +76,6 @@ export default function Step5({ onComplete, formData }: Step5Props) {
         <h2 className="text-2xl font-bold text-gray-900">Check your email!</h2>
         <p className="text-gray-600 text-center">
           We've sent a confirmation link to {formData.email}. Please click the link to verify your email address and complete your registration.
-        </p>
-        <p className="text-sm text-gray-500">
-          After confirming your email, you'll be able to start using Chef3!
         </p>
       </div>
     );

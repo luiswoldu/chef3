@@ -16,18 +16,28 @@ export default function AuthCallback() {
         return;
       }
 
-      const { error: profileError } = await supabase
+      // Check if profile already exists (may have been created during signup)
+      const { data: existingProfile } = await supabase
         .from('profiles')
-        .insert([{
-          id: session.user.id,
-          first_name: session.user.user_metadata.first_name,
-          username: session.user.user_metadata.username,
-          email: session.user.email,
-        }]);
+        .select('id')
+        .eq('id', session.user.id)
+        .single();
 
-      if (profileError) {
-        router.push('/login?error=Profile creation failed');
-        return;
+      // If profile doesn't exist, create it
+      if (!existingProfile) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([{
+            id: session.user.id,
+            first_name: session.user.user_metadata.first_name,
+            username: session.user.user_metadata.username,
+            email: session.user.email,
+          }]);
+
+        if (profileError) {
+          router.push('/login?error=Profile creation failed');
+          return;
+        }
       }
 
       router.push('/home');

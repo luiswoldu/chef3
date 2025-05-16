@@ -52,7 +52,7 @@ export default function HomePage() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                <h2 className="text-3xl font-bold">{heroRecipe.title}</h2>
+                <h2 className="text-3xl font-bold leading-none">{heroRecipe.title}</h2>
               </div>
             </div>
           </div>
@@ -68,7 +68,7 @@ export default function HomePage() {
       <div className="flex-1 overflow-y-auto">
         <section className="py-4">
           <h2 className="text-xl font-semibold mb-2 px-4">Recents</h2>
-          <div className="flex overflow-x-auto space-x-4 px-4 pb-4">
+          <div className="flex overflow-x-auto space-x-2 px-4 pb-4">
             {recipes && recipes.length > 0 ? (
               recipes.slice(0, 5).map((recipe: Recipe) => (
                 <div key={recipe.id} className="w-48 flex-shrink-0">
@@ -95,7 +95,7 @@ export default function HomePage() {
         {recipes && recipes.length > 0 && (
           <section className="py-4">
             <h2 className="text-xl font-semibold mb-2 px-4">Uniquely Yours</h2>
-            <div className="flex overflow-x-auto space-x-4 px-4 pb-4">
+            <div className="flex overflow-x-auto space-x-2 px-4 pb-4">
               {recipes.slice(5, 9).map((recipe: Recipe) => (
                 <div key={`unique-${recipe.id}`} className="w-48 flex-shrink-0">
                   <RecipeCard 

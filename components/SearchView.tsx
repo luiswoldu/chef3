@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronRight, Loader2, Search, X } from "lucide-react"
+import { ChevronRight, Loader, Search, X } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useState } from "react"
@@ -108,7 +108,7 @@ export default function SearchView({ onCancel }: SearchViewProps) {
         <div className="p-4 flex items-center mt-8">
           <div className="flex-1 flex items-center bg-[#ffffff]/50 backdrop-blur-[4px] rounded-full px-4 py-2">
             {isSearching ? (
-              <Loader2 className="w-5 h-5 text-white animate-spin" />
+              <Loader className="w-5 h-5 text-white animate-spin" />
             ) : (
               <Search className="w-5 h-5 text-white" />
             )}
@@ -143,7 +143,7 @@ export default function SearchView({ onCancel }: SearchViewProps) {
         <div className="flex-1 overflow-auto px-4 pb-4">
           {isSearching ? (
             <div className="flex justify-center items-center h-32">
-              <Loader2 className="h-8 w-8 text-white animate-spin" />
+              <Loader className="h-8 w-8 text-white animate-spin" />
             </div>
           ) : searchQuery.trim() ? (
             hasResults ? (

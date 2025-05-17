@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase/client"
 import { Session } from "@supabase/supabase-js"
 import Launch from "./launch/page"
-import { Loader2 } from "lucide-react"
+import { Loader } from "lucide-react"
 
 export default function Home() {
   const [session, setSession] = useState<Session | null>(null)
@@ -42,7 +42,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-20 w-20 animate-spin text-[#6CD401]" />
+        <Loader className="h-20 w-20 animate-spin text-[#6CD401]" />
       </div>
     )
   }

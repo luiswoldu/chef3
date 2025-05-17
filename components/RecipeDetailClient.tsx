@@ -163,76 +163,78 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
       </Link>
-      <button 
-        onClick={async (e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          try {
-            const recipeId = typeof id === 'string' ? Number.parseInt(id) : id
-            
-            if (!recipe.ingredients || recipe.ingredients.length === 0) {
-              throw new Error('No ingredients found for this recipe')
+      <div className="absolute top-4 right-4 z-20 flex gap-[0.75rem]">
+        <button
+          onClick={() => setIsOptionsOpen(true)}
+          className="rounded-full p-2 backdrop-blur-[4px] hover:bg-white/10 transition-all duration-300"
+          aria-label="More options"
+        >
+          <MoreHorizontal className="h-6 w-6 text-white" />
+        </button>
+        <button 
+          onClick={async (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            try {
+              const recipeId = typeof id === 'string' ? Number.parseInt(id) : id
+              
+              if (!recipe.ingredients || recipe.ingredients.length === 0) {
+                throw new Error('No ingredients found for this recipe')
+              }
+              
+              const groceryItems = recipe.ingredients.map((ing: RecipeIngredient) => ({
+                name: ing.name,
+                amount: ing.amount,
+                aisle: "Other",
+                purchased: false,
+                recipe_id: recipeId,
+              }))
+              
+              const { error } = await supabase
+                .from('grocery_items')
+                .insert(groceryItems)
+              
+              if (error) throw error
+              
+              setIsAdded(true)
+              toast({
+                title: "Added to cart",
+                description: "Ingredients have been added to your shopping list",
+              })
+            } catch (error) {
+              console.error('Error adding to cart:', error)
+              toast({
+                title: "Error",
+                description: "Failed to add ingredients to cart",
+              })
             }
-            
-            const groceryItems = recipe.ingredients.map((ing: RecipeIngredient) => ({
-              name: ing.name,
-              amount: ing.amount,
-              aisle: "Other",
-              purchased: false,
-              recipe_id: recipeId,
-            }))
-            
-            const { error } = await supabase
-              .from('grocery_items')
-              .insert(groceryItems)
-            
-            if (error) throw error
-            
-            setIsAdded(true)
-            toast({
-              title: "Added to cart",
-              description: "Ingredients have been added to your shopping list",
-            })
-          } catch (error) {
-            console.error('Error adding to cart:', error)
-            toast({
-              title: "Error",
-              description: "Failed to add ingredients to cart",
-            })
-          }
-        }} 
-        className="absolute top-4 right-24 z-20 bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-shadow duration-300"
-        aria-label={isAdded ? "Added to cart" : "Add to cart"}
-      >
-        {isAdded ? (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6 text-green-500"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-        ) : (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6 text-gray-700"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-        )}
-      </button>
-      <button
-        onClick={() => setIsOptionsOpen(true)}
-        className="absolute top-4 right-4 z-20 bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-shadow duration-300"
-        aria-label="More options"
-      >
-        <MoreHorizontal className="h-6 w-6 text-gray-700" />
-      </button>
+          }} 
+          className="bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-shadow duration-300"
+          aria-label={isAdded ? "Added to cart" : "Add to cart"}
+        >
+          {isAdded ? (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 text-green-500"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 text-gray-700"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+          )}
+        </button>
+      </div>
       <div className="relative w-full h-[56.4vh]">
         <Image 
           src={recipe.image || "/placeholder.svg"} 

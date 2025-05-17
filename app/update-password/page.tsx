@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react"
 import { motion } from "framer-motion"
 import { Lock } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { supabase } from "@/lib/supabase/client"
 
 // Component that uses useSearchParams
@@ -13,9 +13,6 @@ function PasswordUpdateForm() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState("")
   const router = useRouter()
-  
-  // Import useSearchParams inside the component that uses it
-  const { useSearchParams } = require("next/navigation")
   const searchParams = useSearchParams()
 
   useEffect(() => {

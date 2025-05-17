@@ -12,28 +12,20 @@ function PasswordUpdateForm() {
   const [confirmPassword, setConfirmPassword] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState("")
-  const [isLoading, setIsLoading] = useState(true)
+  const [checked, setChecked] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    // Give more time for params to be available and check them properly
-    const validateToken = setTimeout(() => {
-      const accessToken = searchParams?.get("access_token")
-      const type = searchParams?.get("type")
-      
-      console.log("Params check:", { accessToken: !!accessToken, type })
-      
-      // Only redirect if we've confirmed params are loaded but token is missing
-      if (accessToken && type === "recovery") {
-        setIsLoading(false)
-      } else if (searchParams !== null) {
-        // Only redirect if searchParams is available but doesn't have what we need
-        router.push("/login")
-      }
-    }, 500) // Increased delay to ensure params are loaded
-
-    return () => clearTimeout(validateToken)
+    const accessToken = searchParams?.get("access_token")
+    const type = searchParams?.get("type")
+    
+    if (!accessToken || type !== "recovery") {
+      router.replace("/login")
+      return
+    }
+    
+    setChecked(true)
   }, [searchParams, router])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -57,7 +49,7 @@ function PasswordUpdateForm() {
       setMessage("Password updated successfully!")
       // Redirect to login after a short delay
       setTimeout(() => {
-        router.push("/login")
+        router.replace("/login")
       }, 2000)
     } catch (error) {
       setMessage("An error occurred while updating your password. Please try again.")
@@ -67,72 +59,66 @@ function PasswordUpdateForm() {
     }
   }
 
+  if (!checked) return null
+
   return (
     <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-      {isLoading ? (
-        <div className="text-center">
-          <p className="text-gray-500">Validating your request...</p>
+      <div className="space-y-4">
+        <div>
+          <label htmlFor="newPassword" className="sr-only">
+            New Password
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Lock className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              id="newPassword"
+              name="newPassword"
+              type="password"
+              required
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="New password"
+            />
+          </div>
         </div>
-      ) : (
-        <>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="newPassword" className="sr-only">
-                New Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="newPassword"
-                  name="newPassword"
-                  type="password"
-                  required
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="New password"
-                />
-              </div>
+
+        <div>
+          <label htmlFor="confirmPassword" className="sr-only">
+            Confirm Password
+          </label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Lock className="h-5 w-5 text-gray-400" />
             </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="sr-only">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  placeholder="Confirm password"
-                />
-              </div>
-            </div>
+            <input
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+              placeholder="Confirm password"
+            />
           </div>
+        </div>
+      </div>
 
-          <div>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSubmitting ? "Updating..." : "Update password"}
-            </button>
-          </div>
+      <div>
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isSubmitting ? "Updating..." : "Update password"}
+        </button>
+      </div>
 
-          {message && (
-            <p className="mt-2 text-sm text-center text-gray-600">{message}</p>
-          )}
-        </>
+      {message && (
+        <p className="mt-2 text-sm text-center text-gray-600">{message}</p>
       )}
     </form>
   )

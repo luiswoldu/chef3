@@ -17,21 +17,21 @@ function PasswordUpdateForm() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    // Set a small delay to ensure searchParams are populated
+    // Give more time for params to be available and check them properly
     const validateToken = setTimeout(() => {
-      if (!searchParams) {
-        router.push("/login")
-        return
-      }
+      const accessToken = searchParams?.get("access_token")
+      const type = searchParams?.get("type")
       
-      const accessToken = searchParams.get("access_token")
-      const type = searchParams.get("type")
-
-      if (!accessToken || type !== "recovery") {
+      console.log("Params check:", { accessToken: !!accessToken, type })
+      
+      // Only redirect if we've confirmed params are loaded but token is missing
+      if (accessToken && type === "recovery") {
+        setIsLoading(false)
+      } else if (searchParams !== null) {
+        // Only redirect if searchParams is available but doesn't have what we need
         router.push("/login")
       }
-      setIsLoading(false)
-    }, 100)
+    }, 500) // Increased delay to ensure params are loaded
 
     return () => clearTimeout(validateToken)
   }, [searchParams, router])

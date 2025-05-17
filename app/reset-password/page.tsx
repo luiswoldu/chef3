@@ -18,9 +18,12 @@ export default function ResetPassword() {
     setMessage("")
 
     try {
+      const redirectUrl = new URL('/update-password', window.location.origin).toString()
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/update-password`
+        redirectTo: redirectUrl
       })
+      
       if (error) throw error
       
       setMessage("If an account exists with this email, you will receive a password reset link.")

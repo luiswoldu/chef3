@@ -37,15 +37,18 @@ export default function Step5({ onComplete, formData }: Step5Props) {
         }
       });
 
-      if (signUpError) {
-        throw new Error(signUpError.message);
-      }
+      if (signUpError) throw signUpError;
+      if (!authData.user?.id) throw new Error('No user ID returned from signup');
 
-      if (!authData.user) {
-        throw new Error('No user returned from signup');
-      }
+      // 2. Sign in the user to get an authenticated session
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      });
 
-      // 2. Immediately create profile with same UUID
+      if (signInError) throw signInError;
+
+      // 3. Create profile with the authenticated session
       const { error: profileError } = await supabase
         .from('profiles')
         .insert({
@@ -53,6 +56,8 @@ export default function Step5({ onComplete, formData }: Step5Props) {
           first_name: formData.firstName,
           username: formData.username,
           email: formData.email,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
         });
 
       if (profileError) {
@@ -64,6 +69,7 @@ export default function Step5({ onComplete, formData }: Step5Props) {
       setEmailSent(true);
       
     } catch (err) {
+      console.error('Signup error:', err);
       setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setLoading(false);

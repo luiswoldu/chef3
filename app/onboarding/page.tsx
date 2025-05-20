@@ -54,7 +54,10 @@ export default function Onboarding() {
   };
 
   return (
-    <OnboardingContainer>
+    <OnboardingContainer 
+      currentStep={step}
+      onBack={() => setStep(step - 1)}
+    >
       <ProgressBar step={step} totalSteps={totalSteps} />
       
       {step === 1 && (

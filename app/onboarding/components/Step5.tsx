@@ -24,7 +24,8 @@ export default function Step5({ onComplete, formData }: Step5Props) {
     setError(null);
 
     try {
-      // 1. Create the Auth user and send confirmation email
+      // Create the Auth user and send confirmation email
+      // Don't create the profile yet - we'll do that after email verification
       const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -40,32 +41,7 @@ export default function Step5({ onComplete, formData }: Step5Props) {
       if (signUpError) throw signUpError;
       if (!authData.user?.id) throw new Error('No user ID returned from signup');
 
-      // 2. Sign in the user to get an authenticated session
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
-
-      if (signInError) throw signInError;
-
-      // 3. Create profile with the authenticated session
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert({
-          id: authData.user.id,
-          first_name: formData.firstName,
-          username: formData.username,
-          email: formData.email,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-
-      if (profileError) {
-        console.error('Profile creation error:', profileError);
-        throw new Error('Failed to create user profile');
-      }
-
-      // Show success message
+      // Show success message - don't try to sign in or create profile here
       setEmailSent(true);
       
     } catch (err) {
@@ -111,9 +87,9 @@ export default function Step5({ onComplete, formData }: Step5Props) {
             Creating your account...
           </>
         ) : (
-          'Complete Setup'
+          'Complete'
         )}
       </button>
     </div>
   );
-} 
+}

@@ -50,9 +50,9 @@ export default function HomePage() {
                 alt={heroRecipe.title}
                 className="w-full h-full object-cover"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                <h2 className="text-3xl font-bold leading-none">{heroRecipe.title}</h2>
+              <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent" />
+              <div className="absolute bottom-0 left-0 right-0 pb-6 pl-4">
+                <h2 className="text-3xl font-bold leading-none tracking-tight text-white">{heroRecipe.title}</h2>
               </div>
             </div>
           </div>

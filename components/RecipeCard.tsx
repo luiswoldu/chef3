@@ -40,18 +40,25 @@ export default function RecipeCard({
 
   const checkIfAdded = async () => {
     try {
-      const { data: recipe, error } = await supabase
-        .from('recipes')
+      // Check if this recipe is in the grocery_items table
+      const { data, error } = await supabase
+        .from('grocery_items')
         .select('*')
-        .eq('id', id)
+        .eq('recipe_id', id)
         .single()
       
       if (error) {
-        console.error('Error checking recipe:', error)
+        // If the error is that no rows were returned, it means the recipe is not in the shopping list
+        if (error.code === 'PGRST116') {
+          setIsAdded(false)
+          return
+        }
+        console.error('Error checking grocery items:', error)
         return
       }
       
-      setIsAdded(!!recipe)
+      // If we got data back, the recipe is in the shopping list
+      setIsAdded(!!data)
     } catch (error) {
       console.error('Error in checkIfAdded:', error)
     }
@@ -60,12 +67,13 @@ export default function RecipeCard({
   const addToCart = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     try {
+      // Insert into grocery_items table
       const { error } = await supabase
-        .from('recipes')
-        .insert([{ id: Number(id), title, image }])
+        .from('grocery_items')
+        .insert([{ recipe_id: Number(id), title, image }])
       
       if (error) {
-        console.error('Error adding recipe:', error)
+        console.error('Error adding to grocery items:', error)
         return
       }
       
@@ -155,4 +163,3 @@ export default function RecipeCard({
     </div>
   )
 }
-

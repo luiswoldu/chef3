@@ -166,7 +166,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
       <div className="absolute top-4 right-4 z-20 flex gap-[0.75rem]">
         <button
           onClick={() => setIsOptionsOpen(true)}
-          className="rounded-full p-2 backdrop-blur-[4px] hover:bg-white/10 transition-all duration-300"
+          className="rounded-full p-2 backdrop-blur-[4px] bg-white/20 hover:bg-white/30 transition-all duration-300"
           aria-label="More options"
         >
           <MoreHorizontal className="h-6 w-6 text-white" />

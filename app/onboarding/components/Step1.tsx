@@ -31,7 +31,7 @@ const Step1: React.FC<Step1Props> = ({ setFirstName, onNext }) => {
         </div>
         <button
           type="submit"
-          className="w-full bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors text-lg font-medium"
+          className="w-full bg-primary text-white px-6 py-3 rounded-full hover:bg-primary/90 transition-colors text-lg font-medium"
         >
           Continue
         </button>

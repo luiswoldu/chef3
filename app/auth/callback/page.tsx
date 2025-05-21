@@ -13,10 +13,15 @@ export default function AuthCallback() {
   useEffect(() => {
     async function handleAuth() {
       try {
-        // Get the current session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // 1️⃣ Parse tokens from URL and establish session
+        const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(window.location.href);
         
         if (sessionError) throw sessionError;
+        
+        // Get the session after code exchange
+        const { data: { session }, error: getSessionError } = await supabase.auth.getSession();
+        
+        if (getSessionError) throw getSessionError;
         
         if (!session) {
           throw new Error('No valid session found');

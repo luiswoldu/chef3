@@ -56,6 +56,7 @@ export default function Onboarding() {
   return (
     <OnboardingContainer 
       currentStep={step}
+      totalSteps={totalSteps}
       onBack={() => setStep(step - 1)}
     >
       <ProgressBar step={step} totalSteps={totalSteps} />

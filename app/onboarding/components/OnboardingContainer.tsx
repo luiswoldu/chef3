@@ -7,10 +7,11 @@ import { useRouter } from 'next/navigation';
 interface OnboardingContainerProps {
   children: React.ReactNode;
   currentStep: number;
+  totalSteps: number;
   onBack?: () => void;
 }
 
-const OnboardingContainer: React.FC<OnboardingContainerProps> = ({ children, currentStep, onBack }) => {
+const OnboardingContainer: React.FC<OnboardingContainerProps> = ({ children, currentStep, totalSteps, onBack }) => {
   const router = useRouter();
 
   const handleBack = () => {
@@ -23,13 +24,15 @@ const OnboardingContainer: React.FC<OnboardingContainerProps> = ({ children, cur
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <button
-        onClick={handleBack}
-        className="absolute top-4 left-4 p-2 text-gray-600 hover:text-gray-900 transition-colors"
-        aria-label="Go back"
-      >
-        <ChevronLeft className="h-6 w-6" />
-      </button>
+      {currentStep !== totalSteps && (
+        <button
+          onClick={handleBack}
+          className="absolute top-4 left-4 p-2 text-gray-600 hover:text-gray-900 transition-colors"
+          aria-label="Go back"
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+      )}
       <div className="flex-1 flex flex-col items-center p-4 pt-8">
         {children}
       </div>
@@ -37,4 +40,4 @@ const OnboardingContainer: React.FC<OnboardingContainerProps> = ({ children, cur
   );
 };
 
-export default OnboardingContainer; 
+export default OnboardingContainer;

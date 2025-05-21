@@ -13,19 +13,10 @@ export default function AuthCallback() {
   useEffect(() => {
     async function handleAuth() {
       try {
-        // 1️⃣ Parse tokens from URL and establish session
-        const { data, error: sessionError } = await supabase.auth.exchangeCodeForSession(window.location.href);
-        
+        // Handle the auth callback and get session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
-        
-        // Get the session after code exchange
-        const { data: { session }, error: getSessionError } = await supabase.auth.getSession();
-        
-        if (getSessionError) throw getSessionError;
-        
-        if (!session) {
-          throw new Error('No valid session found');
-        }
+        if (!session) throw new Error('No session found after verification');
 
         setStatus('Email verified! Setting up your profile...');
 
@@ -79,6 +70,24 @@ export default function AuthCallback() {
 
     handleAuth();
   }, [router]);
+
+  // Prevent navigation away from the auth callback page
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.history.pushState(null, '', window.location.href);
+    window.onpopstate = () => {
+      window.history.pushState(null, '', window.location.href);
+    };
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center">

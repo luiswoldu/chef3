@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2 } from 'lucide-react';
 
-export default function AuthCallback() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [status, setStatus] = useState('Verifying your email...');
@@ -14,26 +14,19 @@ export default function AuthCallback() {
   useEffect(() => {
     async function handleAuth() {
       try {
+        // Check if searchParams is available
         if (!searchParams) {
-          throw new Error('No search parameters found');
+          throw new Error('Search parameters not available');
         }
 
-        let data, exchangeError;
-        
-        // Check if this is a magic-link flow (no code parameter) or OAuth flow (has code parameter)
+        // First, handle the auth callback with the URL parameters
         const code = searchParams.get('code');
         
-        if (code) {
-          // OAuth flow - use exchangeCodeForSession
-          const result = await supabase.auth.exchangeCodeForSession(code);
-          data = result.data;
-          exchangeError = result.error;
-        } else {
-          // Magic-link flow - use getSession
-          const result = await supabase.auth.getSession();
-          data = result.data;
-          exchangeError = result.error;
+        if (!code) {
+          throw new Error('No verification code found in URL');
         }
+
+        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
         if (exchangeError) {
           throw exchangeError;
@@ -98,15 +91,7 @@ export default function AuthCallback() {
       }
     }
 
-    // Only run if we have searchParams and the necessary URL parameters
-    if (searchParams?.get('code')) {
-      handleAuth();
-    } else {
-      setError('Invalid verification link');
-      setTimeout(() => {
-        router.push('/login?error=Invalid verification link');
-      }, 3000);
-    }
+    handleAuth();
   }, [router, searchParams]);
 
   // Prevent navigation away from the auth callback page
@@ -147,5 +132,27 @@ export default function AuthCallback() {
         )}
       </div>
     </div>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="text-center p-8 max-w-md">
+        <div className="flex items-center justify-center mb-4">
+          <Loader2 className="animate-spin h-8 w-8 text-blue-600" />
+        </div>
+        <h2 className="text-2xl font-bold mb-4">Loading...</h2>
+        <p className="text-gray-600">Please wait while we process your request.</p>
+      </div>
+    </div>
+  );
+}
+
+export default function AuthCallback() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <AuthCallbackContent />
+    </Suspense>
   );
 }

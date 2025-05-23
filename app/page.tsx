@@ -42,7 +42,7 @@ export default function Home() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader className="h-20 w-20 animate-spin text-[#6CD401]" />
+        <Loader className="h-10 w-10 animate-spin text-[#6CD401]" />
       </div>
     )
   }

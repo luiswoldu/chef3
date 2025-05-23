@@ -17,10 +17,23 @@ export default function AuthCallback() {
         if (!searchParams) {
           throw new Error('No search parameters found');
         }
-        // First, handle the auth callback with the URL parameters
-        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(
-          searchParams.get('code') || ''
-        );
+
+        let data, exchangeError;
+        
+        // Check if this is a magic-link flow (no code parameter) or OAuth flow (has code parameter)
+        const code = searchParams.get('code');
+        
+        if (code) {
+          // OAuth flow - use exchangeCodeForSession
+          const result = await supabase.auth.exchangeCodeForSession(code);
+          data = result.data;
+          exchangeError = result.error;
+        } else {
+          // Magic-link flow - use getSession
+          const result = await supabase.auth.getSession();
+          data = result.data;
+          exchangeError = result.error;
+        }
 
         if (exchangeError) {
           throw exchangeError;

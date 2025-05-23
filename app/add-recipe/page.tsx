@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { ChevronLeft, ArrowUp, Loader2 } from "lucide-react"
+import { ChevronLeft, ArrowUp, Loader } from "lucide-react"
 import { supabase } from "../../lib/supabase/client"
 import { useToast } from "../../hooks/use-toast"
 import { Button } from "@/components/ui/button"
@@ -555,7 +555,7 @@ export default function AddRecipe() {
               }`}
             >
               {loading ? (
-                <Loader2 className="h-14 w-14 animate-spin text-white" />
+                <Loader className="h-14 w-14 animate-spin text-white" />
               ) : (
                 <ArrowUp className="h-14 w-14 text-white" />
               )}
@@ -610,7 +610,7 @@ export default function AddRecipe() {
                     className="text-emerald-600 hover:text-emerald-700 p-0 h-auto font-medium"
                   >
                     {loading ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                      <Loader className="h-4 w-4 animate-spin mr-2" />
                     ) : null}
                     Save
                   </Button>

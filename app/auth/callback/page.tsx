@@ -1,23 +1,36 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2 } from 'lucide-react';
 
 export default function AuthCallback() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [status, setStatus] = useState('Verifying your email...');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function handleAuth() {
       try {
-        // Handle the auth callback and get session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
-        if (!session) throw new Error('No session found after verification');
+        if (!searchParams) {
+          throw new Error('No search parameters found');
+        }
+        // First, handle the auth callback with the URL parameters
+        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(
+          searchParams.get('code') || ''
+        );
 
+        if (exchangeError) {
+          throw exchangeError;
+        }
+
+        if (!data.session) {
+          throw new Error('No session found after email verification');
+        }
+
+        const session = data.session;
         setStatus('Email verified! Setting up your profile...');
 
         // Check if profile already exists
@@ -29,24 +42,28 @@ export default function AuthCallback() {
 
         if (profileCheckError && profileCheckError.code !== 'PGRST116') {
           // If it's not the "row not found" error, it's a real error
-          throw profileCheckError;
+          console.error('Profile check error:', profileCheckError);
+          throw new Error('Failed to check existing profile');
         }
 
         // Only create profile if it doesn't exist
         if (!existingProfile) {
+          const profileData = {
+            id: session.user.id,
+            first_name: session.user.user_metadata?.first_name || '',
+            username: session.user.user_metadata?.username || '',
+            email: session.user.email || '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+
           const { error: profileError } = await supabase
             .from('profiles')
-            .insert([{
-              id: session.user.id,
-              first_name: session.user.user_metadata.first_name,
-              username: session.user.user_metadata.username,
-              email: session.user.email,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-            }]);
+            .insert([profileData]);
 
           if (profileError) {
-            throw profileError;
+            console.error('Profile creation error:', profileError);
+            throw new Error(`Failed to create profile: ${profileError.message}`);
           }
         }
 
@@ -68,8 +85,16 @@ export default function AuthCallback() {
       }
     }
 
-    handleAuth();
-  }, [router]);
+    // Only run if we have searchParams and the necessary URL parameters
+    if (searchParams?.get('code')) {
+      handleAuth();
+    } else {
+      setError('Invalid verification link');
+      setTimeout(() => {
+        router.push('/login?error=Invalid verification link');
+      }, 3000);
+    }
+  }, [router, searchParams]);
 
   // Prevent navigation away from the auth callback page
   useEffect(() => {

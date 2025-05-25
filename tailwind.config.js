@@ -43,6 +43,9 @@ module.exports = {
           foreground: "hsl(var(--card-foreground))",
         },
       },
+      boxShadow: {
+        'custom': '0 2px 10px 2px rgba(0, 0, 0, 0.1)',
+      },
       keyframes: {
         shimmer: {
           "0%": { backgroundColor: "hsl(var(--muted))" },

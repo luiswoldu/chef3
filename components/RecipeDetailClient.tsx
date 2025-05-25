@@ -251,10 +251,10 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           <p className="text-[15px] text-gray-400 mb-6 italic">No caption provided.</p>
         )}
         <section className="mb-6">
-          <h2 className="text-xl font-semibold mb-2">Ingredients</h2>
+          <h2 className="text-2xl font-semibold mb-2">Ingredients</h2>
           <div className="rounded-lg">
             {recipe.ingredients && recipe.ingredients.map((ingredient: RecipeIngredient, index: number) => (
-              <div key={ingredient.id || index} className="bg-white p-3 rounded-md shadow mb-2">
+              <div key={ingredient.id || index} className="bg-white p-3 rounded-xl shadow-custom mb-2">
                 <p className="font-medium">{ingredient.name}</p>
                 <p className="text-sm text-gray-600">
                   {ingredient.amount} {ingredient.details}
@@ -264,7 +264,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           </div>
         </section>
         <section>
-          <h2 className="text-xl font-semibold mb-2">Steps</h2>
+          <h2 className="text-2xl font-semibold mb-2">Steps</h2>
           <ol className="list-decimal list-inside space-y-4">
             {recipe.steps && recipe.steps.map((step: string, index: number) => (
               <li key={index} className="pl-2">

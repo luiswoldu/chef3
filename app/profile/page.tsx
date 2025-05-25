@@ -5,14 +5,13 @@ import { useRouter } from "next/navigation"
 import Navigation from "../../components/Navigation"
 import { User, Settings, ArrowLeft, LogOut, Trash2 } from "lucide-react"
 import { supabase } from "../../lib/supabaseClient"
-import { useToast } from "@/hooks/use-toast"
+import { showNotification } from "@/hooks/use-notification"
 import Image from "next/image"
 
 export default function Profile() {
   const [userName, setUserName] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userAvatar, setUserAvatar] = useState<string | null>(null)
-  const { toast } = useToast()
   const router = useRouter()
 
   useEffect(() => {
@@ -41,10 +40,7 @@ export default function Profile() {
       }
     } catch (error) {
       console.error('Error loading user profile:', error)
-      toast({
-        title: "Error",
-        description: "Failed to load profile information",
-      })
+      showNotification("Failed to load profile information")
     }
   }
 
@@ -53,17 +49,11 @@ export default function Profile() {
       const { error } = await supabase.auth.signOut()
       if (error) throw error
       
-      toast({
-        title: "Success",
-        description: "Logged out successfully",
-      })
+      showNotification("Logged out successfully")
       router.push('/login')
     } catch (error) {
       console.error('Error signing out:', error)
-      toast({
-        title: "Error",
-        description: "Failed to log out",
-      })
+      showNotification("Failed to log out")
     }
   }
 
@@ -91,28 +81,19 @@ export default function Profile() {
 
       if (!response.ok) {
         console.error("Error deleting account:", data)
-        toast({
-          title: "Error",
-          description: `Failed: ${data.error}`,
-        })
+        showNotification(`Failed: ${data.error}`)
         return
       }
 
       // Sign out the user locally
       await supabase.auth.signOut()
       
-      toast({
-        title: "Success",
-        description: "Account deleted successfully!",
-      })
+      showNotification("Account deleted successfully!")
       
       router.push('/login')
     } catch (error) {
       console.error('Network or JSON error:', error)
-      toast({
-        title: "Error",
-        description: "Failed to delete account. Please try again.",
-      })
+      showNotification("Failed to delete account. Please try again.")
     }
   }
 

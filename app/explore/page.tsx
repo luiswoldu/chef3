@@ -40,8 +40,8 @@ export default function Explore() {
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
         )
 
-        // Limit to 15 recipes
-        setRecipes(filteredRecipes.slice(0, 15))
+        // Remove the slice limitation - show all recipes
+        setRecipes(filteredRecipes)
       } catch (error) {
         console.error("Error fetching recipes:", error)
         setRecipes([])
@@ -85,100 +85,157 @@ export default function Explore() {
         ) : (
           <div className="space-y-0.5 bg-gray-100">
             {/* Hero Card */}
-            <RecipeCard
-              id={recipes[0]?.id?.toString() ?? ""}
-              title={recipes[0]?.title ?? ""}
-              image={recipes[0]?.image ?? "/placeholder.svg"}
-              isHero={true}
-              showAddButton={true}
-              cardType="hero"
-            />
-
-            {/* Group 1: 2x2 Grid */}
-            {recipes.length > 4 && (
-              <div className="grid grid-cols-2 gap-0.5">
-                {recipes.slice(1, 5).map((recipe) => (
-                  <RecipeCard
-                    key={recipe.id}
-                    id={recipe.id?.toString() ?? ""}
-                    title={recipe.title ?? ""}
-                    image={recipe.image ?? "/placeholder.svg"}
-                    showAddButton={true}
-                    cardType="square"
-                  />
-                ))}
-              </div>
+            {recipes.length > 0 && (
+              <RecipeCard
+                id={recipes[0]?.id?.toString() ?? ""}
+                title={recipes[0]?.title ?? ""}
+                image={recipes[0]?.image ?? "/placeholder.svg"}
+                isHero={true}
+                showAddButton={true}
+                cardType="hero"
+                rounded="none"
+              />
             )}
 
-            {/* Group 2: Thumbnail + 2 Squares */}
-            {recipes.length > 7 && (
-              <div className="grid grid-cols-2 gap-0.5">
-                <div className="col-span-1">
-                  <RecipeCard
-                    id={recipes[5]?.id?.toString() ?? ""}
-                    title={recipes[5]?.title ?? ""}
-                    image={recipes[5]?.image ?? "/placeholder.svg"}
-                    showAddButton={true}
-                    cardType="thumbnail"
-                  />
-                </div>
-                <div className="col-span-1 grid grid-rows-2 gap-0.5">
-                  {recipes.slice(6, 8).map((recipe) => (
-                    <RecipeCard
-                      key={recipe.id}
-                      id={recipe.id?.toString() ?? ""}
-                      title={recipe.title ?? ""}
-                      image={recipe.image ?? "/placeholder.svg"}
-                      showAddButton={true}
-                      cardType="square"
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Render remaining recipes in repeating pattern groups */}
+            {(() => {
+              const remainingRecipes = recipes.slice(1)
+              const groups = []
+              let index = 0
 
-            {/* Group 1 Repeated: 2x2 Grid */}
-            {recipes.length > 11 && (
-              <div className="grid grid-cols-2 gap-0.5">
-                {recipes.slice(8, 12).map((recipe) => (
-                  <RecipeCard
-                    key={recipe.id}
-                    id={recipe.id?.toString() ?? ""}
-                    title={recipe.title ?? ""}
-                    image={recipe.image ?? "/placeholder.svg"}
-                    showAddButton={true}
-                    cardType="square"
-                  />
-                ))}
-              </div>
-            )}
+              while (index < remainingRecipes.length) {
+                // Group 1: 2x2 Grid (4 recipes)
+                if (index < remainingRecipes.length) {
+                  const groupRecipes = remainingRecipes.slice(index, index + 4)
+                  if (groupRecipes.length > 0) {
+                    groups.push(
+                      <div key={`grid-${index}`} className="grid grid-cols-2 gap-0.5">
+                        {groupRecipes.map((recipe) => (
+                          <RecipeCard
+                            key={recipe.id}
+                            id={recipe.id?.toString() ?? ""}
+                            title={recipe.title ?? ""}
+                            image={recipe.image ?? "/placeholder.svg"}
+                            showAddButton={true}
+                            cardType="square"
+                            rounded="none"
+                          />
+                        ))}
+                      </div>
+                    )
+                  }
+                  index += 4
+                }
 
-            {/* Group 3: 2 Squares + Thumbnail */}
-            {recipes.length > 13 && (
-              <div className="grid grid-cols-2 gap-0.5">
-                <div className="col-span-1 grid grid-rows-2 gap-0.5">
-                  {recipes.slice(12, 14).map((recipe) => (
-                    <RecipeCard
-                      key={recipe.id}
-                      id={recipe.id?.toString() ?? ""}
-                      title={recipe.title ?? ""}
-                      image={recipe.image ?? "/placeholder.svg"}
-                      showAddButton={true}
-                      cardType="square"
-                    />
-                  ))}
-                </div>
-                <div className="col-span-1">
-                  <RecipeCard
-                    id={recipes[14]?.id?.toString() ?? ""}
-                    title={recipes[14]?.title ?? ""}
-                    image={recipes[14]?.image ?? "/placeholder.svg"}
-                    showAddButton={true}
-                    cardType="thumbnail"
-                  />
-                </div>
-              </div>
-            )}
+                // Group 2: Thumbnail + 2 Squares (3 recipes)
+                if (index < remainingRecipes.length) {
+                  const groupRecipes = remainingRecipes.slice(index, index + 3)
+                  if (groupRecipes.length >= 3) {
+                    groups.push(
+                      <div key={`thumb-squares-${index}`} className="grid grid-cols-2 gap-0.5">
+                        <div className="col-span-1">
+                          <RecipeCard
+                            id={groupRecipes[0]?.id?.toString() ?? ""}
+                            title={groupRecipes[0]?.title ?? ""}
+                            image={groupRecipes[0]?.image ?? "/placeholder.svg"}
+                            showAddButton={true}
+                            cardType="thumbnail"
+                            rounded="none"
+                          />
+                        </div>
+                        <div className="col-span-1 grid grid-rows-2 gap-0.5">
+                          {groupRecipes.slice(1, 3).map((recipe) => (
+                            <RecipeCard
+                              key={recipe.id}
+                              id={recipe.id?.toString() ?? ""}
+                              title={recipe.title ?? ""}
+                              image={recipe.image ?? "/placeholder.svg"}
+                              showAddButton={true}
+                              cardType="square"
+                              rounded="none"
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )
+                    index += 3
+                  } else if (groupRecipes.length > 0) {
+                    // Handle remaining recipes as a simple grid if less than 3
+                    groups.push(
+                      <div key={`remaining-${index}`} className="grid grid-cols-2 gap-0.5">
+                        {groupRecipes.map((recipe) => (
+                          <RecipeCard
+                            key={recipe.id}
+                            id={recipe.id?.toString() ?? ""}
+                            title={recipe.title ?? ""}
+                            image={recipe.image ?? "/placeholder.svg"}
+                            showAddButton={true}
+                            cardType="square"
+                            rounded="none"
+                          />
+                        ))}
+                      </div>
+                    )
+                    break
+                  }
+                }
+
+                // Group 3: 2 Squares + Thumbnail (3 recipes)
+                if (index < remainingRecipes.length) {
+                  const groupRecipes = remainingRecipes.slice(index, index + 3)
+                  if (groupRecipes.length >= 3) {
+                    groups.push(
+                      <div key={`squares-thumb-${index}`} className="grid grid-cols-2 gap-0.5">
+                        <div className="col-span-1 grid grid-rows-2 gap-0.5">
+                          {groupRecipes.slice(0, 2).map((recipe) => (
+                            <RecipeCard
+                              key={recipe.id}
+                              id={recipe.id?.toString() ?? ""}
+                              title={recipe.title ?? ""}
+                              image={recipe.image ?? "/placeholder.svg"}
+                              showAddButton={true}
+                              cardType="square"
+                              rounded="none"
+                            />
+                          ))}
+                        </div>
+                        <div className="col-span-1">
+                          <RecipeCard
+                            id={groupRecipes[2]?.id?.toString() ?? ""}
+                            title={groupRecipes[2]?.title ?? ""}
+                            image={groupRecipes[2]?.image ?? "/placeholder.svg"}
+                            showAddButton={true}
+                            cardType="thumbnail"
+                            rounded="none"
+                          />
+                        </div>
+                      </div>
+                    )
+                    index += 3
+                  } else if (groupRecipes.length > 0) {
+                    // Handle remaining recipes as a simple grid if less than 3
+                    groups.push(
+                      <div key={`remaining-${index}`} className="grid grid-cols-2 gap-0.5">
+                        {groupRecipes.map((recipe) => (
+                          <RecipeCard
+                            key={recipe.id}
+                            id={recipe.id?.toString() ?? ""}
+                            title={recipe.title ?? ""}
+                            image={recipe.image ?? "/placeholder.svg"}
+                            showAddButton={true}
+                            cardType="square"
+                            rounded="none"
+                          />
+                        ))}
+                      </div>
+                    )
+                    break
+                  }
+                }
+              }
+
+              return groups
+            })()}
           </div>
         )}
       </div>

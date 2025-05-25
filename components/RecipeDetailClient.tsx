@@ -8,7 +8,7 @@ import { Fragment } from 'react'
 import type { Database } from '@/types/supabase'
 import RecipeCard from './RecipeCard'
 import { supabase } from '@/lib/supabase/client'
-import { useToast } from '@/hooks/use-toast'
+import { showNotification } from '@/hooks/use-notification'
 import { useRouter } from 'next/navigation'
 import { MoreHorizontal, Share2, Edit2, Trash2 } from 'lucide-react'
 
@@ -38,7 +38,6 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
   const [error, setError] = useState<string | null>(null)
   const [isAdded, setIsAdded] = useState(false)
   const [isOptionsOpen, setIsOptionsOpen] = useState(false)
-  const { toast } = useToast()
   const router = useRouter()
 
   useEffect(() => {
@@ -121,18 +120,12 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
         throw new Error('Failed to delete recipe: ' + recipeError.message)
       }
 
-      toast({
-        title: "Recipe deleted",
-        description: "The recipe and all related items have been successfully deleted",
-      })
+      showNotification("Recipe deleted successfully")
       
       router.push('/')
     } catch (error) {
       console.error('Error in deletion process:', error)
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to delete recipe and related items"
-      })
+      showNotification(error instanceof Error ? error.message : "Failed to delete recipe")
     } finally {
       setIsOptionsOpen(false)
     }
@@ -197,16 +190,10 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
               if (error) throw error
               
               setIsAdded(true)
-              toast({
-                title: "Added to cart",
-                description: "Ingredients have been added to your shopping list",
-              })
+              showNotification("Added to cart")
             } catch (error) {
               console.error('Error adding to cart:', error)
-              toast({
-                title: "Error",
-                description: "Failed to add ingredients to cart",
-              })
+              showNotification("Failed to add ingredients to cart")
             }
           }} 
           className="bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-shadow duration-300"

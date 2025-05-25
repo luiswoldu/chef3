@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { ChevronLeft, ArrowUp, Loader } from "lucide-react"
 import { supabase } from "../../lib/supabase/client"
-import { useToast } from "../../hooks/use-toast"
+import { showNotification } from "@/hooks/use-notification"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import Link from "next/link"
@@ -77,7 +77,6 @@ const SUPPORTED_PLATFORMS = [
 
 export default function AddRecipe() {
   const router = useRouter()
-  const { toast } = useToast()
   const [loading, setLoading] = useState(false)
   const [url, setUrl] = useState("")
   const [isModalVisible, setIsModalVisible] = useState(false)
@@ -224,21 +223,12 @@ export default function AddRecipe() {
       )
       
       if (!platform) {
-        return {
-          isValid: false,
-          message: 'URL must be from a supported platform'
-        }
+        return 'URL must be from a supported platform'
       }
 
-      return {
-        isValid: true,
-        platform: platform.name
-      }
+      return null
     } catch {
-      return {
-        isValid: false,
-        message: 'Please enter a valid URL'
-      }
+      return 'Please enter a valid URL'
     }
   }
 
@@ -439,22 +429,22 @@ export default function AddRecipe() {
   const handleExtractRecipe = async () => {
     if (!url) return
 
+    const validationError = validateUrl(url)
+    if (validationError) {
+      showNotification(validationError)
+      return
+    }
+
     setLoading(true)
     try {
       const data = await extractRecipeFromUrl(url)
       if (data) {
         setExtractedRecipe(data)
       }
-      toast({
-        title: "Recipe Found",
-        description: "We've extracted the recipe details. Please review and save.",
-      })
+      showNotification("Recipe found! Please review and save.")
     } catch (error) {
       console.error('Error extracting recipe:', error)
-      toast({
-        title: "Error",
-        description: "Failed to extract recipe. Please check the URL and try again.",
-      })
+      showNotification("Failed to extract recipe. Please check the URL and try again.")
     } finally {
       setLoading(false)
     }
@@ -511,18 +501,12 @@ export default function AddRecipe() {
 
       if (groceryItemsError) throw groceryItemsError
 
-      toast({
-        title: "Success",
-        description: "Recipe saved successfully!",
-      })
+      showNotification("Added to your library")
       
       router.push('/explore')
     } catch (error) {
       console.error('Error saving recipe:', error)
-      toast({
-        title: "Error",
-        description: "Failed to save recipe. Please try again.",
-      })
+      showNotification("Failed to save recipe. Please try again.")
     } finally {
       setLoading(false)
     }

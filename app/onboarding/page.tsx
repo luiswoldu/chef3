@@ -9,12 +9,14 @@ import Step2 from './components/Step2';
 import Step3 from './components/Step3';
 import Step4 from './components/Step4';
 import Step5 from './components/Step5';
+import Step6 from './components/Step6';
 
 interface OnboardingData {
   firstName: string;
   username: string;
   email: string;
   password: string;
+  tastePreference: string;
 }
 
 export default function Onboarding() {
@@ -25,9 +27,10 @@ export default function Onboarding() {
     username: '',
     email: '',
     password: '',
+    tastePreference: '',
   });
 
-  const totalSteps = 5;
+  const totalSteps = 6;
 
   const handleNextStep = () => {
     if (step === totalSteps) {
@@ -39,7 +42,7 @@ export default function Onboarding() {
 
   const handleOnboardingComplete = async () => {
     try {
-      // Redirect to main app after successful signup in Step5
+      // Redirect to main app after successful signup in Step6
       router.push('/home');
     } catch (error) {
       console.error('Error during onboarding completion:', error);
@@ -90,7 +93,14 @@ export default function Onboarding() {
       )}
       
       {step === 5 && (
-        <Step5 
+        <Step5
+          setTastePreference={(preference) => updateFormData('tastePreference', preference)}
+          onNext={handleNextStep}
+        />
+      )}
+      
+      {step === 6 && (
+        <Step6 
           formData={formData}
           onComplete={handleOnboardingComplete} 
         />

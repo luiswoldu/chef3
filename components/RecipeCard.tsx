@@ -20,6 +20,7 @@ interface RecipeCardProps {
   backgroundColor?: string
   showAddButton?: boolean
   cardType: 'hero' | 'square' | 'thumbnail'
+  rounded?: 'none' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'full'
 }
 
 export default function RecipeCard({
@@ -30,6 +31,7 @@ export default function RecipeCard({
   backgroundColor = "#f3f4f6", // default gray-100
   showAddButton = true,
   cardType = 'square', // default to square if not specified
+  rounded = 'lg', // default to rounded-lg
 }: RecipeCardProps) {
   const [isAdded, setIsAdded] = useState(false)
   const imageSrc = image && image.trim() !== "" ? image : "/placeholder2.jpg"
@@ -96,9 +98,32 @@ export default function RecipeCard({
     }
   }
 
+  const getRoundedClass = () => {
+    switch (rounded) {
+      case 'none':
+        return 'rounded-none'
+      case 'sm':
+        return 'rounded-sm'
+      case 'md':
+        return 'rounded-md'
+      case 'lg':
+        return 'rounded-lg'
+      case 'xl':
+        return 'rounded-xl'
+      case '2xl':
+        return 'rounded-2xl'
+      case '3xl':
+        return 'rounded-3xl'
+      case 'full':
+        return 'rounded-full'
+      default:
+        return 'rounded-lg'
+    }
+  }
+
   return (
     <div
-      className={`relative overflow-hidden rounded-lg ${getCardStyles()}`}
+      className={`relative overflow-hidden ${getRoundedClass()} ${getCardStyles()}`}
       style={{ backgroundColor }}
     >
       <Link href={`/recipe/${id}`} className="block w-full h-full">

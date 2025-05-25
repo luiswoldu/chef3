@@ -1,95 +1,74 @@
 'use client';
 
 import React, { useState } from 'react';
-import { supabase } from '@/lib/supabase/client';
-import { Loader2 } from 'lucide-react';
 
 interface Step5Props {
-  onComplete: () => void;
-  formData: {
-    firstName: string;
-    username: string;
-    email: string;
-    password: string;
-  };
+  setTastePreference: (preference: string) => void;
+  onNext: () => void;
 }
 
-export default function Step5({ onComplete, formData }: Step5Props) {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [emailSent, setEmailSent] = useState(false);
+const Step5: React.FC<Step5Props> = ({ setTastePreference, onNext }) => {
+  const [selectedTaste, setSelectedTaste] = useState('');
 
-  const handleFinish = async () => {
-    setLoading(true);
-    setError(null);
+  const tasteOptions = [
+    { id: 'comfort', label: 'Comfort Food' },
+    { id: 'healthy', label: 'Healthy & Fresh' },
+    { id: 'international', label: 'International' },
+    { id: 'quick', label: 'Quick & Easy' }
+  ];
 
-    try {
-      // Create the Auth user and send confirmation email
-      // Don't create the profile yet - we'll do that after email verification
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            first_name: formData.firstName,
-            username: formData.username,
-          },
-          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`
-        }
-      });
+  const handleSelection = (tasteId: string) => {
+    setSelectedTaste(tasteId);
+    setTastePreference(tasteId);
+  };
 
-      if (signUpError) throw signUpError;
-      if (!authData.user?.id) throw new Error('No user ID returned from signup');
-
-      // Show success message - don't try to sign in or create profile here
-      setEmailSent(true);
-      
-    } catch (err) {
-      console.error('Signup error:', err);
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-    } finally {
-      setLoading(false);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedTaste) {
+      onNext();
     }
   };
 
-  if (emailSent) {
-    return (
-      <div className="flex flex-col items-center space-y-6 p-6">
-        <h2 className="text-2xl font-bold text-gray-900">Check your email!</h2>
-        <p className="text-gray-600 text-center">
-          We've sent a confirmation link to {formData.email}. Please click the link to verify your email address and complete your registration.
-        </p>
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col items-center space-y-6 p-6">
-      <h2 className="text-2xl font-bold text-gray-900">Ready to start cooking?</h2>
-      <p className="text-gray-600 text-center">
-        Your account is about to be created. Click below to finish setup and start exploring recipes!
-      </p>
-
-      {error && (
-        <div className="w-full p-4 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-red-600 text-sm">{error}</p>
+    <div className="w-full max-w-md">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-extrabold tracking-tighter mb-8 text-black text-left">
+            Which one best describes your taste?
+          </h1>
+          
+          <div className="grid grid-cols-2 gap-2 mb-8">
+            {tasteOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => handleSelection(option.id)}
+                className={`
+                  h-24 rounded-2xl transition-all duration-200 flex items-center justify-center
+                  ${selectedTaste === option.id 
+                    ? 'bg-primary/10 text-primary' 
+                    : 'bg-[#F7F7F7] text-gray-700 hover:bg-gray-200'
+                  }
+                `}
+              >
+                <span className="text-sm font-medium text-center px-2">
+                  {option.label}
+                </span>
+              </button>
+            ))}
+          </div>
         </div>
-      )}
-
-      <button
-        onClick={handleFinish}
-        disabled={loading}
-        className="w-full max-w-sm flex items-center justify-center px-6 py-3 bg-primary text-white rounded-full hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg font-medium"
-      >
-        {loading ? (
-          <>
-            <Loader2 className="animate-spin h-5 w-5 mr-2" />
-            Creating your account...
-          </>
-        ) : (
-          'Complete'
-        )}
-      </button>
+        
+        <button
+          type="submit"
+          disabled={!selectedTaste}
+          className="w-full bg-primary text-white px-6 py-3 rounded-full hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg font-medium"
+        >
+          Continue
+        </button>
+      </form>
     </div>
   );
-}
+};
+
+export default Step5;

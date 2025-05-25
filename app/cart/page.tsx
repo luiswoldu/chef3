@@ -6,14 +6,13 @@ import Navigation from "../../components/Navigation"
 import { type GroceryItem } from "@/types/index"
 import { Plus, User } from "lucide-react"
 import { supabase } from "../../lib/supabaseClient"
-import { useToast } from "@/hooks/use-toast"
+import { showNotification } from "@/hooks/use-notification"
 import Image from "next/image"
 
 export default function Cart() {
   const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([])
   const [newItem, setNewItem] = useState("")
   const [userAvatar, setUserAvatar] = useState<string | null>(null)
-  const { toast } = useToast()
   const router = useRouter()
 
   useEffect(() => {
@@ -55,10 +54,7 @@ export default function Cart() {
       setGroceryItems(sortItems(data || []))
     } catch (error) {
       console.error('Error loading grocery items:', error)
-      toast({
-        title: "Error",
-        description: "Failed to load shopping list",
-      })
+      showNotification("Failed to load shopping list")
     }
   }
 
@@ -88,12 +84,10 @@ export default function Cart() {
         
         setNewItem("")
         loadGroceryItems()
+        showNotification("Item added")
       } catch (error) {
         console.error('Error adding item:', error)
-        toast({
-          title: "Error",
-          description: "Failed to add item",
-        })
+        showNotification("Failed to add item")
       }
     }
   }
@@ -111,10 +105,7 @@ export default function Cart() {
         loadGroceryItems()
       } catch (error) {
         console.error('Error updating item:', error)
-        toast({
-          title: "Error",
-          description: "Failed to update item",
-        })
+        showNotification("Failed to update item")
       }
     }
   }
@@ -128,12 +119,10 @@ export default function Cart() {
       
       if (error) throw error
       loadGroceryItems()
+      showNotification("Shopping list cleared")
     } catch (error) {
       console.error('Error clearing list:', error)
-      toast({
-        title: "Error",
-        description: "Failed to clear shopping list",
-      })
+      showNotification("Failed to clear shopping list")
     }
   }
 

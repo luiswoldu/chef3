@@ -59,8 +59,7 @@ function AuthCallbackContent() {
             first_name: session.user.user_metadata?.first_name || '',
             username: session.user.user_metadata?.username || '',
             email: session.user.email || '',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
+            created_at: new Date().toISOString()
           };
 
           const { error: profileError } = await supabase

@@ -1,8 +1,7 @@
 "use client"
 
-import '../app/globals.css'
-import { ToastProvider } from "../components/ui/toast"
-import { Toaster } from "../components/ui/toaster"
+import './globals.css'
+import NotificationContainer from '@/components/ui/notification-banner'
 
 export default function RootLayout({
   children,
@@ -12,12 +11,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="bg-gray-100">
-        <ToastProvider>
-          <main className="max-w-lg mx-auto bg-white min-h-screen">
-            {children}
-          </main>
-          <Toaster />
-        </ToastProvider>
+        <main className="max-w-lg mx-auto bg-white min-h-screen">
+          {children}
+        </main>
+        <NotificationContainer />
       </body>
     </html>
   )

@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase/client"
-import { useToast } from "@/hooks/use-toast"
+import { showNotification } from "@/hooks/use-notification"
 import Link from "next/link"
 import { ChevronLeft } from "lucide-react"
 
@@ -12,16 +12,12 @@ export default function Login() {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const router = useRouter()
-  const { toast } = useToast()
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!email || !password) {
-      toast({
-        title: "Missing Fields",
-        description: "Please fill in all fields",
-      })
+      showNotification("Please fill in all fields")
       return
     }
 
@@ -35,14 +31,12 @@ export default function Login() {
       if (error) throw error
       
       if (data?.user) {
+        showNotification("Welcome back!")
         router.push("/home")
       }
     } catch (error: any) {
       console.error("Error signing in:", error)
-      toast({
-        title: "Error",
-        description: error.message || "Failed to sign in. Please check your credentials.",
-      })
+      showNotification(error.message || "Failed to sign in. Please check your credentials.")
     } finally {
       setLoading(false)
     }

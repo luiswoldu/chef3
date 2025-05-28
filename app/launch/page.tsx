@@ -22,8 +22,8 @@ export default function Launch() {
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-white">
       <div className="w-full max-w-md space-y-8">
         <div className="space-y-4">
-          <h1 className="text-5xl font-extrabold text-black tracking-tight">Start your week.</h1>
-          <h2 className="text-3xl font-bold text-black tracking-tight leading-none">Plan meals, find new recipes and save time cooking.</h2>
+          <h1 className="text-5xl font-extrabold text-black tracking-tight leading-none">Knows what&apos;s for dinner</h1>
+          <h2 className="text-3xl font-bold text-black tracking-tight leading-none">Organize recipes, find inspiration, and shop like a pro.</h2>
         </div>
 
         <div className="flex flex-col space-y-4 mt-12">

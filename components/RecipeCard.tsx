@@ -158,7 +158,7 @@ export default function RecipeCard({
       </Link>
       {showAddButton && (
         <button
-          className={`absolute ${isHero ? 'bottom-4' : 'top-4'} right-4 bg-white rounded-full p-1 shadow-md hover:shadow-lg transition-shadow duration-300`}
+          className={`absolute ${isHero ? 'bottom-4' : 'top-3'} right-3 bg-white rounded-full p-1 shadow-md hover:shadow-lg transition-shadow duration-300`}
           onClick={addToCart}
           aria-label={isAdded ? "Added to cart" : "Add to cart"}
         >

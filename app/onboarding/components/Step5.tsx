@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
+import { Check } from 'lucide-react';
 
 interface Step5Props {
   setTastePreference: (preference: string) => void;
@@ -11,10 +13,10 @@ const Step5: React.FC<Step5Props> = ({ setTastePreference, onNext }) => {
   const [selectedTaste, setSelectedTaste] = useState('');
 
   const tasteOptions = [
-    { id: 'comfort', label: 'Comfort Food' },
-    { id: 'healthy', label: 'Healthy & Fresh' },
-    { id: 'international', label: 'International' },
-    { id: 'quick', label: 'Quick & Easy' }
+    { id: '1', label: 'Comfort Food', image: '/onboarding-option1.jpg' },
+    { id: '2', label: 'Healthy & Fresh', image: '/onboarding-option2.jpg' },
+    { id: '3', label: 'International', image: '/onboarding-option3.jpg' },
+    { id: '4', label: 'Quick & Easy', image: '/onboarding-option4.jpg' }
   ];
 
   const handleSelection = (tasteId: string) => {
@@ -34,7 +36,7 @@ const Step5: React.FC<Step5Props> = ({ setTastePreference, onNext }) => {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tighter mb-8 text-black text-left">
-            Which one best describes your taste?
+          What's your go-to breakfast?
           </h1>
           
           <div className="grid grid-cols-2 gap-2 mb-8">
@@ -43,17 +45,25 @@ const Step5: React.FC<Step5Props> = ({ setTastePreference, onNext }) => {
                 key={option.id}
                 type="button"
                 onClick={() => handleSelection(option.id)}
-                className={`
-                  h-24 rounded-2xl transition-all duration-200 flex items-center justify-center
-                  ${selectedTaste === option.id 
-                    ? 'bg-primary/10 text-primary' 
-                    : 'bg-[#F7F7F7] text-gray-700 hover:bg-gray-200'
-                  }
-                `}
+                className="h-32 rounded-2xl transition-all duration-200 relative overflow-hidden hover:scale-105"
               >
-                <span className="text-sm font-medium text-center px-2">
-                  {option.label}
-                </span>
+                <div className="absolute inset-0">
+                  <Image
+                    src={option.image}
+                    alt={option.label}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                  />
+                </div>
+                {selectedTaste === option.id && (
+                  <>
+                    <div className="absolute inset-0 bg-green-500/40" />
+                    <div className="absolute top-2 right-2 bg-white rounded-full p-1">
+                      <Check size={16} className="text-[#6CD401]" />
+                    </div>
+                  </>
+                )}
               </button>
             ))}
           </div>
@@ -62,7 +72,11 @@ const Step5: React.FC<Step5Props> = ({ setTastePreference, onNext }) => {
         <button
           type="submit"
           disabled={!selectedTaste}
-          className="w-full bg-primary text-white px-6 py-3 rounded-full hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg font-medium"
+          className={`w-full px-6 py-3 rounded-full disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg font-medium ${
+            selectedTaste 
+              ? 'bg-black text-white hover:bg-gray-800' 
+              : 'bg-[#F7F7F7] text-gray-700 hover:bg-gray-200'
+          }`}
         >
           Continue
         </button>

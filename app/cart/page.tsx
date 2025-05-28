@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Navigation from "../../components/Navigation"
 import { type GroceryItem } from "@/types/index"
-import { Plus, User } from "lucide-react"
+import { Plus, User, Trash2, Loader } from "lucide-react"
 import { supabase } from "../../lib/supabaseClient"
 import { showNotification } from "@/hooks/use-notification"
 import Image from "next/image"
@@ -13,6 +13,7 @@ export default function Cart() {
   const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([])
   const [newItem, setNewItem] = useState("")
   const [userAvatar, setUserAvatar] = useState<string | null>(null)
+  const [sortState, setSortState] = useState<'default' | 'loading' | 'sorted'>('default')
   const router = useRouter()
 
   useEffect(() => {
@@ -126,6 +127,15 @@ export default function Cart() {
     }
   }
 
+  const handleSort = async () => {
+    setSortState('loading')
+    
+    // Simulate sorting process - replace with actual logic later
+    setTimeout(() => {
+      setSortState('sorted')
+    }, 2000)
+  }
+
   const groupedItems = groceryItems.reduce(
     (acc, item) => {
       if (!acc[item.aisle]) {
@@ -143,7 +153,7 @@ export default function Cart() {
         <div className="flex justify-between items-center mb-4 pr-2">
           <h1 className="text-3xl font-bold pt-[42px]">Shopping List</h1>
           <div 
-            className="w-[34px] h-[34px] rounded-full overflow-hidden mt-[42px] cursor-pointer bg-gray-200 flex items-center justify-center" 
+            className="w-[34px] h-[34px] rounded-full overflow-hidden mt-[42px] cursor-pointer bg-[#F7F7F7] flex items-center justify-center" 
             onClick={handleProfileClick}
           >
             {userAvatar ? (
@@ -155,7 +165,8 @@ export default function Cart() {
                 className="object-cover w-full h-full"
               />
             ) : (
-              <User className="w-5 h-5 text-gray-500" />
+              <div className="w-full h-full bg-[#F7F7F7] flex items-center justify-center">
+              </div>
             )}
           </div>
         </div>
@@ -171,12 +182,35 @@ export default function Cart() {
             <Plus className={`w-6 h-6 ${newItem.trim() ? 'text-black' : 'text-[#B2B2B2]'}`} />
           </button>
         </form>
-        <button 
-          onClick={clearList} 
-          className="text-[#8A8A8A] text-sm mb-4"
-        >
-          Clear all items
-        </button>
+        
+        <div className="flex items-center justify-end gap-3 mb-4">
+          <button 
+            onClick={clearList}
+            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+            aria-label="Clear all items"
+          >
+            <Trash2 className="w-5 h-5 text-gray-600" />
+          </button>
+          
+          <button 
+            onClick={handleSort}
+            disabled={sortState === 'loading'}
+            className={`px-8 py-2 rounded-full text-base font-semibold transition-colors ${
+              sortState === 'default' 
+                ? 'bg-[#F7F7F7] text-[#58575C] hover:bg-gray-200' 
+                : sortState === 'loading'
+                ? 'bg-[#F7F7F7] text-[#58575C] cursor-not-allowed'
+                : 'bg-[#6CD401]/10 text-[#6ED308]'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              {sortState === 'loading' && <Loader className="w-4 h-4 animate-spin" />}
+              <span>
+                {sortState === 'default' ? 'Sort' : sortState === 'loading' ? 'Sort' : 'Sorted'}
+              </span>
+            </div>
+          </button>
+        </div>
       </div>
       <div className="flex-grow overflow-auto">
         {Object.entries(groupedItems).map(([aisle, items]) => (

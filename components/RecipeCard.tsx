@@ -69,10 +69,35 @@ export default function RecipeCard({
   const addToCart = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     try {
-      // Insert into grocery_items table
+      // First get the recipe with its ingredients
+      const { data: recipe, error: recipeError } = await supabase
+        .from('recipes')
+        .select(`
+          *,
+          ingredients (*)
+        `)
+        .eq('id', id)
+        .single()
+      
+      if (recipeError) throw recipeError
+      
+      if (!recipe.ingredients || recipe.ingredients.length === 0) {
+        console.error('No ingredients found for this recipe')
+        return
+      }
+      
+      // Insert ingredients as grocery items with only valid columns
+      const groceryItems = recipe.ingredients.map((ing: any) => ({
+        name: ing.name,
+        amount: ing.amount,
+        aisle: "Other",
+        purchased: false,
+        recipe_id: Number(id),
+      }))
+      
       const { error } = await supabase
         .from('grocery_items')
-        .insert([{ recipe_id: Number(id), title, image }])
+        .insert(groceryItems)
       
       if (error) {
         console.error('Error adding to grocery items:', error)

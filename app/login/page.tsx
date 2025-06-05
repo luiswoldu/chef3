@@ -57,7 +57,7 @@ export default function Login() {
           <h1 className="text-3xl font-extrabold tracking-tighter mb-2 text-black">
             Welcome back
           </h1>
-          <p className="text-black/60">Enter your credentials to access your account</p>
+          <p className="text-black/60">Enter your details to log in.</p>
         </div>
 
         <form className="space-y-6" onSubmit={handleSignIn}>

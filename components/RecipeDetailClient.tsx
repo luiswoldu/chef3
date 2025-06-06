@@ -10,7 +10,7 @@ import RecipeCard from './RecipeCard'
 import { supabase } from '@/lib/supabase/client'
 import { showNotification } from '@/hooks/use-notification'
 import { useRouter } from 'next/navigation'
-import { MoreHorizontal, Share2, Edit2, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Edit2, Trash2 } from 'lucide-react'
 
 // Define ingredient interface that matches what we get from the database
 interface RecipeIngredient {
@@ -302,22 +302,6 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
               >
                 <Dialog.Panel className="w-full transform rounded-t-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
                   <div className="space-y-4">
-                    <button 
-                      className="flex items-center gap-2 w-full py-2 hover:bg-gray-100 rounded-md"
-                      onClick={() => {
-                        // Implement share functionality
-                        if (navigator.share) {
-                          navigator.share({
-                            title: recipe?.title,
-                            text: recipe?.caption,
-                            url: window.location.href,
-                          })
-                        }
-                        setIsOptionsOpen(false)
-                      }}
-                    >
-                      <Share2 className="h-5 w-5" /> Share
-                    </button>
                     <button 
                       className="flex items-center gap-2 w-full py-2 hover:bg-gray-100 rounded-md"
                       onClick={() => {

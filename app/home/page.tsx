@@ -41,26 +41,20 @@ export default function HomePage() {
 
   return (
     <div className="flex flex-col min-h-screen pb-[70px]">
-      <div className="relative w-full h-[56.4vh] bg-gradient-to-b from-gray-500 to-gray-600">
+      <div className="relative w-full h-[56.4vh]">
         {heroRecipe ? (
-          <div className="absolute inset-0">
-            <div className="relative w-full h-full">
-              <img 
-                src={heroRecipe.image || '/placeholder.svg'} 
-                alt={heroRecipe.title}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/60 to-transparent" />
-              <div className="absolute bottom-0 left-0 right-0 pb-6 pl-4">
-                <h2 className="text-3xl font-bold leading-none tracking-tight text-white">{heroRecipe.title}</h2>
-              </div>
-            </div>
-          </div>
+          <RecipeCard
+            id={heroRecipe.id?.toString() || "0"}
+            title={heroRecipe.title || "Untitled Recipe"}
+            image={heroRecipe.image || '/placeholder.svg'}
+            isHero={true}
+            showAddButton={true}
+            cardType="hero"
+            rounded="none"
+          />
         ) : (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-full h-full bg-gray-700 animate-pulse rounded-md overflow-hidden">
-              <div className="w-2/3 h-8 bg-gray-600 absolute bottom-6 left-6 rounded-md animate-shimmer"></div>
-            </div>
+          <div className="w-full h-full bg-gray-700 animate-pulse rounded-md overflow-hidden">
+            <div className="w-2/3 h-8 bg-gray-600 absolute bottom-6 left-6 rounded-md animate-shimmer"></div>
           </div>
         )}
       </div>

@@ -326,9 +326,9 @@ export default function AddRecipe() {
               caption: recipe.description || '',
               tags: recipe.keywords 
                 ? (typeof recipe.keywords === 'string' 
-                  ? recipe.keywords.split(',').map((k: string) => k.trim()) 
+                  ? recipe.keywords.split(',').map((k: string) => k.trim()).slice(0, 3) 
                   : Array.isArray(recipe.keywords) 
-                    ? recipe.keywords 
+                    ? recipe.keywords.slice(0, 3) 
                     : [])
                 : [],
               steps: Array.isArray(recipe.recipeInstructions) 

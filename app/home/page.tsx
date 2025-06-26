@@ -88,7 +88,7 @@ export default function HomePage() {
         
         {recipes && recipes.length > 0 && (
           <section className="py-4">
-            <h2 className="text-3xl tracking-tight font-bold mb-2 px-4">Uniquely Yours</h2>
+            <h2 className="text-3xl tracking-tight font-bold mb-2 px-4">Your Week</h2>
             <div className="flex overflow-x-auto space-x-2 px-4 pb-4">
               {recipes.slice(5, 9).map((recipe: Recipe) => (
                 <div key={`unique-${recipe.id}`} className="w-48 flex-shrink-0">

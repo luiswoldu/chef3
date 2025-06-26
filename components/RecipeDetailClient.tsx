@@ -38,6 +38,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
   const [error, setError] = useState<string | null>(null)
   const [isAdded, setIsAdded] = useState(false)
   const [isOptionsOpen, setIsOptionsOpen] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -246,7 +247,17 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           ))}
         </div>
         {recipe.caption ? (
-          <p className="text-[15px] text-gray-600 mb-6 line-clamp-2">{recipe.caption}</p>
+          <div className="relative mb-6">
+            <p className={`text-[15px] text-gray-600 ${isExpanded ? '' : 'line-clamp-2'}`}>
+              {recipe.caption}
+            </p>
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-[15px] font-medium text-gray-500 hover:text-gray-700 absolute bottom-0 right-0 pl-12 bg-gradient-to-l from-white via-white to-transparent"
+            >
+              {isExpanded ? 'Less' : 'More'}
+            </button>
+          </div>
         ) : (
           <p className="text-[15px] text-gray-400 mb-6 italic">No caption provided.</p>
         )}

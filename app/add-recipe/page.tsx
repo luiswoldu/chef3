@@ -49,6 +49,11 @@ const SUPPORTED_PLATFORMS = [
     name: 'The Mediterranean Dish'
   },
   {
+    domain: 'themodernproper.com',
+    pattern: /^https?:\/\/(www\.)?themodernproper\.com\/[a-zA-Z0-9-]+(\/)?$/,
+    name: 'The Modern Proper'
+  },
+  {
     domain: 'instagram.com',
     pattern: /^https?:\/\/(www\.)?instagram\.com\/p\/[A-Za-z0-9_-]+/,
     name: 'Instagram'
@@ -503,7 +508,7 @@ export default function AddRecipe() {
 
       showNotification("Added to your library")
       
-      router.push('/explore')
+      router.push('/')
     } catch (error) {
       console.error('Error saving recipe:', error)
       showNotification("Failed to save recipe. Please try again.")

@@ -12,6 +12,8 @@ export default function Profile() {
   const [userName, setUserName] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
   const [userAvatar, setUserAvatar] = useState<string | null>(null)
+  const [username, setUsername] = useState<string | null>(null)
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
@@ -20,19 +22,43 @@ export default function Profile() {
 
   async function loadUserProfile() {
     try {
+      setLoading(true)
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
+        console.log('User data:', user) // Debug log
         setUserEmail(user.email ?? null)
         
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', user.id)
-          .single()
+        // Get first name and username from user metadata
+        const firstName = user.user_metadata?.first_name
+        const userUsername = user.user_metadata?.username
+        setUserName(firstName)
+        setUsername(userUsername)
         
-        if (profile) {
-          setUserName(profile.username || profile.full_name)
-          setUserAvatar(profile.avatar_url)
+        // Get avatar from user metadata
+        const avatarUrl = user.user_metadata?.avatar_url || 
+                         user.user_metadata?.picture
+        setUserAvatar(avatarUrl)
+        
+        // Only try to fetch from profiles table if it exists and you need additional data
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single()
+          
+          if (profile) {
+            console.log('Profile data:', profile)
+            // Override with profile data if available
+            if (profile.username || profile.full_name || profile.name) {
+              setUserName(profile.username || profile.full_name || profile.name)
+            }
+            if (profile.avatar_url) {
+              setUserAvatar(profile.avatar_url)
+            }
+          }
+        } catch (profileError) {
+          console.log('No profiles table or profile not found, using auth metadata')
         }
       } else {
         // Not logged in, redirect to login
@@ -41,6 +67,8 @@ export default function Profile() {
     } catch (error) {
       console.error('Error loading user profile:', error)
       showNotification("Failed to load profile information")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -127,8 +155,24 @@ export default function Profile() {
             )}
           </div>
           
-          <h1 className="text-2xl font-extrabold text-black">Name</h1>
-          <p className="text-[#B2B2B2] font-medium">{userName || "User"} • {userEmail}</p>
+          <h1 className="text-2xl font-extrabold text-black">
+            {loading ? (
+              <span className="inline-block flex-shrink-0 rounded-lg bg-gray-700 animate-pulse overflow-hidden w-24 h-7">
+                <span className="block w-full h-full bg-gray-600 rounded-md animate-shimmer"></span>
+              </span>
+            ) : (
+              userName || "User"
+            )}
+          </h1>
+          <p className="text-[#B2B2B2] font-medium">
+            {loading ? (
+              <span className="inline-block flex-shrink-0 rounded-lg bg-gray-700 animate-pulse overflow-hidden w-48 h-4 mt-1">
+                <span className="block w-full h-full bg-gray-600 rounded-md animate-shimmer"></span>
+              </span>
+            ) : (
+              `${username || "User"} • ${userEmail}`
+            )}
+          </p>
         </div>
         
         <div>
@@ -156,4 +200,4 @@ export default function Profile() {
       <Navigation />
     </div>
   )
-} 
+}

@@ -56,9 +56,9 @@ export default function Step6({ onComplete, formData }: Step6Props) {
 
   if (emailSent) {
     return (
-      <div className="flex flex-col items-center space-y-6 p-6">
-        <h2 className="text-2xl font-bold text-gray-900">Check your email!</h2>
-        <p className="text-gray-600 text-center">
+      <div className="w-full max-w-md">
+        <h2 className="text-3xl font-extrabold tracking-tighter mb-2 text-black">Check your email!</h2>
+        <p className="text-[#BFBFBF]">
           We've sent a confirmation link to {formData.email}. Please click the link to verify your email address and complete your registration.
         </p>
       </div>
@@ -66,10 +66,10 @@ export default function Step6({ onComplete, formData }: Step6Props) {
   }
 
   return (
-    <div className="flex flex-col items-center space-y-6 p-6">
-      <h2 className="text-2xl font-bold text-gray-900">Ready to start cooking?</h2>
-      <p className="text-gray-600 text-center">
-        Your account is about to be created. Click below to finish setup and start exploring recipes!
+    <div className="w-full max-w-md">
+      <h2 className="text-3xl font-extrabold tracking-tighter mb-2 text-black">Almost there.</h2>
+      <p className="text-[#BFBFBF]">
+        Tap Complete and finish your signup by verifying your email address.
       </p>
 
       {error && (
@@ -81,7 +81,7 @@ export default function Step6({ onComplete, formData }: Step6Props) {
       <button
         onClick={handleFinish}
         disabled={loading}
-        className="w-full max-w-sm flex items-center justify-center px-6 py-3 bg-primary text-white rounded-full hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg font-medium"
+        className="w-full max-w-sm flex items-center justify-center px-6 py-3 bg-primary text-white rounded-full hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-lg font-medium mt-6"
       >
         {loading ? (
           <>

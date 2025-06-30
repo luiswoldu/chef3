@@ -35,9 +35,12 @@ const Step5: React.FC<Step5Props> = ({ setTastePreference, onNext }) => {
     <div className="w-full max-w-md">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tighter mb-8 text-black text-left">
+          <h1 className="text-3xl font-extrabold tracking-tighter mb-2 text-black text-left">
           What's your go-to breakfast?
           </h1>
+          <p className="text-base text-[#9F9F9F] mb-8">
+            Your choice will help us understand your taste.  
+          </p>
           
           <div className="grid grid-cols-2 gap-2 mb-8">
             {tasteOptions.map((option) => (
@@ -45,7 +48,9 @@ const Step5: React.FC<Step5Props> = ({ setTastePreference, onNext }) => {
                 key={option.id}
                 type="button"
                 onClick={() => handleSelection(option.id)}
-                className="h-32 rounded-2xl transition-all duration-200 relative overflow-hidden hover:scale-105"
+                className={`h-32 rounded-2xl transition-all duration-200 relative overflow-hidden ${
+                  selectedTaste === option.id ? 'border-4 border-[#6CD401]' : 'border-4 border-transparent'
+                }`}
               >
                 <div className="absolute inset-0">
                   <Image
@@ -57,12 +62,9 @@ const Step5: React.FC<Step5Props> = ({ setTastePreference, onNext }) => {
                   />
                 </div>
                 {selectedTaste === option.id && (
-                  <>
-                    <div className="absolute inset-0 bg-green-500/40" />
-                    <div className="absolute top-2 right-2 bg-white rounded-full p-1">
-                      <Check size={16} className="text-[#6CD401]" />
-                    </div>
-                  </>
+                  <div className="absolute top-2 right-2 bg-white rounded-full p-1">
+                    <Check size={16} className="text-[#6CD401]" />
+                  </div>
                 )}
               </button>
             ))}

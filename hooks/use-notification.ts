@@ -48,6 +48,14 @@ function generateId() {
 }
 
 export function showNotification(message: string, duration: number = 3000) {
+  // Check if the same message is already being displayed
+  const existingNotification = memoryState.notifications.find(n => n.message === message)
+  
+  if (existingNotification) {
+    // Don't add duplicate notification, just return existing id
+    return existingNotification.id
+  }
+
   const id = generateId()
   
   dispatch({

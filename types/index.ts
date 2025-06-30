@@ -29,4 +29,14 @@ export interface GroceryItem {
   recipe_id: number
   created_at: string
   updated_at: string
+}
+
+export type UserRecipeInteraction = {
+  user_id: string;
+  recipe_id: string;
+  last_viewed_at?: string | null;
+  last_shared_at?: string | null;
+  last_saved_at?: string | null;
+  created_at?: string;
+  updated_at?: string;
 } 

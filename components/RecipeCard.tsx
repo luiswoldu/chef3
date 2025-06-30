@@ -4,6 +4,7 @@ import { useState, useEffect, MouseEvent } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase/client"
+import { trackRecipeCardView, trackRecipeCardTap } from "@/lib/supabase/track"
 import type { Recipe } from "@/types"
 
 interface Ingredient {
@@ -38,7 +39,9 @@ export default function RecipeCard({
 
   useEffect(() => {
     checkIfAdded()
-  }, [])
+    // Track recipe card view when component mounts
+    trackRecipeCardView(id)
+  }, [id])
 
   const checkIfAdded = async () => {
     try {
@@ -151,7 +154,11 @@ export default function RecipeCard({
       className={`relative overflow-hidden ${getRoundedClass()} ${getCardStyles()}`}
       style={{ backgroundColor }}
     >
-      <Link href={`/recipe/${id}`} className="block w-full h-full">
+      <Link 
+        href={`/recipe/${id}`} 
+        className="block w-full h-full"
+        onClick={() => trackRecipeCardTap(id)}
+      >
         <Image
           src={imageSrc}
           alt={title}

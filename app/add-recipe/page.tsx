@@ -94,6 +94,12 @@ export default function AddRecipe() {
     isDragging: boolean;
   }>({ startY: 0, startHeight: 0, isDragging: false })
 
+  // Add debouncing refs to prevent multiple rapid clicks
+  const extractTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const lastExtractTime = useRef<number>(0)
+  const lastSaveTime = useRef<number>(0)
+
   // Add animation effect when recipe data is loaded
   useEffect(() => {
     if (extractedRecipe) {
@@ -118,6 +124,18 @@ export default function AddRecipe() {
     window.addEventListener('keydown', handleEscapeKey)
     return () => window.removeEventListener('keydown', handleEscapeKey)
   }, [extractedRecipe, loading])
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (extractTimeoutRef.current) {
+        clearTimeout(extractTimeoutRef.current)
+      }
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
+    }
+  }, [])
 
   // Handle sheet resizing
   useEffect(() => {
@@ -432,7 +450,19 @@ export default function AddRecipe() {
   }
 
   const handleExtractRecipe = async () => {
-    if (!url) return
+    if (!url || loading) return
+
+    // Debouncing: prevent multiple rapid clicks
+    const now = Date.now()
+    if (now - lastExtractTime.current < 1000) { // 1 second debounce
+      return
+    }
+    lastExtractTime.current = now
+
+    // Clear any existing timeout
+    if (extractTimeoutRef.current) {
+      clearTimeout(extractTimeoutRef.current)
+    }
 
     const validationError = validateUrl(url)
     if (validationError) {
@@ -440,13 +470,15 @@ export default function AddRecipe() {
       return
     }
 
+    // Set loading immediately to prevent multiple clicks
     setLoading(true)
+    
     try {
       const data = await extractRecipeFromUrl(url)
       if (data) {
         setExtractedRecipe(data)
+        showNotification("Recipe found! Please review and save.")
       }
-      showNotification("Recipe found! Please review and save.")
     } catch (error) {
       console.error('Error extracting recipe:', error)
       showNotification("Failed to extract recipe. Please check the URL and try again.")
@@ -456,9 +488,23 @@ export default function AddRecipe() {
   }
 
   const handleSaveRecipe = async () => {
-    if (!extractedRecipe) return
+    if (!extractedRecipe || loading) return
 
+    // Debouncing: prevent multiple rapid clicks
+    const now = Date.now()
+    if (now - lastSaveTime.current < 1000) { // 1 second debounce
+      return
+    }
+    lastSaveTime.current = now
+
+    // Clear any existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+
+    // Set loading immediately to prevent multiple clicks
     setLoading(true)
+    
     try {
       // Insert recipe and get the generated ID
       const { data: recipeData, error: recipeError } = await supabase
@@ -539,14 +585,20 @@ export default function AddRecipe() {
               size="icon"
               onClick={handleExtractRecipe}
               disabled={loading || !url}
-              className={`absolute right-2 top-1/2 -translate-y-1/2 border-0 rounded-full ${
-                url ? 'bg-gradient-to-r from-[#6ED308] to-[#A5E765]' : 'bg-white/30'
+              className={`absolute right-2 top-1/2 -translate-y-1/2 border-0 rounded-full transition-all duration-200 ${
+                loading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : url 
+                    ? 'bg-gradient-to-r from-[#6ED308] to-[#A5E765] hover:scale-105' 
+                    : 'bg-white/30'
               }`}
             >
               {loading ? (
-                <Loader className="h-14 w-14 animate-spin text-white" />
+                <div className="flex items-center justify-center">
+                  <Loader className="h-6 w-6 animate-spin text-white" />
+                </div>
               ) : (
-                <ArrowUp className="h-14 w-14 text-white" />
+                <ArrowUp className="h-6 w-6 text-white" />
               )}
             </Button>
           </div>

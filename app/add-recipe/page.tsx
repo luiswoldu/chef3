@@ -577,7 +577,7 @@ export default function AddRecipe() {
               placeholder="Paste Link"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              className="pr-12 bg-[#343434] text-white placeholder:text-white/30 rounded-full focus:ring-0 border-0 focus:border-0 h-[3.3125rem] text-xl"
+              className="pl-4 pr-12 bg-[#343434] text-white placeholder:text-white/30 rounded-full focus:ring-0 border-0 focus:border-0 h-[3.3125rem] text-xl"
               disabled={loading}
             />
             <Button

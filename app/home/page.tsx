@@ -121,7 +121,7 @@ export default function HomePage() {
                 className="p-1 rounded-full"
                 aria-label="Shuffle recipes"
               >
-                <RefreshCw className="w-6 h-6" />
+                <RefreshCw className="w-5 h-5" />
               </button>
             </div>
             <div className="flex overflow-x-auto space-x-2 px-4 pb-4">

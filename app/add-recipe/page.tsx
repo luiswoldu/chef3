@@ -598,7 +598,7 @@ export default function AddRecipe() {
                   <Loader className="h-6 w-6 animate-spin text-white" />
                 </div>
               ) : (
-                <ArrowUp className="h-6 w-6 text-white" />
+                <ArrowUp className="!h-6 !w-6 text-white" />
               )}
             </Button>
           </div>

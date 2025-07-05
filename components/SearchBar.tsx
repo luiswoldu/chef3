@@ -21,7 +21,7 @@ export default function SearchBar() {
   return (
     <>
       <div className="absolute top-0 left-0 right-0 z-10 p-4" style={{
-        background: 'linear-gradient(to bottom, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)'
+        background: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 100%)'
       }}>
         <div className="flex items-center gap-3 mt-6">
           <button

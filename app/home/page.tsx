@@ -6,22 +6,14 @@ import SearchBar from "@/components/SearchBar"
 import RecipeCard from "@/components/RecipeCard"
 import type { Recipe } from "@/types"
 import { supabase } from "@/lib/supabase/client"
-import { RefreshCw } from "lucide-react"
+
 
 export default function HomePage() {
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [recentRecipes, setRecentRecipes] = useState<Recipe[]>([])
   const [heroRecipe, setHeroRecipe] = useState<Recipe | null>(null)
 
-  const shuffleRecipes = () => {
-    const newRecipes = [...recipes]
-    const yourWeekSection = newRecipes.slice(5, 9)
-    const shuffledYourWeek = yourWeekSection.sort(() => Math.random() - 0.5)
-    
-    // Replace the "Your Week" section with the shuffled version
-    newRecipes.splice(5, 4, ...shuffledYourWeek)
-    setRecipes(newRecipes)
-  }
+
   
   useEffect(() => {
     // Fetch recipes
@@ -37,12 +29,6 @@ export default function HomePage() {
         }
         
         setRecipes(allRecipes as Recipe[] || [])
-        
-        // Select a random recipe from the first 5 recipes for the hero section
-        if (allRecipes && allRecipes.length > 0) {
-          const randomIndex = Math.floor(Math.random() * Math.min(5, allRecipes.length))
-          setHeroRecipe(allRecipes[randomIndex] as Recipe)
-        }
       } catch (error) {
         console.error("Error in loadRecipes:", error)
       }
@@ -57,13 +43,36 @@ export default function HomePage() {
       if (!user) return;
     
       const { data: recents, error } = await supabase
-        .rpc("get_recent_recipes", { p_user_id: user.id, p_limit: 9 });
+        .rpc("get_recent_recipes", { p_user_id: user.id, p_limit: 10 });
       if (error) return console.error(error);
-      setRecentRecipes(recents as Recipe[]);
+      
+      if (recents && recents.length > 0) {
+        // Set the first recipe as hero recipe
+        setHeroRecipe(recents[0] as Recipe);
+        // Set the remaining 9 recipes for the Recents row
+        setRecentRecipes(recents.slice(1) as Recipe[]);
+      }
     }
 
     loadRecents();
   }, []);
+
+  // Helper function to get random recipes for each section
+  const getRandomRecipes = (count: number) => {
+    if (!recipes || recipes.length === 0) return [];
+    const shuffled = [...recipes].sort(() => Math.random() - 0.5);
+    return shuffled.slice(0, count);
+  };
+
+  // Define sections with their titles
+  const sections = [
+    { title: "For You", recipes: getRandomRecipes(9) },
+    { title: "Popular", recipes: getRandomRecipes(9) },
+    { title: "Added Recipes", recipes: getRandomRecipes(9) },
+    { title: "Summer Hits", recipes: getRandomRecipes(9) },
+    { title: "How to", recipes: getRandomRecipes(9) },
+    { title: "Untitled", recipes: getRandomRecipes(9) }
+  ];
 
   return (
     <div className="flex flex-col min-h-screen pb-[70px]">
@@ -111,50 +120,35 @@ export default function HomePage() {
             )}
           </div>
         </section>
-        
-        {recipes && recipes.length > 0 && (
-          <section className="py-2">
-            <div className="flex items-center gap-3 mb-2 px-4">
-              <h2 className="text-3xl tracking-tight font-bold">Your Week</h2>
-              <button 
-                onClick={shuffleRecipes}
-                className="p-1 rounded-full"
-                aria-label="Shuffle recipes"
-              >
-                <RefreshCw className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="flex overflow-x-auto space-x-2 px-4 pb-4">
-              {recipes.slice(5, 9).map((recipe: Recipe) => (
-                <div key={`unique-${recipe.id}`} className="w-48 flex-shrink-0">
-                  <RecipeCard 
-                    id={recipe.id.toString()} 
-                    title={recipe.title} 
-                    image={recipe.image || '/placeholder.svg'}
-                    cardType="thumbnail"
-                  />
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
 
-        {recipes && recipes.length > 0 && (
-          <section className="py-4">
-            <h2 className="text-3xl font-semibold mb-2 px-4">All</h2>
-            <div className="grid grid-cols-2 gap-4 px-4">
-              {recipes.slice(9, 100).map((recipe: Recipe) => (
-                <RecipeCard 
-                  key={`all-${recipe.id}`} 
-                  id={recipe.id.toString()} 
-                  title={recipe.title} 
-                  image={recipe.image || '/placeholder.svg'}
-                  cardType="square"
-                />
-              ))}
+        {/* Render all the new sections */}
+        {sections.map((section, sectionIndex) => (
+          <section key={section.title} className="py-4">
+            <h2 className="text-3xl tracking-tight font-bold mb-2 px-4">{section.title}</h2>
+            <div className="flex overflow-x-auto space-x-2 px-4 pb-4">
+              {section.recipes && section.recipes.length > 0 ? (
+                section.recipes.map((recipe: Recipe) => (
+                  <div key={`${section.title}-${recipe.id}`} className="w-48 flex-shrink-0">
+                    <RecipeCard 
+                      id={recipe.id?.toString() || "0"} 
+                      title={recipe.title || "Untitled Recipe"} 
+                      image={recipe.image || '/placeholder.svg'}
+                      cardType="thumbnail"
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="flex space-x-4">
+                  {[...Array(3)].map((_, index) => (
+                    <div key={`${section.title}-skeleton-${index}`} className="w-48 h-40 flex-shrink-0 rounded-lg bg-gray-700 animate-pulse overflow-hidden">
+                      <div className="w-2/3 h-4 bg-gray-600 absolute bottom-3 left-3 rounded-md animate-shimmer"></div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </section>
-        )}
+        ))}
       </div>
       <Navigation />
     </div>

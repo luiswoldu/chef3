@@ -506,7 +506,16 @@ export default function AddRecipe() {
     setLoading(true)
     
     try {
-      // Insert recipe and get the generated ID
+      // Check if user is authenticated
+      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      
+      if (authError || !user) {
+        showNotification("Please log in to save recipes")
+        router.push('/auth') // Redirect to auth page
+        return
+      }
+
+      // Insert recipe with user_id (the trigger will handle this automatically, but we can be explicit)
       const { data: recipeData, error: recipeError } = await supabase
         .from('recipes')
         .insert([{
@@ -516,48 +525,68 @@ export default function AddRecipe() {
           tags: extractedRecipe.recipe.tags,
           steps: extractedRecipe.recipe.steps,
           created_at: new Date().toISOString()
+          // user_id will be set automatically by the trigger
         }])
         .select()
         .single()
       
-      if (recipeError) throw recipeError
-      if (!recipeData) throw new Error('Failed to create recipe')
+      if (recipeError) {
+        console.error('Recipe insert error:', recipeError)
+        throw new Error('Failed to save recipe: ' + recipeError.message)
+      }
+      
+      if (!recipeData) {
+        throw new Error('Failed to create recipe - no data returned')
+      }
 
-      // Insert ingredients with recipe_id
-      const ingredientsWithRecipeId = extractedRecipe.ingredients.map(ingredient => ({
-        ...ingredient,
-        recipe_id: recipeData.id
-      }))
+      // Insert ingredients with recipe_id (user_id set automatically by trigger)
+      if (extractedRecipe.ingredients.length > 0) {
+        const ingredientsWithRecipeId = extractedRecipe.ingredients.map(ingredient => ({
+          ...ingredient,
+          recipe_id: recipeData.id
+          // user_id will be set automatically by the trigger
+        }))
 
-      const { error: ingredientsError } = await supabase
-        .from('ingredients')
-        .insert(ingredientsWithRecipeId)
+        const { error: ingredientsError } = await supabase
+          .from('ingredients')
+          .insert(ingredientsWithRecipeId)
 
-      if (ingredientsError) throw ingredientsError
+        if (ingredientsError) {
+          console.error('Ingredients insert error:', ingredientsError)
+          throw new Error('Failed to save ingredients: ' + ingredientsError.message)
+        }
+      }
 
-      // Insert grocery items with recipe_id
-      const groceryItemsWithRecipeId = extractedRecipe.groceryItems.map(item => ({
-        recipe_id: recipeData.id,
-        name: item.name,
-        amount: item.amount,
-        details: item.details,
-        aisle: '', // This will be set by the user later
-        purchased: false,
-        created_at: new Date().toISOString()
-      }))
+      // Insert grocery items with recipe_id (user_id set automatically by trigger)
+      if (extractedRecipe.groceryItems.length > 0) {
+        const groceryItemsWithRecipeId = extractedRecipe.groceryItems.map(item => ({
+          recipe_id: recipeData.id,
+          name: item.name,
+          amount: item.amount,
+          details: item.details,
+          aisle: '', // This will be set by the user later
+          purchased: false,
+          created_at: new Date().toISOString()
+          // user_id will be set automatically by the trigger
+        }))
 
-      const { error: groceryItemsError } = await supabase
-        .from('grocery_items')
-        .insert(groceryItemsWithRecipeId)
+        const { error: groceryItemsError } = await supabase
+          .from('grocery_items')
+          .insert(groceryItemsWithRecipeId)
 
-      if (groceryItemsError) throw groceryItemsError
+        if (groceryItemsError) {
+          console.error('Grocery items insert error:', groceryItemsError)
+          throw new Error('Failed to save grocery items: ' + groceryItemsError.message)
+        }
+      }
 
       showNotification("Added to your library")
       
       router.push('/')
     } catch (error) {
       console.error('Error saving recipe:', error)
-      showNotification("Failed to save recipe. Please try again.")
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      showNotification("Failed to save recipe: " + errorMessage)
     } finally {
       setLoading(false)
     }
@@ -720,4 +749,3 @@ export default function AddRecipe() {
     </div>
   )
 }
-

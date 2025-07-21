@@ -97,10 +97,10 @@ export default function HomePage() {
       <div className="flex-1 overflow-y-auto">
         <section className="py-4">
           <h2 className="text-3xl tracking-tight font-bold mb-2 px-4">Recents</h2>
-          <div className="flex overflow-x-auto space-x-2 px-4 pb-4">
+          <div className="flex overflow-x-auto space-x-2 px-4 pb-2">
             {recentRecipes && recentRecipes.length > 0 ? (
               recentRecipes.map((recipe: Recipe) => (
-                <div key={recipe.id} className="w-48 flex-shrink-0">
+                <div key={recipe.id} className="w-48">
                   <RecipeCard 
                     id={recipe.id?.toString() || "0"} 
                     title={recipe.title || "Untitled Recipe"} 
@@ -123,12 +123,12 @@ export default function HomePage() {
 
         {/* Render all the new sections */}
         {sections.map((section, sectionIndex) => (
-          <section key={section.title} className="py-4">
+          <section key={section.title} className="py-2">
             <h2 className="text-3xl tracking-tight font-bold mb-2 px-4">{section.title}</h2>
-            <div className="flex overflow-x-auto space-x-2 px-4 pb-4">
+            <div className="flex overflow-x-auto space-x-2 px-4 pb-4 ">
               {section.recipes && section.recipes.length > 0 ? (
                 section.recipes.map((recipe: Recipe) => (
-                  <div key={`${section.title}-${recipe.id}`} className="w-48 flex-shrink-0">
+                  <div key={`${section.title}-${recipe.id}`} className="w-48">
                     <RecipeCard 
                       id={recipe.id?.toString() || "0"} 
                       title={recipe.title || "Untitled Recipe"} 

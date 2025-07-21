@@ -62,7 +62,9 @@ module.exports = {
         sm: "calc(var(--radius) - 4px)",
       },
       screens: {
-        'sm': {'max': '440px'},
+        'sm': '375px',   // Small iPhones (375px) and up to ~440px
+        'md': '440px',   // Medium tablets 440px to ~834px  
+        'lg': '834px',   // Large screens 834px and above (no upper limit)
       },
     },
   },

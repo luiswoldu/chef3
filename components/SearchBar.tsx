@@ -23,7 +23,7 @@ export default function SearchBar() {
       <div className="absolute top-0 left-0 right-0 z-10 p-4" style={{
         background: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 100%)'
       }}>
-        <div className="flex items-center gap-3 mt-6">
+        <div className="flex items-center gap-3 mt-6 w-full max-w-[488px] mx-auto">
           <button
             onClick={handleAddRecipe}
             className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-r"
@@ -32,7 +32,7 @@ export default function SearchBar() {
             <Plus className="h-6 w-6 text-white" />
           </button>
           <motion.div
-            className="flex items-center bg-[#ffffff]/50 backdrop-blur-[4px] rounded-full px-4 py-2 text-white cursor-pointer"
+            className="flex flex-grow items-center bg-[#ffffff]/50 backdrop-blur-[4px] rounded-full px-4 py-2 text-white cursor-pointer"
             style={{ width: isSearching ? "81%" : "87%" }}
             animate={{
               width: isSearching ? "81%" : "87%",

@@ -118,7 +118,7 @@ export default function RecipeCard({
       case 'hero':
         return 'w-full h-full'
       case 'thumbnail':
-        return 'max-w-sm aspect-[1/2]' // 2:1 aspect ratio for thumbnails
+        return 'w-36 md:w-48 lg:w-48 aspect-[1/2]' // 2:1 aspect ratio for thumbnails
       case 'square':
         return 'max-w-sm aspect-square' // 1:1 aspect ratio for square cards
       default:

@@ -153,8 +153,8 @@ export default function Cart() {
         <div className="flex justify-between items-center mb-4 pr-2">
           <h1 className="text-3xl font-bold pt-[42px]">Shopping List</h1>
           <div 
-            className="w-[34px] h-[34px] rounded-full overflow-hidden mt-[42px] cursor-pointer bg-[#FFFFFF] flex items-center justify-center" 
-            onClick={handleProfileClick}
+        className="w-[34px] h-[34px] rounded-full border border-[#F4F4F4] overflow-hidden mt-[42px] cursor-pointer bg-[#FFFFFF] flex items-center justify-center"
+onClick={handleProfileClick}
           >
             <Image
               src={userAvatar || "/avatar.png"}

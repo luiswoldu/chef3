@@ -237,14 +237,28 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           <h1 className="text-2xl font-bold">{recipe.title}</h1>
         </div>
         <div className="flex flex-wrap gap-2 mb-4">
-          {recipe.tags && recipe.tags.map((tag: string, i: number) => (
-            <span 
-              key={`${tag}-${i}`} 
-              className="px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap bg-[#DFE0E1] text-gray-800"
-            >
-              {tag}
-            </span>
-          ))}
+          {recipe.tags && recipe.tags.map((tag: string, i: number) => {
+            let tagClass = '';
+            let tagStyle = {};
+            if (i === 0) {
+              tagClass = 'bg-[#6CD401] text-white';
+            } else if (i === 1) {
+              tagClass = 'text-white';
+              tagStyle = { backgroundColor: 'rgba(156, 225, 77, 0.7)' };
+            } else {
+              tagClass = 'text-[#6ED308]';
+              tagStyle = { backgroundColor: '#F0FBE5' };
+            }
+            return (
+              <span
+                key={`${tag}-${i}`}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${tagClass}`}
+                style={tagStyle}
+              >
+                {tag}
+              </span>
+            );
+          })}
         </div>
         {recipe.caption ? (
           <div className="relative mb-6">

@@ -25,31 +25,26 @@ export default function Profile() {
       setLoading(true)
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        console.log('User data:', user) // Debug log
+        console.log('User data:', user)
         setUserEmail(user.email ?? null)
-        
-        // Get first name and username from user metadata
+
         const firstName = user.user_metadata?.first_name
         const userUsername = user.user_metadata?.username
         setUserName(firstName)
         setUsername(userUsername)
-        
-        // Get avatar from user metadata
-        const avatarUrl = user.user_metadata?.avatar_url || 
-                         user.user_metadata?.picture
+
+        const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture
         setUserAvatar(avatarUrl)
-        
-        // Only try to fetch from profiles table if it exists and you need additional data
+
         try {
           const { data: profile } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', user.id)
             .single()
-          
+
           if (profile) {
             console.log('Profile data:', profile)
-            // Override with profile data if available
             if (profile.username || profile.full_name || profile.name) {
               setUserName(profile.username || profile.full_name || profile.name)
             }
@@ -61,7 +56,6 @@ export default function Profile() {
           console.log('No profiles table or profile not found, using auth metadata')
         }
       } else {
-        // Not logged in, redirect to login
         router.push('/login')
       }
     } catch (error) {
@@ -76,7 +70,7 @@ export default function Profile() {
     try {
       const { error } = await supabase.auth.signOut()
       if (error) throw error
-      
+
       showNotification("Logged out successfully")
       router.push('/login')
     } catch (error) {
@@ -86,7 +80,6 @@ export default function Profile() {
   }
 
   const handleDeleteAccount = async () => {
-    // Show browser confirmation dialog
     const isConfirmed = window.confirm(
       "Are you sure you want to delete your account? This action cannot be undone."
     )
@@ -113,11 +106,8 @@ export default function Profile() {
         return
       }
 
-      // Sign out the user locally
       await supabase.auth.signOut()
-      
       showNotification("Account deleted successfully!")
-      
       router.push('/login')
     } catch (error) {
       console.error('Network or JSON error:', error)
@@ -138,23 +128,18 @@ export default function Profile() {
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        
+
         <div className="flex flex-col items-center mb-8">
           <div className="w-[113px] h-[113px] rounded-full overflow-hidden mb-4">
-            {userAvatar ? (
-              <Image
-                src={userAvatar}
-                alt="User avatar"
-                width={113}
-                height={113}
-                className="object-cover w-full h-full"
-              />
-            ) : (
-              <div className="w-full h-full bg-[#F7F7F7] flex items-center justify-center">
-              </div>
-            )}
+            <Image
+              src={userAvatar || "/avatar.png"}
+              alt="User avatar"
+              width={113}
+              height={113}
+              className="object-cover w-full h-full"
+            />
           </div>
-          
+
           <h1 className="text-2xl font-extrabold text-black">
             {loading ? (
               <span className="inline-block flex-shrink-0 rounded-lg bg-gray-700 animate-pulse overflow-hidden w-24 h-7">
@@ -174,7 +159,7 @@ export default function Profile() {
             )}
           </p>
         </div>
-        
+
         <div>
           <button
             onClick={handleLogout}

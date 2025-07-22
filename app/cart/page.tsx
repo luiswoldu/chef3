@@ -153,21 +153,16 @@ export default function Cart() {
         <div className="flex justify-between items-center mb-4 pr-2">
           <h1 className="text-3xl font-bold pt-[42px]">Shopping List</h1>
           <div 
-            className="w-[34px] h-[34px] rounded-full overflow-hidden mt-[42px] cursor-pointer bg-[#F7F7F7] flex items-center justify-center" 
+            className="w-[34px] h-[34px] rounded-full overflow-hidden mt-[42px] cursor-pointer bg-[#FFFFFF] flex items-center justify-center" 
             onClick={handleProfileClick}
           >
-            {userAvatar ? (
-              <Image
-                src={userAvatar}
-                alt="User avatar"
-                width={34}
-                height={34}
-                className="object-cover w-full h-full"
-              />
-            ) : (
-              <div className="w-full h-full bg-[#F7F7F7] flex items-center justify-center">
-              </div>
-            )}
+            <Image
+              src={userAvatar || "/avatar.png"}
+              alt="User avatar"
+              width={34}
+              height={34}
+              className="object-cover w-full h-full"
+            />
           </div>
         </div>
         <form onSubmit={addItem} className="relative mb-4">
@@ -245,4 +240,3 @@ export default function Cart() {
     </div>
   )
 }
-

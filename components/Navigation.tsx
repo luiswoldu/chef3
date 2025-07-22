@@ -8,7 +8,7 @@ import { motion } from "framer-motion"
 const tabs = ["home", "explore", "cart"]
 
 export default function Navigation() {
-  const pathname = usePathname()
+  const pathname = usePathname() ?? ""
 
   return (
     <nav
@@ -18,8 +18,8 @@ export default function Navigation() {
       <div className="container mx-auto flex justify-around items-center h-16 relative">
         {tabs.map((tab) => {
           const isActive =
-            (pathname === "/" && tab === "home") ||
-            pathname?.includes(tab)
+            (tab === "home" && (pathname === "/" || pathname.startsWith("/recipe/"))) ||
+            pathname.startsWith(`/${tab}`)
 
           return (
             <Link
@@ -53,4 +53,3 @@ export default function Navigation() {
     </nav>
   )
 }
-

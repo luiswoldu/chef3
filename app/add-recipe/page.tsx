@@ -53,31 +53,6 @@ const SUPPORTED_PLATFORMS = [
     pattern: /^https?:\/\/(www\.)?themodernproper\.com\/[a-zA-Z0-9-]+(\/)?$/,
     name: 'The Modern Proper'
   },
-  {
-    domain: 'instagram.com',
-    pattern: /^https?:\/\/(www\.)?instagram\.com\/p\/[A-Za-z0-9_-]+/,
-    name: 'Instagram'
-  },
-  {
-    domain: 'facebook.com',
-    pattern: /^https?:\/\/(www\.)?facebook\.com\/[A-Za-z0-9_-]+/,
-    name: 'Facebook'
-  },
-  {
-    domain: 'tiktok.com',
-    pattern: /^https?:\/\/(www\.)?tiktok\.com\/@[A-Za-z0-9_-]+\/video\/[0-9]+/,
-    name: 'TikTok'
-  },
-  {
-    domain: 'youtube.com',
-    pattern: /^https?:\/\/(www\.)?youtube\.com\/watch\?v=[A-Za-z0-9_-]+/,
-    name: 'YouTube'
-  },
-  {
-    domain: 'allrecipes.com',
-    pattern: /^https?:\/\/(www\.)?allrecipes\.com\/recipe\/[0-9]+/,
-    name: 'AllRecipes'
-  }
 ]
 
 export default function AddRecipe() {

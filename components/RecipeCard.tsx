@@ -175,11 +175,11 @@ export default function RecipeCard({
           <h2 
             className={`text-white leading-[1.1] ${
               cardType === 'hero' 
-                ? 'text-[28px] tracking-[-0.04em] font-extrabold' 
+                ? 'text-[28px] tracking-[-0.04em] font-extrabold px-3 py-5' // controls hero title padding y 6 = 24px
                 : cardType === 'thumbnail'
-                ? 'text-base font-bold'
+                ? 'text-base font-bold tracking-tight'
                 : 'text-lg font-bold'
-            } px-4 py-3 w-full`}
+                } px-3 py-3 w-full`} // controls thumbnail text
             style={{ 
               background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)'
             }}

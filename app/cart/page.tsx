@@ -151,7 +151,7 @@ export default function Cart() {
     <div className="flex flex-col min-h-screen pb-[70px]">
       <div className="p-4">
         <div className="flex justify-between items-center mb-4 pr-2">
-          <h1 className="text-3xl font-bold pt-[42px]">Shopping List</h1>
+          <h1 className="text-3xl font-bold pt-[42px] tracking-tight">Shopping List</h1>
           <div 
         className="w-[34px] h-[34px] rounded-full border border-[#F4F4F4] overflow-hidden mt-[42px] cursor-pointer bg-[#FFFFFF] flex items-center justify-center"
 onClick={handleProfileClick}

@@ -314,9 +314,9 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           </section>
           <section>
             <h2 className="text-2xl font-semibold mb-2">Steps</h2>
-            <ol className="list-decimal list-inside space-y-4">
+            <ol className="list-decimal list-inside space-y-1">
               {recipe.steps && recipe.steps.map((step: string, index: number) => (
-                <li key={index} className="pl-2">
+                <li key={index} className="py-2 text-lg font-medium tracking-tight leading-normal">
                   {step}
                 </li>
               ))}

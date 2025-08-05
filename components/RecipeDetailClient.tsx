@@ -268,7 +268,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
                 tagClass = 'bg-[#6CD401] text-white';
               } else if (i === 1) {
                 tagClass = 'text-white';
-                tagStyle = { backgroundColor: 'rgba(156, 225, 77, 0.7)' };
+                tagStyle = { backgroundColor: '#98E14D' };
               } else {
                 tagClass = 'text-[#6ED308]';
                 tagStyle = { backgroundColor: '#F0FBE5' };

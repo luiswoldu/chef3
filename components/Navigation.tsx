@@ -12,10 +12,10 @@ export default function Navigation() {
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 bg-white shadow-md"
+      className="fixed bottom-0 left-0 right-0 bg-white"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="container mx-auto flex justify-around items-center h-16 relative">
+      <div className="container mx-auto flex justify-center items-center h-16 relative gap-x-3">
         {tabs.map((tab) => {
           const isActive =
             (tab === "home" && (pathname === "/" || pathname.startsWith("/recipe/"))) ||
@@ -25,12 +25,12 @@ export default function Navigation() {
             <Link
               key={tab}
               href={tab === "home" ? "/" : `/${tab}`}
-              className="relative px-7 py-2.5"
+              className="relative px-5 py-2" // adjusts padding for the tab/pill
             >
               {isActive && (
                 <motion.div
                   layoutId="active-pill"
-                  className="absolute inset-0 bg-gray-100 rounded-full"
+                  className="absolute inset-0 bg-[#F7F7F7] rounded-full"
                   initial={false}
                   transition={{
                     type: "spring",
@@ -41,7 +41,7 @@ export default function Navigation() {
               )}
               <span
                 className={`relative text-base ${
-                  isActive ? "text-gray-900 tracking-tight font-bold" : "text-gray-600 font-semibold"
+                  isActive ? "text-black tracking-tight font-bold" : "text-gray-600 font-semibold"
                 }`}
               >
                 {tab.charAt(0).toUpperCase() + tab.slice(1)}

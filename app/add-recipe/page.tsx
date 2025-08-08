@@ -41,19 +41,7 @@ interface RecipeData {
   groceryItems: GroceryItem[]
 }
 
-// Add supported platforms
-const SUPPORTED_PLATFORMS = [
-  {
-    domain: 'themediterraneandish.com',
-    pattern: /^https?:\/\/(www\.)?themediterraneandish\.com\/[a-zA-Z0-9-]+(\/)?$/,
-    name: 'The Mediterranean Dish'
-  },
-  {
-    domain: 'themodernproper.com',
-    pattern: /^https?:\/\/(www\.)?themodernproper\.com\/[a-zA-Z0-9-]+(\/)?$/,
-    name: 'The Modern Proper'
-  },
-]
+// Platform restrictions removed - OpenAI can extract from any recipe website!
 
 export default function AddRecipe() {
   const router = useRouter()
@@ -214,26 +202,17 @@ export default function AddRecipe() {
 
   const validateUrl = (url: string) => {
     try {
-      const urlObj = new URL(url)
-      const platform = SUPPORTED_PLATFORMS.find(platform => 
-        urlObj.hostname.includes(platform.domain) && 
-        platform.pattern.test(url)
-      )
-      
-      if (!platform) {
-        return 'URL must be from a supported platform'
-      }
-
-      return null
+      new URL(url)
+      return null // Any valid URL is now accepted!
     } catch {
       return 'Please enter a valid URL'
     }
   }
 
-  // Recipe extraction API call
+  // Recipe extraction API call using OpenAI
   const extractRecipeFromUrl = async (url: string): Promise<RecipeData> => {
     try {
-      // Fetch the HTML content of the URL
+      // Call the OpenAI-powered recipe extraction API
       const response = await fetch(`/api/fetch-url?url=${encodeURIComponent(url)}`, {
         method: 'GET',
         headers: {
@@ -242,182 +221,18 @@ export default function AddRecipe() {
       })
       
       if (!response.ok) {
-        throw new Error(`Failed to fetch URL: ${response.statusText}`)
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `Failed to extract recipe: ${response.statusText}`)
       }
       
-      const html = await response.text()
+      const extractedData = await response.json()
       
-      // Extract JSON-LD data
-      const jsonLdRegex = /<script[^>]*type=['"]application\/ld\+json['"][^>]*>([\s\S]*?)<\/script>/gmi
-      const jsonLdMatches = Array.from(html.matchAll(jsonLdRegex))
-      
-      if (jsonLdMatches.length === 0) {
-        throw new Error("No JSON-LD data found on the page")
-      }
-      
-      // Try to find Recipe schema in JSON-LD blocks
-      let recipeData: ExtractedRecipe | null = null
-      let ingredients: Ingredient[] = []
-      let groceryItems: GroceryItem[] = []
-      
-      for (const match of jsonLdMatches) {
-        try {
-          const jsonContent = match[1].trim()
-          const parsedData = JSON.parse(jsonContent)
-          
-          // Handle both direct Recipe objects and @graph arrays containing Recipe objects
-          const recipes = []
-          
-          if (Array.isArray(parsedData)) {
-            recipes.push(...parsedData.filter(item => 
-              item['@type'] === 'Recipe' || 
-              (Array.isArray(item['@type']) && item['@type'].includes('Recipe'))
-            ))
-          } else if (parsedData['@graph'] && Array.isArray(parsedData['@graph'])) {
-            recipes.push(...parsedData['@graph'].filter(item => 
-              item['@type'] === 'Recipe' || 
-              (Array.isArray(item['@type']) && item['@type'].includes('Recipe'))
-            ))
-          } else if (
-            parsedData['@type'] === 'Recipe' || 
-            (Array.isArray(parsedData['@type']) && parsedData['@type'].includes('Recipe'))
-          ) {
-            recipes.push(parsedData)
-          }
-          
-          if (recipes.length > 0) {
-            // Use the first recipe found
-            const recipe = recipes[0]
-            
-            // Validate and clean image URL
-            let imageUrl = recipe.image || ''
-            if (Array.isArray(recipe.image)) {
-              imageUrl = recipe.image[0] || ''
-            }
-            
-            // If no image URL is found, try to extract from HTML
-            if (!imageUrl) {
-              const imgRegex = /<img[^>]+src="([^">]+)"/g
-              const imgMatch = html.match(imgRegex)
-              if (imgMatch) {
-                const srcMatch = imgMatch[0].match(/src="([^">]+)"/)
-                if (srcMatch) {
-                  imageUrl = srcMatch[1]
-                }
-              }
-            }
-
-            // Ensure image URL is absolute
-            if (imageUrl && !imageUrl.startsWith('http')) {
-              try {
-                const urlObj = new URL(url)
-                imageUrl = `${urlObj.protocol}//${urlObj.host}${imageUrl}`
-              } catch (e) {
-                console.warn('Failed to make image URL absolute:', e)
-              }
-            }
-
-            // Map recipe properties with validation
-            recipeData = {
-              title: recipe.name || recipe.headline || '',
-              image: imageUrl || '/placeholder.svg', // Fallback to placeholder if no image
-              caption: recipe.description || '',
-              tags: recipe.keywords 
-                ? (typeof recipe.keywords === 'string' 
-                  ? recipe.keywords.split(',').map((k: string) => k.trim()).slice(0, 3) 
-                  : Array.isArray(recipe.keywords) 
-                    ? recipe.keywords.slice(0, 3) 
-                    : [])
-                : [],
-              steps: Array.isArray(recipe.recipeInstructions) 
-                ? recipe.recipeInstructions.map((step: any) => 
-                    typeof step === 'string' 
-                      ? step 
-                      : step.text || step.description || '')
-                : typeof recipe.recipeInstructions === 'string'
-                  ? [recipe.recipeInstructions]
-                  : [],
-              created_at: new Date().toISOString()
-            }
-
-            // Map ingredients with validation
-            ingredients = await Promise.all(
-              (Array.isArray(recipe.recipeIngredient) ? recipe.recipeIngredient : [])
-                .map(async (ingredient: string) => {
-                  try {
-                    // Call our new ingredient parsing API
-                    const response = await fetch('/api/parse-ingredient', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({ ingredient }),
-                    });
-
-                    if (!response.ok) {
-                      throw new Error('Failed to parse ingredient');
-                    }
-
-                    const parsed = await response.json();
-                    
-                    // Only include the details, not alternatives
-                    return {
-                      name: parsed.name || ingredient.trim(),
-                      amount: parsed.amount || '',
-                      details: parsed.details || '',
-                      created_at: new Date().toISOString()
-                    };
-                  } catch (error) {
-                    console.error('Error parsing ingredient:', error);
-                    // Fallback to basic parsing if API parsing fails
-                    const match = ingredient.match(/^([\d\s/]+)?\s*(.+)$/);
-                    if (match) {
-                      const [, amount, name] = match;
-                      return {
-                        name: name.trim(),
-                        amount: amount ? amount.trim() : '',
-                        details: '',
-                        created_at: new Date().toISOString()
-                      };
-                    }
-                    return {
-                      name: ingredient.trim(),
-                      amount: '',
-                      details: '',
-                      created_at: new Date().toISOString()
-                    };
-                  }
-                })
-            );
-
-            // Map ingredients to grocery items with more detailed information
-            groceryItems = ingredients.map((ingredient: Ingredient) => ({
-              name: ingredient.name,
-              amount: ingredient.amount,
-              details: ingredient.details,
-              aisle: '', // This will be set by the user later
-              purchased: false,
-              created_at: new Date().toISOString()
-            }));
-
-            break; // Exit the loop once we've found and processed a valid recipe
-          }
-        } catch (err) {
-          console.error('Error parsing JSON-LD block:', err)
-          continue
-        }
-      }
-      
-      // Fallback: If no recipe data was found in JSON-LD
-      if (!recipeData) {
-        throw new Error("No recipe schema found in the page's JSON-LD data")
-      }
-
+      // The API now returns the data in the exact format we need
       return {
-        recipe: recipeData,
-        ingredients,
-        groceryItems
-      };
+        recipe: extractedData.recipe,
+        ingredients: extractedData.ingredients,
+        groceryItems: extractedData.groceryItems
+      }
     } catch (error: unknown) {
       console.error('Recipe extraction error:', error)
       throw new Error(`Failed to extract recipe: ${error instanceof Error ? error.message : String(error)}`)

@@ -14,22 +14,18 @@ export default function SearchBar() {
     setIsSearching(false)
   }
 
-  const handleUserAccount = () => {
-    router.push("/user-account")
-  }
-
   return (
     <>
       <div className="absolute top-0 left-0 right-0 z-10 p-4" style={{
         background: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 100%)'
       }}>
         <div className="flex items-center gap-3 mt-6 w-full max-w-[488px] mx-auto">
-          <button
-            onClick={handleUserAccount}
-            className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0 bg-white"
-          >
-            <User className="h-6 w-6 text-black" />
-          </button>
+        <button
+         onClick={() => console.log("User account clicked")} // add user account profile route
+         className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0 bg-white"
+        >
+        <User className="h-6 w-6 text-black" />
+        </button>
           <motion.div
             className="flex flex-grow items-center bg-[#ffffff]/50 backdrop-blur-[4px] rounded-full px-4 py-2 text-white cursor-pointer"
             style={{ width: isSearching ? "81%" : "87%" }}

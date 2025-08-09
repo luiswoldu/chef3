@@ -1,10 +1,10 @@
-"use client"
+
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import SearchView from "./SearchView"
 import { motion, AnimatePresence } from "framer-motion"
-import { Plus } from "lucide-react"
+import { User } from "lucide-react"
 
 export default function SearchBar() {
   const [isSearching, setIsSearching] = useState(false)
@@ -14,8 +14,8 @@ export default function SearchBar() {
     setIsSearching(false)
   }
 
-  const handleAddRecipe = () => {
-    router.push("/add-recipe")
+  const handleUserAccount = () => {
+    router.push("/user-account")
   }
 
   return (
@@ -25,11 +25,10 @@ export default function SearchBar() {
       }}>
         <div className="flex items-center gap-3 mt-6 w-full max-w-[488px] mx-auto">
           <button
-            onClick={handleAddRecipe}
-            className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-r"
-            style={{ background: "linear-gradient(90deg, #A6E964 0%, #6CD401 100%)" }}
+            onClick={handleUserAccount}
+            className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0 bg-white"
           >
-            <Plus className="h-6 w-6 text-white" />
+            <User className="h-6 w-6 text-black" />
           </button>
           <motion.div
             className="flex flex-grow items-center bg-[#ffffff]/50 backdrop-blur-[4px] rounded-full px-4 py-2 text-white cursor-pointer"
@@ -70,4 +69,3 @@ export default function SearchBar() {
     </>
   )
 }
-

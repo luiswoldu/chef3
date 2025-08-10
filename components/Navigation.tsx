@@ -17,7 +17,7 @@ export default function Navigation() {
       className="fixed bottom-0 left-0 right-0 bg-white"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      <div className="container mx-auto flex justify-center items-center h-16 relative gap-x-3">
+      <div className="container mx-auto flex justify-center items-center h-16 relative gap-x-5">
         {/* Home Tab */}
         <NavItem
           tab="home"
@@ -25,12 +25,12 @@ export default function Navigation() {
           pathname={pathname}
         />
         
-        {/* Green Plus Button in the middle */}
+        {/* Import + Recipe Button */}
         <button
           onClick={handleAddRecipe}
           className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-r"
           style={{
-            background: "linear-gradient(90deg, #A6E964 0%, #6CD401 100%)"
+            background: "linear-gradient(90deg, #6CD401 0%, #A6E964 100%)"
           }}
         >
           <Plus className="h-6 w-6 text-white" />

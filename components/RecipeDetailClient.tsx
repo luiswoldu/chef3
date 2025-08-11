@@ -257,7 +257,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           />
         </div>
         <div className="p-4">
-          <div className="mb-0">
+          <div className="mb-3">
             <h1 className="text-2xl font-bold leading-[1.1] tracking-tight">{recipe.title}</h1>
           </div>
           <div className="flex flex-wrap gap-2 mb-4">

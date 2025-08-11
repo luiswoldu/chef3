@@ -31,9 +31,8 @@ export default function Navigation() {
           className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-r"
           style={{
             background: "linear-gradient(90deg, #6CD401 0%, #A6E964 100%)"
-          }}
-        >
-          <Plus className="h-6 w-6 text-white" />
+          }}>
+          <Plus className="h-6 w-6 text-white"/>
         </button>
         
         {/* Cart Tab */}

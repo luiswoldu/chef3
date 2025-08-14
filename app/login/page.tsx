@@ -43,7 +43,7 @@ export default function Login() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4">
+    <div className="flex flex-col items-center justify-start min-h-screen p-6 pt-24">
       <div className="absolute top-4 left-4">
         <button
           onClick={() => router.push("/")}
@@ -54,7 +54,7 @@ export default function Login() {
       </div>
       <div className="w-full max-w-md space-y-8">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tighter mb-2 text-black">
+          <h1 className="text-3xl font-extrabold tracking-tighter mb-0 text-black">
             Welcome back
           </h1>
           <p className="text-black/60">Enter your details to log in.</p>
@@ -99,7 +99,7 @@ export default function Login() {
           </p>
           <p className="mt-2 text-black/60">
             <Link href="/onboarding" className="text-primary hover:underline">
-              No account yet? Sign Up
+              No account yet? <span className="font-bold text-[#6DD400]">Sign Up</span>
             </Link>
           </p>
         </div>

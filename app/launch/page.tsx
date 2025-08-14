@@ -1,5 +1,4 @@
 "use client"
-
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 
@@ -19,25 +18,25 @@ export default function Launch() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-white">
+    <div className="flex flex-col items-center justify-start min-h-screen p-6 pt-9 bg-white">
       <div className="w-full max-w-md space-y-8">
-        <div className="space-y-4">
-          <h1 className="text-5xl font-extrabold text-black tracking-tight leading-none">Dinner, sorted.</h1>
-          <h2 className="text-3xl font-bold text-black tracking-tight leading-none">Organize recipes, find inspiration, and shop like a pro.</h2>
+        <p className="text-3xl text-[#98E14D] font-black tracking-tighter text-center mb-24">Hands</p>
+        <div className="space-y-5">
+          <h1 className="text-5xl font-black text-black tracking-tighter leading-none">Dinner, sorted.</h1>
+          <h2 className="text-3xl font-extrabold text-black tracking-tighter leading-none">Organize recipes, find inspiration, and shop like a pro.</h2>
         </div>
-
         <div className="flex flex-col space-y-4 mt-10">
           <Button
-            onClick={handleSignUp}
-            className="w-full bg-black text-white py-6 text-lg rounded-full"
-          >
-            Sign up
-          </Button>
-          <Button
             onClick={handleLogin}
-            className="w-full py-6 text-lg text-black rounded-full bg-[#F7F7F7] hover:bg-[#F7F7F7]/90"
+            className="w-full bg-[#6CD401] text-white py-6 text-lg rounded-full hover:bg-[#6CD401]/90"
           >
             Log in
+          </Button>
+          <Button
+            onClick={handleSignUp}
+            className="w-full py-6 text-lg text-black rounded-full bg-[#F7F7F7] hover:bg-[#F7F7F7]/90"
+          >
+            Sign up
           </Button>
           {/*
           <Button

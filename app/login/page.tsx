@@ -87,7 +87,7 @@ export default function Login() {
             disabled={loading}
             className="w-full bg-primary text-white px-6 py-3 rounded-full hover:bg-primary/90 transition-colors text-lg font-medium"
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ? "Logging in..." : "Log in"}
           </button>
         </form>
 

@@ -10,7 +10,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-gray-100">
+      <body className="bg-white">
         <main className="max-w-lg mx-auto bg-white min-h-screen">
           {children}
         </main>

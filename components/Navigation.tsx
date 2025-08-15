@@ -66,7 +66,7 @@ function NavItem({
       {isActive && (
         <motion.div
           layoutId="active-pill"
-          className="absolute inset-0 bg-[#F7F7F7] rounded-full"
+          className="absolute inset-0 bg-[#f7f7f7] rounded-full"
           initial={false}
           transition={{
             type: "spring",

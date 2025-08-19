@@ -38,7 +38,7 @@ const Step5: React.FC<Step5Props> = ({ setTastePreference, onNext }) => {
           <h1 className="text-3xl font-extrabold tracking-tighter mb-2 text-black text-left">
           What's your go-to breakfast?
           </h1>
-          <p className="text-base text-[#9F9F9F] mb-8">
+          <p className="text-base tracking-tight text-[#9F9F9F] mb-8">
             Your choice will help us understand your taste.  
           </p>
           

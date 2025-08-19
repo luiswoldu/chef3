@@ -28,8 +28,8 @@ const Step3: React.FC<Step3Props> = ({ setEmail, onNext }) => {
             placeholder="Enter your email"
             required
           />
-          <p className="mt-2 text-sm text-gray-500">
-            We'll never share your email with anyone else
+          <p className="mt-2 text-sm tracking-tight text-gray-500">
+            We'll never share your email with anyone else. 
           </p>
         </div>
         <button

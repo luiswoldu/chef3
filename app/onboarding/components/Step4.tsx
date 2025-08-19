@@ -53,8 +53,8 @@ const Step4: React.FC<Step4Props> = ({ setPassword, onNext }) => {
           {passwordError && (
             <p className="text-sm text-red-500 mt-2">{passwordError}</p>
           )}
-          <p className="mt-2 text-sm text-gray-500">
-            Password must be at least 8 characters long
+          <p className="mt-2 text-sm tracking-tight text-gray-500">
+            Password must be at least 8 characters long.
           </p>
         </div>
         <button

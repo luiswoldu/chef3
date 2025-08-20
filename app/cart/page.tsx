@@ -13,7 +13,7 @@ export default function Cart() {
   const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([])
   const [newItem, setNewItem] = useState("")
   const [userAvatar, setUserAvatar] = useState<string | null>(null)
-  const [sortState, setSortState] = useState<'default' | 'loading' | 'sorted'>('default')
+  // const [sortState, setSortState] = useState<'default' | 'loading' | 'sorted'>('default')
   const router = useRouter()
 
   useEffect(() => {
@@ -77,7 +77,6 @@ export default function Cart() {
           .insert([{
             name: newItem,
             amount: "",
-            aisle: "Other",
             purchased: false,
           }])
         
@@ -127,33 +126,22 @@ export default function Cart() {
     }
   }
 
-  const handleSort = async () => {
-    setSortState('loading')
-    
-    // Simulate sorting process - replace with actual logic later
-    setTimeout(() => {
-      setSortState('sorted')
-    }, 2000)
-  }
-
-  const groupedItems = groceryItems.reduce(
-    (acc, item) => {
-      if (!acc[item.aisle]) {
-        acc[item.aisle] = []
-      }
-      acc[item.aisle].push(item)
-      return acc
-    },
-    {} as Record<string, GroceryItem[]>,
-  )
+  // const handleSort = async () => {
+  //   setSortState('loading')
+  //   
+  //   // Simulate sorting process - replace with actual logic later
+  //   setTimeout(() => {
+  //     setSortState('sorted')
+  //   }, 2000)
+  // }
 
   return (
     <div className="flex flex-col min-h-screen pb-[70px]">
       <div className="p-4">
-        <div className="flex justify-between items-center mb-4 pr-2">
-          <h1 className="text-3xl font-bold pt-[42px] tracking-tight">Shopping List</h1>
+        <div className="flex justify-between items-center mb-4 pr-1.5">
+          <h1 className="text-3xl font-bold pt-2 tracking-tight">Shopping List</h1>
           <div 
-        className="w-[34px] h-[34px] rounded-full border border-[#F4F4F4] overflow-hidden mt-[42px] cursor-pointer bg-[#FFFFFF] flex items-center justify-center"
+        className="w-[34px] h-[34px] mt-1.5 rounded-full border border-[#F4F4F4] overflow-hidden  cursor-pointer bg-[#FFFFFF] flex items-center justify-center"
 onClick={handleProfileClick}
           >
             <Image
@@ -173,21 +161,22 @@ onClick={handleProfileClick}
             placeholder="New grocery item"
             className="w-full p-2 pl-4 pr-12 border rounded-full focus:outline-none placeholder:text-[#9F9F9F]"
           />
-          <button type="submit" className={`absolute top-1/2 right-2 transform -translate-y-1/2 flex items-center justify-center rounded-full p-1 border border-[#DFE0E1] bg-transparent`}>
+          <button type="submit" className={`absolute top-1/2 right-1.5 transform -translate-y-1/2 flex items-center justify-center rounded-full p-1 border border-[#DFE0E1] bg-transparent`}>
             <Plus className={`w-6 h-6 ${newItem.trim() ? 'text-black' : 'text-[#B2B2B2]'}`} />
           </button>
         </form>
         
-        <div className="flex items-center justify-end gap-3 mb-4">
+        <div className="flex items-center justify-end pr-1">
           <button 
             onClick={clearList}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"
             aria-label="Clear all items"
           >
-            <Trash2 className="w-5 h-5 text-gray-600" />
+            <Trash2 className="w-6 h-6 text-[#9f9f9f]" />
           </button>
           
-          <button 
+          {/* Sort button commented out for simplification */}
+          {/* <button 
             onClick={handleSort}
             disabled={sortState === 'loading'}
             className={`px-8 py-2 rounded-full text-base font-semibold transition-colors ${
@@ -204,37 +193,32 @@ onClick={handleProfileClick}
                 {sortState === 'default' ? 'Sort' : sortState === 'loading' ? 'Sort' : 'Sorted'}
               </span>
             </div>
-          </button>
+          </button> */}
         </div>
       </div>
       <div className="flex-grow overflow-auto">
-        {Object.entries(groupedItems).map(([aisle, items]) => (
-          <div key={aisle} className="mb-4">
-            <h2 className="text-lg font-semibold mb-2 px-4">{aisle}</h2>
-            <ul>
-              {items.map((item) => (
-                <li key={item.id} className="flex items-center py-2 px-4">
-                  <button
-                    onClick={() => item.id && togglePurchased(item.id)}
-                    className={`w-[38px] h-[38px] rounded-full mr-4 flex-shrink-0 flex items-center justify-center border-2 ${
-                      item.purchased ? "bg-[#6CD401] border-[#6CD401]" : "border-gray-300"
-                    }`}
-                  >
-                    {item.purchased && (
-                      <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </button>
-                  <div className={item.purchased ? "line-through text-gray-500" : ""}>
-                    <p className="font-medium">{item.name}</p>
-                    {item.amount && <p className="text-sm text-gray-600">{item.amount}</p>}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
+        <ul>
+          {groceryItems.map((item) => (
+            <li key={item.id} className="flex items-center py-1 px-4">
+              <button
+                onClick={() => item.id && togglePurchased(item.id)}
+                className={`w-[38px] h-[38px] rounded-full mr-4 flex-shrink-0 flex items-center justify-center border-2 ${
+                  item.purchased ? "bg-[#6CD401] border-[#6CD401]" : "border-gray-300"
+                }`}
+              >
+                {item.purchased && (
+                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+              <div className={item.purchased ? "line-through text-gray-500" : ""}>
+                <p className="font-medium">{item.name}</p>
+                {item.amount && <p className="text-sm text-gray-600">{item.amount}</p>}
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
       <Navigation />
     </div>

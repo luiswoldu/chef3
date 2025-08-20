@@ -35,7 +35,7 @@ const Step5: React.FC<Step5Props> = ({ setTastePreference, onNext }) => {
     <div className="w-full max-w-md">
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tighter mb-2 text-black text-left">
+          <h1 className="text-3xl font-extrabold tracking-tighter leading-none mb-2 text-black text-left">
           What's your go-to breakfast?
           </h1>
           <p className="text-base tracking-tight text-[#9F9F9F] mb-8">

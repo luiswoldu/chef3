@@ -12,37 +12,37 @@ import Image from "next/image"
 export default function Cart() {
   const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([])
   const [newItem, setNewItem] = useState("")
-  const [userAvatar, setUserAvatar] = useState<string | null>(null)
+  // const [userAvatar, setUserAvatar] = useState<string | null>(null)
   // const [sortState, setSortState] = useState<'default' | 'loading' | 'sorted'>('default')
   const router = useRouter()
 
   useEffect(() => {
     loadGroceryItems()
-    loadUserAvatar()
+    // loadUserAvatar()
   }, [])
 
-  const handleProfileClick = () => {
-    router.push('/profile')
-  }
+  // const handleProfileClick = () => {
+  //   router.push('/profile')
+  // }
 
-  async function loadUserAvatar() {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('avatar_url')
-          .eq('id', user.id)
-          .single()
-        
-        if (profile?.avatar_url) {
-          setUserAvatar(profile.avatar_url)
-        }
-      }
-    } catch (error) {
-      console.error('Error loading user avatar:', error)
-    }
-  }
+  // async function loadUserAvatar() {
+  //   try {
+  //     const { data: { user } } = await supabase.auth.getUser()
+  //     if (user) {
+  //       const { data: profile } = await supabase
+  //         .from('profiles')
+  //         .select('avatar_url')
+  //         .eq('id', user.id)
+  //         .single()
+  //       
+  //       if (profile?.avatar_url) {
+  //         setUserAvatar(profile.avatar_url)
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error('Error loading user avatar:', error)
+  //   }
+  // }
 
   async function loadGroceryItems() {
     try {
@@ -140,7 +140,8 @@ export default function Cart() {
       <div className="p-4">
         <div className="flex justify-between items-center mb-4 pr-1.5">
           <h1 className="text-3xl font-bold pt-2 tracking-tight">Shopping List</h1>
-          <div 
+          {/* Profile avatar commented out - will be relocated */}
+          {/* <div 
         className="w-[34px] h-[34px] mt-1.5 rounded-full border border-[#F4F4F4] overflow-hidden  cursor-pointer bg-[#FFFFFF] flex items-center justify-center"
 onClick={handleProfileClick}
           >
@@ -151,7 +152,7 @@ onClick={handleProfileClick}
               height={34}
               className="object-cover w-full h-full"
             />
-          </div>
+          </div> */}
         </div>
         <form onSubmit={addItem} className="relative mb-4">
           <input

@@ -10,7 +10,7 @@ export default function Launch() {
   }
 
   const handleSignUp = () => {
-    router.push("/onboarding")
+    router.push("/signup")
   }
 
   const handleSkip = () => {

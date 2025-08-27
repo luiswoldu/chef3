@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Navigation from "../../components/Navigation"
 import { User, Settings, ChevronLeft, LogOut, Trash2 } from "lucide-react"
-import { supabase } from "../../lib/supabaseClient"
+import { supabase } from "@/lib/supabase/client"
 import { showNotification } from "@/hooks/use-notification"
 import Image from "next/image"
 
@@ -72,7 +72,7 @@ export default function Profile() {
       if (error) throw error
 
       showNotification("Logged out successfully")
-      router.push('/login')
+      router.push('/')
     } catch (error) {
       console.error('Error signing out:', error)
       showNotification("Failed to log out")

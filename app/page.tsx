@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase/client"
+import { checkOnboardingStatus } from "@/lib/auth"
 import { Session } from "@supabase/supabase-js"
 import Launch from "./launch/page"
 import { Loader } from "lucide-react"
@@ -19,6 +20,7 @@ export default function Home() {
       setLoading(false)
       
       // If session exists, redirect to home page
+      // Home page will handle onboarding check if needed
       if (session) {
         router.push("/home")
       }

@@ -44,14 +44,15 @@ export async function signUpAndOnboard({
   email, 
   password, 
   firstName, 
-  username 
+  username,
+  tastePreference
 }: {
   email: string;
   password: string;
   firstName: string;
   username: string;
+  tastePreference?: string;
 }) {
-  // 1) sign up the user
   const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
     email,
     password,
@@ -62,18 +63,28 @@ export async function signUpAndOnboard({
   const user = signUpData.user;
   if (!user) throw new Error('No user returned from signUp');
 
-  // 2) insert into profiles
+  // Map taste preference strings to integers
+  const tasteMap: { [key: string]: number } = {
+    'sweet,indulgent': 1,
+    'savoury,healthy': 2, 
+    'sweet,healthy': 3,
+    'savoury,indulgent': 4
+  };
+  
+  const tastePreferenceValue = tastePreference ? tasteMap[tastePreference] || null : null;
+
   const { error: profileError } = await supabase
-    .from('profiles')
+    .from('Users')
     .insert({
       id: user.id,
       first_name: firstName,
       username: username,
       email: user.email,
+      taste_preference: tastePreferenceValue,
+      created_at: new Date().toISOString()
     });
 
   if (profileError) throw profileError;
 
-  // 3) return the user object
   return user;
-} 
+}

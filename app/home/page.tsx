@@ -1,78 +1,145 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import Navigation from "@/components/Navigation"
 import SearchBar from "@/components/SearchBar"
 import RecipeCard from "@/components/RecipeCard"
 import type { Recipe } from "@/types"
 import { supabase } from "@/lib/supabase/client"
 
+// Cache outside component to persist across navigations
+let recipeCache: Recipe[] | null = null
+let recipeCacheTime: number = 0
+let recentCache: { heroRecipe: Recipe | null; recentRecipes: Recipe[] } | null = null
+let recentCacheTime: number = 0
+
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 export default function HomePage() {
-  const [recipes, setRecipes] = useState<Recipe[]>([])
-  const [recentRecipes, setRecentRecipes] = useState<Recipe[]>([])
-  const [heroRecipe, setHeroRecipe] = useState<Recipe | null>(null)
+  const [recipes, setRecipes] = useState<Recipe[]>(recipeCache || [])
+  const [recentRecipes, setRecentRecipes] = useState<Recipe[]>(recentCache?.recentRecipes || [])
+  const [heroRecipe, setHeroRecipe] = useState<Recipe | null>(recentCache?.heroRecipe || null)
 
-
-  
-  useEffect(() => {
-    // Fetch recipes
-    async function loadRecipes() {
-      try {
-        const { data: allRecipes, error: fetchError } = await supabase
-          .from('recipes')
-          .select('*')
-        
-        if (fetchError) {
-          console.error("Error fetching recipes:", fetchError)
-          return
-        }
-        
-        setRecipes(allRecipes as Recipe[] || [])
-      } catch (error) {
-        console.error("Error in loadRecipes:", error)
+  // Memoized random recipe generator with consistent results
+  const sections = useMemo(() => {
+    if (!recipes || recipes.length === 0) return []
+    
+    // Use a seed for consistent randomization during the session
+    const getRandomRecipes = (count: number, seed: string) => {
+      // Simple seeded random function
+      let hash = 0
+      for (let i = 0; i < seed.length; i++) {
+        const char = seed.charCodeAt(i)
+        hash = ((hash << 5) - hash) + char
+        hash = hash & hash // Convert to 32bit integer
       }
+      
+      const seededRandom = (hash: number) => {
+        hash = Math.sin(hash) * 10000
+        return hash - Math.floor(hash)
+      }
+      
+      const shuffled = [...recipes].sort(() => seededRandom(hash++) - 0.5)
+      return shuffled.slice(0, count)
     }
 
-    loadRecipes()
+    return [
+      { title: "For You", recipes: getRandomRecipes(9, "for-you") },
+      { title: "Popular", recipes: getRandomRecipes(9, "popular") },
+      { title: "Added Recipes", recipes: getRandomRecipes(9, "added") },
+      { title: "Summer Hits", recipes: getRandomRecipes(9, "summer") },
+      { title: "How to", recipes: getRandomRecipes(9, "howto") },
+      { title: "Untitled", recipes: getRandomRecipes(9, "untitled") }
+    ]
+  }, [recipes])
+
+  const loadRecipes = useCallback(async () => {
+    const now = Date.now()
+    
+    // Check cache first
+    if (recipeCache && (now - recipeCacheTime) < CACHE_DURATION) {
+      setRecipes(recipeCache)
+      return
+    }
+
+    try {
+      const { data: allRecipes, error: fetchError } = await supabase
+        .from('recipes')
+        .select('*')
+      
+      if (fetchError) {
+        console.error("Error fetching recipes:", fetchError)
+        return
+      }
+      
+      const recipesData = allRecipes as Recipe[] || []
+      
+      // Update cache
+      recipeCache = recipesData
+      recipeCacheTime = now
+      
+      setRecipes(recipesData)
+    } catch (error) {
+      console.error("Error in loadRecipes:", error)
+    }
   }, [])
 
-  useEffect(() => {
-    async function loadRecents() {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  const loadRecents = useCallback(async () => {
+    const now = Date.now()
     
-      const { data: recents, error } = await supabase
-        .rpc("get_recent_recipes", { p_user_id: user.id, p_limit: 10 });
-      if (error) return console.error(error);
-      
-      if (recents && recents.length > 0) {
-        // Set the first recipe as hero recipe
-        setHeroRecipe(recents[0] as Recipe);
-        // Set the remaining 9 recipes for the Recents row
-        setRecentRecipes(recents.slice(1) as Recipe[]);
-      }
+    // Check cache first
+    if (recentCache && (now - recentCacheTime) < CACHE_DURATION) {
+      setHeroRecipe(recentCache.heroRecipe)
+      setRecentRecipes(recentCache.recentRecipes)
+      return
     }
 
-    loadRecents();
-  }, []);
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
 
-  // Helper function to get random recipes for each section
-  const getRandomRecipes = (count: number) => {
-    if (!recipes || recipes.length === 0) return [];
-    const shuffled = [...recipes].sort(() => Math.random() - 0.5);
-    return shuffled.slice(0, count);
-  };
+      const { data: recents, error } = await supabase
+        .rpc("get_recent_recipes", { p_user_id: user.id, p_limit: 10 })
+      
+      if (error) {
+        console.error(error)
+        return
+      }
+      
+      let heroRecipeData: Recipe | null = null
+      let recentRecipesData: Recipe[] = []
+      
+      if (recents && recents.length > 0) {
+        heroRecipeData = recents[0] as Recipe
+        recentRecipesData = recents.slice(1) as Recipe[]
+      }
+      
+      // Update cache
+      recentCache = {
+        heroRecipe: heroRecipeData,
+        recentRecipes: recentRecipesData
+      }
+      recentCacheTime = now
+      
+      setHeroRecipe(heroRecipeData)
+      setRecentRecipes(recentRecipesData)
+    } catch (error) {
+      console.error("Error in loadRecents:", error)
+    }
+  }, [])
 
-  // Define sections with their titles
-  const sections = [
-    { title: "For You", recipes: getRandomRecipes(9) },
-    { title: "Popular", recipes: getRandomRecipes(9) },
-    { title: "Added Recipes", recipes: getRandomRecipes(9) },
-    { title: "Summer Hits", recipes: getRandomRecipes(9) },
-    { title: "How to", recipes: getRandomRecipes(9) },
-    { title: "Untitled", recipes: getRandomRecipes(9) }
-  ];
+  // Load data only if not cached
+  useEffect(() => {
+    if (!recipeCache || (Date.now() - recipeCacheTime) >= CACHE_DURATION) {
+      loadRecipes()
+    }
+  }, [loadRecipes])
+
+  useEffect(() => {
+    if (!recentCache || (Date.now() - recentCacheTime) >= CACHE_DURATION) {
+      loadRecents()
+    }
+  }, [loadRecents])
 
   return (
     <div className="flex flex-col min-h-screen pb-[70px]">
@@ -121,8 +188,8 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Render all the new sections */}
-        {sections.map((section, sectionIndex) => (
+        {/* Render all sections */}
+        {sections.map((section) => (
           <section key={section.title} className="py-2">
             <h2 className="text-3xl tracking-tight font-bold mb-2 px-4">{section.title}</h2>
             <div className="flex overflow-x-auto space-x-2 px-4 pb-4 ">

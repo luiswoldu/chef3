@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
+import { checkOnboardingStatus } from '@/lib/auth';
 import { Loader2 } from 'lucide-react';
 
 function AuthCallbackContent() {
@@ -14,21 +15,48 @@ function AuthCallbackContent() {
   useEffect(() => {
     async function handleAuth() {
       try {
+        console.log('Auth callback started');
+        
         // Check if searchParams is available
         if (!searchParams) {
+          console.error('Search parameters not available');
           throw new Error('Search parameters not available');
         }
 
         // First, handle the auth callback with the URL parameters
         const code = searchParams.get('code');
+        const error_param = searchParams.get('error');
+        const error_description = searchParams.get('error_description');
+        
+        console.log('URL params:', { code: !!code, error_param, error_description });
+        
+        // Check for error parameters first
+        if (error_param) {
+          throw new Error(error_description || error_param);
+        }
         
         if (!code) {
-          throw new Error('No verification code found in URL');
+          // If no code but no error either, user might have clicked verification link without params
+          // Redirect to login instead of showing error
+          console.log('No verification code, redirecting to login');
+          router.push('/login');
+          return;
         }
 
+        setStatus('Verifying your account...');
+        console.log('Exchanging code for session');
+        
         const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
+        console.log('Exchange result:', { 
+          hasData: !!data, 
+          hasSession: !!data?.session, 
+          hasUser: !!data?.user,
+          error: exchangeError 
+        });
+
         if (exchangeError) {
+          console.error('Exchange error:', exchangeError);
           throw exchangeError;
         }
 
@@ -37,55 +65,29 @@ function AuthCallbackContent() {
         }
 
         const session = data.session;
-        setStatus('Email verified! Setting up your profile...');
+        console.log('Session established for user:', session.user.id);
+        setStatus('Email verified! Setting up your account...');
 
-        // Check if profile already exists
-        const { data: existingProfile, error: profileCheckError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profileCheckError && profileCheckError.code !== 'PGRST116') {
-          // If it's not the "row not found" error, it's a real error
-          console.error('Profile check error:', profileCheckError);
-          throw new Error('Failed to check existing profile');
-        }
-
-        // Only create profile if it doesn't exist
-        if (!existingProfile) {
-          const profileData = {
-            id: session.user.id,
-            first_name: session.user.user_metadata?.first_name || '',
-            username: session.user.user_metadata?.username || '',
-            email: session.user.email || '',
-            created_at: new Date().toISOString()
-          };
-
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert([profileData]);
-
-          if (profileError) {
-            console.error('Profile creation error:', profileError);
-            throw new Error(`Failed to create profile: ${profileError.message}`);
-          }
-        }
-
-        setStatus('Success! Redirecting to home...');
+        // For new users after email verification, always redirect to onboarding
+        // The onboarding-profile page will handle checking existing profile data
+        setStatus('Redirecting to complete your profile...');
         
-        // Short delay before redirect for better UX
+        // Shorter delay for better UX
         setTimeout(() => {
-          router.push('/home');
-        }, 1000);
+          console.log('Redirecting to onboarding-profile');
+          router.push('/onboarding-profile');
+        }, 500);
         
       } catch (err) {
         console.error('Auth callback error:', err);
-        setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+        const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
+        console.error('Error details:', errorMessage);
+        setError(errorMessage);
         
-        // Redirect to login after error
+        // Redirect to login after error with more info
         setTimeout(() => {
-          router.push('/login?error=Authentication failed');
+          console.log('Redirecting to login due to error');
+          router.push(`/login?error=${encodeURIComponent(errorMessage)}`);
         }, 3000);
       }
     }
@@ -93,23 +95,6 @@ function AuthCallbackContent() {
     handleAuth();
   }, [router, searchParams]);
 
-  // Prevent navigation away from the auth callback page
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = '';
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    window.history.pushState(null, '', window.location.href);
-    window.onpopstate = () => {
-      window.history.pushState(null, '', window.location.href);
-    };
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center">

@@ -19,6 +19,7 @@ export default function HomePage() {
   const [recipes, setRecipes] = useState<Recipe[]>(recipeCache || [])
   const [recentRecipes, setRecentRecipes] = useState<Recipe[]>(recentCache?.recentRecipes || [])
   const [heroRecipe, setHeroRecipe] = useState<Recipe | null>(recentCache?.heroRecipe || null)
+  const [isLoading, setIsLoading] = useState(false)
 
   // Memoized random recipe generator with consistent results
   const sections = useMemo(() => {
@@ -63,6 +64,7 @@ export default function HomePage() {
     }
 
     try {
+      setIsLoading(true)
       const { data: allRecipes, error: fetchError } = await supabase
         .from('recipes')
         .select('*')
@@ -81,6 +83,8 @@ export default function HomePage() {
       setRecipes(recipesData)
     } catch (error) {
       console.error("Error in loadRecipes:", error)
+    } finally {
+      setIsLoading(false)
     }
   }, [])
 
@@ -192,7 +196,7 @@ export default function HomePage() {
         {sections.map((section) => (
           <section key={section.title} className="py-2">
             <h2 className="text-3xl tracking-tight font-bold mb-2 px-4">{section.title}</h2>
-            <div className="flex overflow-x-auto space-x-2 px-4 pb-4 ">
+            <div className="flex overflow-x-auto space-x-2 px-4 pb-4">
               {section.recipes && section.recipes.length > 0 ? (
                 section.recipes.map((recipe: Recipe) => (
                   <div key={`${section.title}-${recipe.id}`} className="w-48">

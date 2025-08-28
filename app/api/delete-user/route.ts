@@ -40,9 +40,9 @@ export async function DELETE(request: Request) {
       )
     }
 
-    // Delete user's profile first
+    // Delete user's profile from Users table first
     const { error: profileError } = await supabaseAdmin
-      .from('profiles')
+      .from('Users')
       .delete()
       .eq('id', userId)
 

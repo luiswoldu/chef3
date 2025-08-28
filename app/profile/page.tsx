@@ -36,24 +36,32 @@ export default function Profile() {
         const avatarUrl = user.user_metadata?.avatar_url || user.user_metadata?.picture
         setUserAvatar(avatarUrl)
 
+        // Try to get additional profile data from Users table
         try {
-          const { data: profile } = await supabase
-            .from('profiles')
+          const { data: profile, error: profileError } = await supabase
+            .from('Users')
             .select('*')
             .eq('id', user.id)
             .single()
 
-          if (profile) {
-            console.log('Profile data:', profile)
-            if (profile.username || profile.full_name || profile.name) {
-              setUserName(profile.username || profile.full_name || profile.name)
+          if (!profileError && profile) {
+            console.log('Profile data from Users table:', profile)
+            // Update with data from Users table
+            if (profile.first_name) {
+              setUserName(profile.first_name)
+            }
+            if (profile.username) {
+              setUsername(profile.username)
             }
             if (profile.avatar_url) {
               setUserAvatar(profile.avatar_url)
             }
+          } else {
+            console.log('No Users table data found, using auth metadata only')
           }
         } catch (profileError) {
-          console.log('No profiles table or profile not found, using auth metadata')
+          console.log('Error querying Users table:', profileError)
+          console.log('Using auth metadata only')
         }
       } else {
         router.push('/login')
@@ -108,7 +116,7 @@ export default function Profile() {
 
       await supabase.auth.signOut()
       showNotification("Account deleted successfully!")
-      router.push('/login')
+      router.push('/')
     } catch (error) {
       console.error('Network or JSON error:', error)
       showNotification("Failed to delete account. Please try again.")

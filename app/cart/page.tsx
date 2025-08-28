@@ -5,50 +5,77 @@ import { useRouter } from "next/navigation"
 import Navigation from "../../components/Navigation"
 import { type GroceryItem } from "@/types/index"
 import { Plus, User, Trash2, Loader } from "lucide-react"
-import { supabase } from "../../lib/supabaseClient"
+import { supabase } from "@/lib/supabase/client"
 import { showNotification } from "@/hooks/use-notification"
 import Image from "next/image"
 
 export default function Cart() {
   const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([])
   const [newItem, setNewItem] = useState("")
-  const [userAvatar, setUserAvatar] = useState<string | null>(null)
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  // const [userAvatar, setUserAvatar] = useState<string | null>(null)
   // const [sortState, setSortState] = useState<'default' | 'loading' | 'sorted'>('default')
   const router = useRouter()
 
   useEffect(() => {
-    loadGroceryItems()
-    loadUserAvatar()
+    initializeUser()
+    // loadUserAvatar()
   }, [])
 
-  const handleProfileClick = () => {
-    router.push('/profile')
-  }
-
-  async function loadUserAvatar() {
+  async function initializeUser() {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('avatar_url')
-          .eq('id', user.id)
-          .single()
-        
-        if (profile?.avatar_url) {
-          setUserAvatar(profile.avatar_url)
-        }
+      const { data: { user }, error } = await supabase.auth.getUser()
+      if (error) {
+        console.error('Error getting user:', error)
+        // Don't redirect on error, just log it
+        return
       }
+      
+      if (!user) {
+        // Only redirect if we're sure there's no user
+        console.log('No user found, redirecting to login')
+        router.push('/login')
+        return
+      }
+      
+      console.log('User found:', user.id)
+      setCurrentUser(user)
+      loadGroceryItems(user.id)
     } catch (error) {
-      console.error('Error loading user avatar:', error)
+      console.error('Error initializing user:', error)
+      // Don't redirect on catch, might be temporary network issue
     }
   }
 
-  async function loadGroceryItems() {
+  // const handleProfileClick = () => {
+  //   router.push('/profile')
+  // }
+
+  // async function loadUserAvatar() {
+  //   try {
+  //     const { data: { user } } = await supabase.auth.getUser()
+  //     if (user) {
+  //       const { data: profile } = await supabase
+  //         .from('profiles')
+  //         .select('avatar_url')
+  //         .eq('id', user.id)
+  //         .single()
+  //       
+  //       if (profile?.avatar_url) {
+  //         setUserAvatar(profile.avatar_url)
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error('Error loading user avatar:', error)
+  //   }
+  // }
+
+  async function loadGroceryItems(userId: string) {
     try {
       const { data, error } = await supabase
         .from('grocery_items')
         .select('*')
+        .eq('user_id', userId)
         .order('created_at', { ascending: true })
       
       if (error) throw error
@@ -70,11 +97,12 @@ export default function Cart() {
 
   async function addItem(e: React.FormEvent) {
     e.preventDefault()
-    if (newItem.trim()) {
+    if (newItem.trim() && currentUser) {
       try {
         const { error } = await supabase
           .from('grocery_items')
           .insert([{
+            user_id: currentUser.id,
             name: newItem,
             amount: "",
             purchased: false,
@@ -83,7 +111,7 @@ export default function Cart() {
         if (error) throw error
         
         setNewItem("")
-        loadGroceryItems()
+        loadGroceryItems(currentUser.id)
         showNotification("Item added")
       } catch (error) {
         console.error('Error adding item:', error)
@@ -94,15 +122,16 @@ export default function Cart() {
 
   async function togglePurchased(id: number) {
     const item = groceryItems.find((item) => item.id === id)
-    if (item) {
+    if (item && currentUser) {
       try {
         const { error } = await supabase
           .from('grocery_items')
           .update({ purchased: !item.purchased })
           .eq('id', id)
+          .eq('user_id', currentUser.id)
         
         if (error) throw error
-        loadGroceryItems()
+        loadGroceryItems(currentUser.id)
       } catch (error) {
         console.error('Error updating item:', error)
         showNotification("Failed to update item")
@@ -111,14 +140,16 @@ export default function Cart() {
   }
 
   async function clearList() {
+    if (!currentUser) return
+    
     try {
       const { error } = await supabase
         .from('grocery_items')
         .delete()
-        .neq('id', 0)
+        .eq('user_id', currentUser.id)
       
       if (error) throw error
-      loadGroceryItems()
+      loadGroceryItems(currentUser.id)
       showNotification("Shopping list cleared")
     } catch (error) {
       console.error('Error clearing list:', error)
@@ -140,7 +171,8 @@ export default function Cart() {
       <div className="p-4">
         <div className="flex justify-between items-center mb-4 pr-1.5">
           <h1 className="text-3xl font-bold pt-2 tracking-tight">Shopping List</h1>
-          <div 
+          {/* Profile avatar commented out - will be relocated */}
+          {/* <div 
         className="w-[34px] h-[34px] mt-1.5 rounded-full border border-[#F4F4F4] overflow-hidden  cursor-pointer bg-[#FFFFFF] flex items-center justify-center"
 onClick={handleProfileClick}
           >
@@ -151,7 +183,7 @@ onClick={handleProfileClick}
               height={34}
               className="object-cover w-full h-full"
             />
-          </div>
+          </div> */}
         </div>
         <form onSubmit={addItem} className="relative mb-4">
           <input

@@ -21,7 +21,7 @@ export default function SearchBar() {
       }}>
         <div className="flex items-center gap-3 mt-6 w-full max-w-[488px] mx-auto">
         <button
-         onClick={() => console.log("User account clicked")} // add user account profile route
+         onClick={() => router.push('/profile')}
          className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0 bg-white "
         >
         <User className="h-6 w-6 text-black" />

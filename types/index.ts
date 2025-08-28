@@ -22,6 +22,7 @@ export interface Recipe {
 
 export interface GroceryItem {
   id: number
+  user_id: string
   name: string
   amount: string
   aisle: string

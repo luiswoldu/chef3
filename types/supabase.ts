@@ -103,31 +103,37 @@ export interface Database {
       grocery_items: {
         Row: {
           id: number
+          user_id: string
           name: string
           amount: string
           aisle: string
           purchased: boolean
           recipe_id: number
+          details: string
           created_at: string
           updated_at: string
         }
         Insert: {
           id?: number
+          user_id: string
           name: string
           amount?: string
           aisle?: string
           purchased?: boolean
           recipe_id?: number
+          details?: string
           created_at?: string
           updated_at?: string
         }
         Update: {
           id?: number
+          user_id?: string
           name?: string
           amount?: string
           aisle?: string
           purchased?: boolean
           recipe_id?: number
+          details?: string
           created_at?: string
           updated_at?: string
         }

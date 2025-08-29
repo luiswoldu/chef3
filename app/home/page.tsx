@@ -25,61 +25,47 @@ export default function HomePage() {
   const sections = useMemo(() => {
     if (!recipes || recipes.length === 0) return []
     
-    // Use a seed for consistent randomization during the session
     const getRandomRecipes = (count: number, seed: string) => {
-      // Simple seeded random function
       let hash = 0
       for (let i = 0; i < seed.length; i++) {
         const char = seed.charCodeAt(i)
         hash = ((hash << 5) - hash) + char
-        hash = hash & hash // Convert to 32bit integer
+        hash = hash & hash
       }
-      
       const seededRandom = (hash: number) => {
         hash = Math.sin(hash) * 10000
         return hash - Math.floor(hash)
       }
-      
       const shuffled = [...recipes].sort(() => seededRandom(hash++) - 0.5)
       return shuffled.slice(0, count)
     }
 
     return [
-      { title: "For You", recipes: getRandomRecipes(9, "for-you") },
-      { title: "Popular", recipes: getRandomRecipes(9, "popular") },
+      // { title: "For You", recipes: getRandomRecipes(9, "for-you") },
+      // { title: "Popular", recipes: getRandomRecipes(9, "popular") },
       { title: "Added Recipes", recipes: getRandomRecipes(9, "added") },
-      { title: "Summer Hits", recipes: getRandomRecipes(9, "summer") },
-      { title: "How to", recipes: getRandomRecipes(9, "howto") },
-      { title: "Untitled", recipes: getRandomRecipes(9, "untitled") }
+      { title: "Summer Hits", recipes: getRandomRecipes(9, "summer") }
     ]
   }, [recipes])
 
   const loadRecipes = useCallback(async () => {
     const now = Date.now()
-    
-    // Check cache first
     if (recipeCache && (now - recipeCacheTime) < CACHE_DURATION) {
       setRecipes(recipeCache)
       return
     }
-
     try {
       setIsLoading(true)
       const { data: allRecipes, error: fetchError } = await supabase
         .from('recipes')
         .select('*')
-      
       if (fetchError) {
         console.error("Error fetching recipes:", fetchError)
         return
       }
-      
       const recipesData = allRecipes as Recipe[] || []
-      
-      // Update cache
       recipeCache = recipesData
       recipeCacheTime = now
-      
       setRecipes(recipesData)
     } catch (error) {
       console.error("Error in loadRecipes:", error)
@@ -90,41 +76,28 @@ export default function HomePage() {
 
   const loadRecents = useCallback(async () => {
     const now = Date.now()
-    
-    // Check cache first
     if (recentCache && (now - recentCacheTime) < CACHE_DURATION) {
       setHeroRecipe(recentCache.heroRecipe)
       setRecentRecipes(recentCache.recentRecipes)
       return
     }
-
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-
       const { data: recents, error } = await supabase
         .rpc("get_recent_recipes", { p_user_id: user.id, p_limit: 10 })
-      
       if (error) {
         console.error(error)
         return
       }
-      
       let heroRecipeData: Recipe | null = null
       let recentRecipesData: Recipe[] = []
-      
       if (recents && recents.length > 0) {
         heroRecipeData = recents[0] as Recipe
         recentRecipesData = recents.slice(1) as Recipe[]
       }
-      
-      // Update cache
-      recentCache = {
-        heroRecipe: heroRecipeData,
-        recentRecipes: recentRecipesData
-      }
+      recentCache = { heroRecipe: heroRecipeData, recentRecipes: recentRecipesData }
       recentCacheTime = now
-      
       setHeroRecipe(heroRecipeData)
       setRecentRecipes(recentRecipesData)
     } catch (error) {
@@ -132,7 +105,6 @@ export default function HomePage() {
     }
   }, [])
 
-  // Load data only if not cached
   useEffect(() => {
     if (!recipeCache || (Date.now() - recipeCacheTime) >= CACHE_DURATION) {
       loadRecipes()
@@ -167,7 +139,7 @@ export default function HomePage() {
       <SearchBar />
       <div className="flex-1 overflow-y-auto">
         <section className="py-4">
-          <h2 className="text-3xl tracking-tight font-bold mb-2 px-4">Recents</h2>
+          <h2 className="text-[28px] tracking-tight font-bold mb-2 px-4">Recents</h2>
           <div className="flex overflow-x-auto space-x-2 px-4 pb-2">
             {recentRecipes && recentRecipes.length > 0 ? (
               recentRecipes.map((recipe: Recipe) => (
@@ -195,7 +167,7 @@ export default function HomePage() {
         {/* Render all sections */}
         {sections.map((section) => (
           <section key={section.title} className="py-2">
-            <h2 className="text-3xl tracking-tight font-bold mb-2 px-4">{section.title}</h2>
+            <h2 className="text-[28px] tracking-tight font-bold mb-2 px-4">{section.title}</h2>
             <div className="flex overflow-x-auto space-x-2 px-4 pb-4">
               {section.recipes && section.recipes.length > 0 ? (
                 section.recipes.map((recipe: Recipe) => (
@@ -224,4 +196,4 @@ export default function HomePage() {
       <Navigation />
     </div>
   )
-} 
+}

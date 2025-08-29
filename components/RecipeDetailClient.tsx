@@ -355,6 +355,8 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
               >
                 <Dialog.Panel className="w-full transform rounded-t-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
                   <div className="space-y-4">
+                    {/* Edit button commented out until database supports update operations */}
+                    {/* 
                     <button 
                       className="flex items-center gap-2 w-full py-2 hover:bg-gray-100 rounded-md"
                       onClick={() => {
@@ -364,6 +366,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
                     >
                       <Edit2 className="h-5 w-5" /> Edit
                     </button>
+                    */}
                     <button
                       className="flex items-center gap-2 w-full py-2 text-red-600 hover:bg-red-50 rounded-md"
                       onClick={handleDelete}
@@ -371,7 +374,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
                       <Trash2 className="h-5 w-5" /> Delete
                     </button>
                     <button 
-                      className="mt-2 w-full py-2 bg-gray-200 rounded-md"
+                      className="mt-2 w-full py-2 bg-gray-200 rounded-full"
                       onClick={() => setIsOptionsOpen(false)}
                     >
                       Cancel

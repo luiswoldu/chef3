@@ -251,7 +251,7 @@ export default function SignUp() {
               value={formData.firstName}
               onChange={handleInputChange}
               required
-              className="w-full px-4 py-3 rounded-2xl bg-[#F7F7F7] text-black/30 placeholder:text-black/30 focus:text-black text-lg"
+              className="w-full px-4 py-3 rounded-2xl bg-[#F7F7F7] text-black placeholder:text-black/30 text-lg"
               disabled={loading}
             />
             
@@ -262,7 +262,7 @@ export default function SignUp() {
               value={formData.username}
               onChange={handleInputChange}
               required
-              className="w-full px-4 py-3 rounded-2xl bg-[#F7F7F7] text-black/30 placeholder:text-black/30 focus:text-black text-lg"
+              className="w-full px-4 py-3 rounded-2xl bg-[#F7F7F7] text-black placeholder:text-black/30 text-lg"
               disabled={loading}
             />
             
@@ -273,7 +273,7 @@ export default function SignUp() {
               value={formData.email}
               onChange={handleInputChange}
               required
-              className="w-full px-4 py-3 rounded-2xl bg-[#F7F7F7] text-black/30 placeholder:text-black/30 focus:text-black text-lg"
+              className="w-full px-4 py-3 rounded-2xl bg-[#F7F7F7] text-black placeholder:text-black/30 text-lg"
               disabled={loading}
             />
             
@@ -284,7 +284,7 @@ export default function SignUp() {
               value={formData.password}
               onChange={handleInputChange}
               required
-              className="w-full px-4 py-3 rounded-2xl bg-[#F7F7F7] text-black/30 placeholder:text-black/30 focus:text-black text-lg"
+              className="w-full px-4 py-3 rounded-2xl bg-[#F7F7F7] text-black placeholder:text-black/30 text-lg"
               disabled={loading}
             />
             
@@ -295,7 +295,7 @@ export default function SignUp() {
               value={formData.confirmPassword}
               onChange={handleInputChange}
               required
-              className="w-full px-4 py-3 rounded-2xl bg-[#F7F7F7] text-black/30 placeholder:text-black/30 focus:text-black text-lg"
+              className="w-full px-4 py-3 rounded-2xl bg-[#F7F7F7] text-black placeholder:text-black/30 text-lg"
               disabled={loading}
             />
           </div>

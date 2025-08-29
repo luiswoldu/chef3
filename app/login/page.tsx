@@ -144,7 +144,7 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-2xl bg-[#F7F7F7] text-black/30 placeholder:text-black/30 focus:text-black text-lg"
+              className="w-full px-4 py-3 rounded-2xl bg-[#F7F7F7] text-black placeholder:text-black/30 text-lg"
               disabled={loading}
             />
             <input
@@ -153,7 +153,7 @@ export default function Login() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 rounded-2xl bg-[#F7F7F7] text-black/30 placeholder:text-black/30 focus:text-black text-lg"
+              className="w-full px-4 py-3 rounded-2xl bg-[#F7F7F7] text-black placeholder:text-black/30 text-lg"
               disabled={loading}
             />
           </div>
@@ -212,12 +212,12 @@ export default function Login() {
 
         <div className="text-center">
           <p className="text-black/60">
-            <Link href="/forgot-password" className="text-[#6CD401] hover:underline">
+            <Link href="/forgot-password" className="text-[#9F9F9F] hover:underline">
               Forgot password?
             </Link>
           </p>
           <p className="mt-2 text-black/60">
-            <Link href="/signup" className="text-black/60 hover:underline">
+            <Link href="/signup" className="text-[#B2B2B2] hover:underline">
               No account yet? <span className="font-medium text-[#6CD401]">Sign Up</span>
             </Link>
           </p>
@@ -225,4 +225,4 @@ export default function Login() {
       </div>
     </div>
   )
-} 
+}

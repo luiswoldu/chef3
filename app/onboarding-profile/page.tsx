@@ -259,7 +259,7 @@ export default function OnboardingProfile() {
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
             required
-            className="w-full px-4 py-3 rounded-2xl bg-[#F7F7F7] text-black/30 placeholder:text-black/30 focus:text-black text-lg"
+            className="w-full px-4 py-3 rounded-2xl bg-[#F7F7F7] text-black placeholder:text-black/30 text-lg"
           />
 
           <button

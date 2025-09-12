@@ -45,11 +45,19 @@ export default function RecipeCard({
 
   const checkIfAdded = async () => {
     try {
-      // Check if this recipe is in the grocery_items table
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError || !user) {
+        setIsAdded(false)
+        return
+      }
+
+      // Check if this recipe is in the grocery_items table for this user
       const { data, error } = await supabase
         .from('grocery_items')
         .select('*')
         .eq('recipe_id', id)
+        .eq('user_id', user.id)
         .single()
       
       if (error) {
@@ -72,6 +80,13 @@ export default function RecipeCard({
   const addToCart = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     try {
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError || !user) {
+        console.error('User not authenticated:', userError)
+        return
+      }
+
       // First get the recipe with its ingredients
       const { data: recipe, error: recipeError } = await supabase
         .from('recipes')
@@ -89,8 +104,9 @@ export default function RecipeCard({
         return
       }
       
-      // Insert ingredients as grocery items with only valid columns
+      // Insert ingredients as grocery items with user_id
       const groceryItems = recipe.ingredients.map((ing: any) => ({
+        user_id: user.id,
         name: ing.name,
         amount: ing.amount,
         aisle: "Other",

@@ -100,22 +100,46 @@ export default function HomePage() {
 
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user) {
+        // If no user, fallback to showing a random recipe from all recipes
+        const { data: fallbackRecipes } = await supabase
+          .from('recipes')
+          .select('*')
+          .limit(10)
+        
+        if (fallbackRecipes && fallbackRecipes.length > 0) {
+          const heroRecipeData = fallbackRecipes[0] as Recipe
+          const recentRecipesData = fallbackRecipes.slice(1) as Recipe[]
+          
+          recentCache = {
+            heroRecipe: heroRecipeData,
+            recentRecipes: recentRecipesData
+          }
+          recentCacheTime = now
+          
+          setHeroRecipe(heroRecipeData)
+          setRecentRecipes(recentRecipesData)
+        }
+        return
+      }
 
-      const { data: recents, error } = await supabase
-        .rpc("get_recent_recipes", { p_user_id: user.id, p_limit: 10 })
+      // Skip RPC call and just get regular recipes
+      const { data: fallbackRecipes, error } = await supabase
+        .from('recipes')
+        .select('*')
+        .limit(10)
       
       if (error) {
-        console.error(error)
+        console.error("Error fetching recipes:", error)
         return
       }
       
       let heroRecipeData: Recipe | null = null
       let recentRecipesData: Recipe[] = []
       
-      if (recents && recents.length > 0) {
-        heroRecipeData = recents[0] as Recipe
-        recentRecipesData = recents.slice(1) as Recipe[]
+      if (fallbackRecipes && fallbackRecipes.length > 0) {
+        heroRecipeData = fallbackRecipes[0] as Recipe
+        recentRecipesData = fallbackRecipes.slice(1) as Recipe[]
       }
       
       // Update cache
@@ -129,6 +153,25 @@ export default function HomePage() {
       setRecentRecipes(recentRecipesData)
     } catch (error) {
       console.error("Error in loadRecents:", error)
+      // Final fallback to show some recipes
+      const { data: fallbackRecipes } = await supabase
+        .from('recipes')
+        .select('*')
+        .limit(10)
+      
+      if (fallbackRecipes && fallbackRecipes.length > 0) {
+        const heroRecipeData = fallbackRecipes[0] as Recipe
+        const recentRecipesData = fallbackRecipes.slice(1) as Recipe[]
+        
+        recentCache = {
+          heroRecipe: heroRecipeData,
+          recentRecipes: recentRecipesData
+        }
+        recentCacheTime = now
+        
+        setHeroRecipe(heroRecipeData)
+        setRecentRecipes(recentRecipesData)
+      }
     }
   }, [])
 

@@ -194,6 +194,13 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
               e.preventDefault()
               e.stopPropagation()
               try {
+                // Get current user
+                const { data: { user }, error: userError } = await supabase.auth.getUser()
+                if (userError || !user) {
+                  showNotification("Please log in to add items to cart")
+                  return
+                }
+
                 const recipeId = typeof id === 'string' ? Number.parseInt(id) : id
                 
                 if (!recipe.ingredients || recipe.ingredients.length === 0) {
@@ -201,6 +208,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
                 }
                 
                 const groceryItems = recipe.ingredients.map((ing: RecipeIngredient) => ({
+                  user_id: user.id,
                   name: ing.name,
                   amount: ing.amount,
                   aisle: "Other",
@@ -220,7 +228,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
                 console.error('Error adding to cart:', error)
                 showNotification("Failed to add ingredients to cart")
               }
-            }} 
+            }}
             className="bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-shadow duration-300"
             aria-label={isAdded ? "Added to cart" : "Add to cart"}
           >

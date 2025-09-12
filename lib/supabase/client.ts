@@ -18,25 +18,17 @@ export async function fullTextSearch(query: string): Promise<SearchResults> {
     return { recipes: [], ingredients: [] };
   }
 
-  // Fire both queries in parallel
-  const [recipeRes, ingredientRes] = await Promise.all([
-    supabase
-      .from('recipes')
-      .select('id, title')
-      .ilike('title', `${q}%`),
+  // Only search recipes, not ingredients
+  const { data: recipeRes, error: recipeError } = await supabase
+    .from('recipes')
+    .select('id, title')
+    .ilike('title', `%${q}%`); // Changed to include matches anywhere in title
 
-    supabase
-      .from('ingredients')
-      .select('id, name')
-      .ilike('name', `${q}%`),
-  ]);
-
-  if (recipeRes.error) throw recipeRes.error;
-  if (ingredientRes.error) throw ingredientRes.error;
+  if (recipeError) throw recipeError;
 
   return {
-    recipes: recipeRes.data,
-    ingredients: ingredientRes.data,
+    recipes: recipeRes || [],
+    ingredients: [], // Always return empty ingredients array
   };
 }
 

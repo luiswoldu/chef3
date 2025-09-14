@@ -336,8 +336,7 @@ export async function checkOnboardingStatus(userId: string): Promise<{
       }
 
       const hasFirstName = Boolean(profile.first_name?.trim())
-      const hasTastePreference = Boolean(profile.taste_preference !== null && profile.taste_preference !== undefined && profile.taste_preference > 0)
-      
+      const hasTastePreference = Boolean(profile.taste_preference !== null && profile.taste_preference !== undefined && profile.taste_preference.trim().length > 0)      
       return {
         needsOnboarding: !hasFirstName || !hasTastePreference,
         hasFirstName,

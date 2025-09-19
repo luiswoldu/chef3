@@ -5,6 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase/client"
 import { trackRecipeCardView, trackRecipeCardTap } from "@/lib/supabase/track"
+import { showNotification } from '@/hooks/use-notification'
 import type { Recipe } from "@/types"
 
 interface Ingredient {
@@ -84,6 +85,7 @@ export default function RecipeCard({
       const { data: { user }, error: userError } = await supabase.auth.getUser()
       if (userError || !user) {
         console.error('User not authenticated:', userError)
+        showNotification("Please log in to add items to cart") // Add notification for auth error
         return
       }
 
@@ -101,6 +103,7 @@ export default function RecipeCard({
       
       if (!recipe.ingredients || recipe.ingredients.length === 0) {
         console.error('No ingredients found for this recipe')
+        showNotification("No ingredients found for this recipe") // Add notification for no ingredients
         return
       }
       
@@ -120,12 +123,15 @@ export default function RecipeCard({
       
       if (error) {
         console.error('Error adding to grocery items:', error)
+        showNotification("Failed to add ingredients to cart") // Add notification for database error
         return
       }
       
       setIsAdded(true)
+      showNotification("Added to cart") // Add success notification
     } catch (error) {
       console.error('Error in addToCart:', error)
+      showNotification("Failed to add ingredients to cart") // Add notification for any other errors
     }
   }
 

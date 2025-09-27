@@ -88,15 +88,37 @@ export default function HomePage() {
     }
     try {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      // Fallback to regular query since RPC function may not exist
+      if (!user) {
+        // If no user, fallback to showing a random recipe from all recipes
+        const { data: fallbackRecipes } = await supabase
+          .from('recipes')
+          .select('*')
+          .limit(10)
+        
+        if (fallbackRecipes && fallbackRecipes.length > 0) {
+          const heroRecipeData = fallbackRecipes[0] as Recipe
+          const recentRecipesData = fallbackRecipes.slice(1) as Recipe[]
+          
+          recentCache = {
+            heroRecipe: heroRecipeData,
+            recentRecipes: recentRecipesData
+          }
+          recentCacheTime = now
+          
+          setHeroRecipe(heroRecipeData)
+          setRecentRecipes(recentRecipesData)
+        }
+        return
+      }
+
+      // Get user's own recipes for logged in users
       const { data: recents, error } = await supabase
         .from('recipes')
         .select('*')
         .eq('user_id', user.id)
         .limit(10)
       if (error) {
-        console.error(error)
+        console.error("Error fetching recipes:", error)
         return
       }
       let heroRecipeData: Recipe | null = null
@@ -111,6 +133,25 @@ export default function HomePage() {
       setRecentRecipes(recentRecipesData)
     } catch (error) {
       console.error("Error in loadRecents:", error)
+      // Final fallback to show some recipes
+      const { data: fallbackRecipes } = await supabase
+        .from('recipes')
+        .select('*')
+        .limit(10)
+      
+      if (fallbackRecipes && fallbackRecipes.length > 0) {
+        const heroRecipeData = fallbackRecipes[0] as Recipe
+        const recentRecipesData = fallbackRecipes.slice(1) as Recipe[]
+        
+        recentCache = {
+          heroRecipe: heroRecipeData,
+          recentRecipes: recentRecipesData
+        }
+        recentCacheTime = now
+        
+        setHeroRecipe(heroRecipeData)
+        setRecentRecipes(recentRecipesData)
+      }
     }
   }, [])
 

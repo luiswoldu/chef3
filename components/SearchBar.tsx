@@ -1,5 +1,3 @@
-
-
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import SearchView from "./SearchView"
@@ -16,10 +14,10 @@ export default function SearchBar() {
 
   return (
     <>
-      <div className="absolute top-0 left-0 right-0 z-10 p-4" style={{
+      <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-10 p-4 w-full max-w-lg mx-auto" style={{
         background: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 100%)'
       }}>
-        <div className="flex items-center gap-3 mt-6 w-full max-w-[488px] mx-auto">
+        <div className="flex items-center gap-3 mt-6 w-full">
         <button
          onClick={() => router.push('/profile')}
          className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0 bg-white "

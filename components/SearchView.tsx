@@ -99,7 +99,7 @@ export default function SearchView({ onCancel }: SearchViewProps) {
     router.push(`/${item.type}/${item.id}`)
   }
 
-  const hasResults = searchResults.recipes.length > 0 || searchResults.ingredients.length > 0
+  const hasResults = searchResults.recipes.length > 0
 
   return (
     <div className="fixed inset-0 bg-black z-50">
@@ -115,7 +115,7 @@ export default function SearchView({ onCancel }: SearchViewProps) {
             <input
               type="text"
               className="flex-1 bg-transparent text-white pl-3 focus:outline-none placeholder-white"
-              placeholder="Search recipes or ingredients"
+              placeholder="Search recipes"
               autoFocus
               value={searchQuery}
               onChange={handleInputChange}
@@ -148,27 +148,6 @@ export default function SearchView({ onCancel }: SearchViewProps) {
           ) : searchQuery.trim() ? (
             hasResults ? (
               <div className="space-y-8">
-                {/* Ingredients Section */}
-                {searchResults.ingredients.length > 0 && (
-                  <div>
-                    <h2 className="text-white text-xl font-semibold mb-4">Ingredients</h2>
-                    <div className="space-y-4">
-                      {searchResults.ingredients.map((ingredient, idx) => (
-                        <Link
-                          key={`ingredient-${idx}`}
-                          href={`/search/ingredient/${encodeURIComponent(ingredient.name)}`}
-                          className="w-full flex items-center justify-between text-left p-3 bg-zinc-900/50 rounded-lg hover:bg-zinc-800/50 block"
-                        >
-                          <div>
-                            <h3 className="text-white text-lg">{ingredient.name}</h3>
-                          </div>
-                          <ChevronRight className="text-gray-400 h-5 w-5" />
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 {/* Recipes Section */}
                 {searchResults.recipes.length > 0 && (
                   <div>
@@ -197,7 +176,7 @@ export default function SearchView({ onCancel }: SearchViewProps) {
             )
           ) : (
             <div className="flex flex-col items-center justify-center h-64">
-              <p className="text-gray-400 text-center">Type to search recipes and ingredients</p>
+              <p className="text-gray-400 text-center">Type to search recipes</p>
             </div>
           )}
         </div>

@@ -45,11 +45,16 @@ export default function RecipeCard({
 
   const checkIfAdded = async () => {
     try {
-      // Check if this recipe is in the grocery_items table
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      
+      // Check if this recipe is in the grocery_items table for this user
       const { data, error } = await supabase
         .from('grocery_items')
         .select('*')
         .eq('recipe_id', id)
+        .eq('user_id', user.id)
         .single()
       
       if (error) {
@@ -72,6 +77,13 @@ export default function RecipeCard({
   const addToCart = async (e: MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        console.error('You must be logged in to add items to cart')
+        return
+      }
+      
       // First get the recipe with its ingredients
       const { data: recipe, error: recipeError } = await supabase
         .from('recipes')
@@ -80,6 +92,7 @@ export default function RecipeCard({
           ingredients (*)
         `)
         .eq('id', id)
+        .eq('user_id', user.id)
         .single()
       
       if (recipeError) throw recipeError
@@ -89,13 +102,13 @@ export default function RecipeCard({
         return
       }
       
-      // Insert ingredients as grocery items with only valid columns
       const groceryItems = recipe.ingredients.map((ing: any) => ({
         name: ing.name,
         amount: ing.amount,
         aisle: "Other",
         purchased: false,
         recipe_id: Number(id),
+        user_id: user.id,
       }))
       
       const { error } = await supabase
@@ -118,9 +131,9 @@ export default function RecipeCard({
       case 'hero':
         return 'w-full h-full'
       case 'thumbnail':
-        return 'w-36 md:w-48 lg:w-48 aspect-[1/2]' // 2:1 aspect ratio for thumbnails
+        return 'w-36 md:w-48 lg:w-48 aspect-[1/2]'
       case 'square':
-        return 'max-w-sm aspect-square' // 1:1 aspect ratio for square cards
+        return 'max-w-sm aspect-square'
       default:
         return 'max-w-sm aspect-square'
     }
@@ -175,11 +188,11 @@ export default function RecipeCard({
           <h2 
             className={`text-white leading-[1.1] ${
               cardType === 'hero' 
-                ? 'text-[28px] tracking-[-0.04em] font-extrabold px-3 py-5' // controls hero title padding y 6 = 24px
+                ? 'text-[28px] tracking-[-0.04em] font-extrabold px-3 py-5'
                 : cardType === 'thumbnail'
                 ? 'text-base font-bold tracking-tight'
                 : 'text-lg font-bold'
-                } px-3 py-3 w-full`} // controls thumbnail text
+                } px-3 py-3 w-full`}
             style={{ 
               background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)'
             }}

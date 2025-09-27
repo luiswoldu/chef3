@@ -209,10 +209,10 @@ export default function AddRecipe() {
     }
   }
 
-  // Recipe extraction API call using OpenAI
+  // Recipe extraction API call using Enhanced extraction (Beautiful Soup + OpenAI)
   const extractRecipeFromUrl = async (url: string): Promise<RecipeData> => {
     try {
-      // Call the OpenAI-powered recipe extraction API
+      // Call the enhanced recipe extraction API (Beautiful Soup + OpenAI fallback)
       const response = await fetch(`/api/fetch-url?url=${encodeURIComponent(url)}`, {
         method: 'GET',
         headers: {
@@ -305,7 +305,7 @@ export default function AddRecipe() {
         return
       }
 
-      // Insert recipe with user_id (the trigger will handle this automatically, but we can be explicit)
+      // Insert recipe with user_id
       const { data: recipeData, error: recipeError } = await supabase
         .from('recipes')
         .insert([{
@@ -314,8 +314,8 @@ export default function AddRecipe() {
           caption: extractedRecipe.recipe.caption,
           tags: extractedRecipe.recipe.tags,
           steps: extractedRecipe.recipe.steps,
+          user_id: user.id,
           created_at: new Date().toISOString()
-          // user_id will be set automatically by the trigger
         }])
         .select()
         .single()
@@ -329,12 +329,12 @@ export default function AddRecipe() {
         throw new Error('Failed to create recipe - no data returned')
       }
 
-      // Insert ingredients with recipe_id (user_id set automatically by trigger)
+      // Insert ingredients with recipe_id and user_id
       if (extractedRecipe.ingredients.length > 0) {
         const ingredientsWithRecipeId = extractedRecipe.ingredients.map(ingredient => ({
           ...ingredient,
-          recipe_id: recipeData.id
-          // user_id will be set automatically by the trigger
+          recipe_id: recipeData.id,
+          user_id: user.id
         }))
 
         const { error: ingredientsError } = await supabase
@@ -347,7 +347,7 @@ export default function AddRecipe() {
         }
       }
 
-      // Insert grocery items with recipe_id (user_id set automatically by trigger)
+      // Insert grocery items with recipe_id and user_id
       if (extractedRecipe.groceryItems.length > 0) {
         const groceryItemsWithRecipeId = extractedRecipe.groceryItems.map(item => ({
           recipe_id: recipeData.id,
@@ -356,8 +356,8 @@ export default function AddRecipe() {
           details: item.details,
           aisle: '', // This will be set by the user later
           purchased: false,
+          user_id: user.id,
           created_at: new Date().toISOString()
-          // user_id will be set automatically by the trigger
         }))
 
         const { error: groceryItemsError } = await supabase
@@ -488,6 +488,10 @@ export default function AddRecipe() {
                       </span>
                     ))}
                   </div>
+                  
+                  {extractedRecipe.recipe.caption && (
+                    <p className="text-gray-600 text-sm mb-4">{extractedRecipe.recipe.caption}</p>
+                  )}
                 </div>
 
                 <div className="border-t border-gray-200 p-4 space-y-6">

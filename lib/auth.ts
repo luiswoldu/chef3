@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase/client'
 import { Database } from '@/types/supabase'
 
-type Profile = Database['public']['Tables']['profiles']['Row']
+type Profile = Database['public']['Tables']['Users']['Row']
 
 export interface AuthError extends Error {
   message: string
@@ -243,15 +243,8 @@ export async function createUserProfile({
 }) {
   try {
     
-    // Map taste preference strings to integers for database storage
-    const tasteMap: { [key: string]: number } = {
-      'sweet,indulgent': 1,      // Cereal with milk
-      'savoury,healthy': 2,      // Avocado toast  
-      'sweet,healthy': 3,        // Yogurt & Berries
-      'savoury,indulgent': 4     // Breakfast burrito
-    }
-    
-    const tastePreferenceValue = tastePreference ? tasteMap[tastePreference] || null : null
+    // Store taste preference as text directly
+    const tastePreferenceValue = tastePreference || null
     
     const { data, error } = await supabase
       .from('Users')
@@ -290,11 +283,8 @@ export async function updateUserProfile(
   updates: Partial<Pick<Profile, 'first_name' | 'username' | 'taste_preference'>>
 ) {
   try {
-    // Convert taste preference to integer if it exists
+    // Keep taste preference as string
     const updatedData = { ...updates }
-    if (updatedData.taste_preference && typeof updatedData.taste_preference === 'string') {
-      updatedData.taste_preference = parseInt(updatedData.taste_preference) as any
-    }
     
     const { data, error } = await supabase
       .from('Users')
@@ -336,7 +326,7 @@ export async function checkOnboardingStatus(userId: string): Promise<{
       }
 
       const hasFirstName = Boolean(profile.first_name?.trim())
-      const hasTastePreference = Boolean(profile.taste_preference !== null && profile.taste_preference !== undefined && profile.taste_preference > 0)
+      const hasTastePreference = Boolean(profile.taste_preference !== null && profile.taste_preference !== undefined && profile.taste_preference.trim())
       
       return {
         needsOnboarding: !hasFirstName || !hasTastePreference,

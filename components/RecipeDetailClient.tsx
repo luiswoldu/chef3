@@ -6,12 +6,11 @@ import Link from 'next/link'
 import { Dialog, Transition } from '@headlessui/react'
 import { Fragment } from 'react'
 import type { Database } from '@/types/supabase'
-import RecipeCard from './RecipeCard'
 import { supabase } from '@/lib/supabase/client'
 import { showNotification } from '@/hooks/use-notification'
 import { useRouter } from 'next/navigation'
-import { MoreHorizontal, Edit2, Trash2 } from 'lucide-react'
-import Navigation from '@/components/Navigation' // Add this import
+import { MoreHorizontal, Trash2 } from 'lucide-react'
+import Navigation from '@/components/Navigation'
 
 // Define ingredient interface that matches what we get from the database
 interface RecipeIngredient {
@@ -47,6 +46,14 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
       try {
         const recipeId = typeof id === 'string' ? Number.parseInt(id) : id;
         
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          setError('You must be logged in to view recipes')
+          setLoading(false)
+          return
+        }
+        
         // Get recipe
         const { data: recipeData, error: recipeError } = await supabase
           .from('recipes')
@@ -55,6 +62,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
             ingredients (*)
           `)
           .eq('id', recipeId)
+          .eq('user_id', user.id)
           .single()
         
         if (recipeError) {
@@ -74,6 +82,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           .from('grocery_items')
           .select('id')
           .eq('recipe_id', recipeId)
+          .eq('user_id', user.id)
         
         if (cartError) throw cartError
         setIsAdded(cartItems.length > 0)
@@ -91,12 +100,19 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
   const handleDelete = async () => {
     try {
       const recipeId = typeof id === 'string' ? parseInt(id) : id
+      
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        throw new Error('You must be logged in to delete recipes')
+      }
 
       // First delete grocery items
       const { error: groceryError } = await supabase
         .from('grocery_items')
         .delete()
         .eq('recipe_id', recipeId)
+        .eq('user_id', user.id)
 
       if (groceryError) {
         throw new Error('Failed to delete grocery items: ' + groceryError.message)
@@ -107,6 +123,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
         .from('ingredients')
         .delete()
         .eq('recipe_id', recipeId)
+        .eq('user_id', user.id)
 
       if (ingredientsError) {
         throw new Error('Failed to delete ingredients: ' + ingredientsError.message)
@@ -117,6 +134,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
         .from('recipes')
         .delete()
         .eq('id', recipeId)
+        .eq('user_id', user.id)
 
       if (recipeError) {
         throw new Error('Failed to delete recipe: ' + recipeError.message)
@@ -200,12 +218,19 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
                   throw new Error('No ingredients found for this recipe')
                 }
                 
+                // Get current user
+                const { data: { user } } = await supabase.auth.getUser()
+                if (!user) {
+                  throw new Error('You must be logged in to add items to cart')
+                }
+                
                 const groceryItems = recipe.ingredients.map((ing: RecipeIngredient) => ({
                   name: ing.name,
                   amount: ing.amount,
                   aisle: "Other",
                   purchased: false,
                   recipe_id: recipeId,
+                  user_id: user.id,
                 }))
                 
                 const { error } = await supabase

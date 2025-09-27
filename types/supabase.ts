@@ -9,7 +9,7 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      profiles: {
+      Users: {
         Row: {
           id: string
           first_name: string | null
@@ -17,7 +17,6 @@ export interface Database {
           email: string
           taste_preference: string | null
           created_at: string
-          updated_at: string
         }
         Insert: {
           id: string
@@ -26,7 +25,6 @@ export interface Database {
           email: string
           taste_preference?: string | null
           created_at?: string
-          updated_at?: string
         }
         Update: {
           id?: string
@@ -35,10 +33,9 @@ export interface Database {
           email?: string
           taste_preference?: string | null
           created_at?: string
-          updated_at?: string
         }
       }
-      recipes: {
+      MasterRecipes: {
         Row: {
           id: number
           title: string
@@ -71,47 +68,59 @@ export interface Database {
           updated_at?: string
         }
       }
-      ingredients: {
+      UserRecipes: {
         Row: {
           id: number
-          recipe_id: number
-          name: string
-          amount: string
-          details: string
+          title: string
+          caption: string | null
+          ingredients: string | null
+          steps: string
+          image: string
+          popularity: number | null
+          tags: string | null
           created_at: string
-          updated_at: string
+          ingredient_name: string | null
+          ingredient_quantity: string | null
+          ingredient_details: string | null
         }
         Insert: {
           id?: number
-          recipe_id: number
-          name: string
-          amount?: string
-          details?: string
+          title: string
+          caption?: string | null
+          ingredients?: string | null
+          steps: string
+          image: string
+          popularity?: number | null
+          tags?: string | null
           created_at?: string
-          updated_at?: string
+          ingredient_name?: string | null
+          ingredient_quantity?: string | null
+          ingredient_details?: string | null
         }
         Update: {
           id?: number
-          recipe_id?: number
-          name?: string
-          amount?: string
-          details?: string
+          title?: string
+          caption?: string | null
+          ingredients?: string | null
+          steps?: string
+          image?: string
+          popularity?: number | null
+          tags?: string | null
           created_at?: string
-          updated_at?: string
+          ingredient_name?: string | null
+          ingredient_quantity?: string | null
+          ingredient_details?: string | null
         }
       }
-      grocery_items: {
+      ShoppingList: {
         Row: {
           id: number
-          user_id: string
-          name: string
-          amount: string
-          aisle: string
-          purchased: boolean
-          recipe_id: number
-          details: string
           created_at: string
-          updated_at: string
+          name: string | null
+          quantity: string | null
+          details: string | null
+          purchased: boolean | null
+          recipe_link: string | null
         }
         Insert: {
           id?: number
@@ -141,7 +150,7 @@ export interface Database {
       user_recipe_interactions: {
         Row: {
           user_id: string
-          recipe_id: string
+          recipe_id: number
           last_viewed_at: string | null
           last_shared_at: string | null
           last_saved_at: string | null
@@ -150,7 +159,7 @@ export interface Database {
         }
         Insert: {
           user_id: string
-          recipe_id: string
+          recipe_id: number
           last_viewed_at?: string | null
           last_shared_at?: string | null
           last_saved_at?: string | null
@@ -159,7 +168,7 @@ export interface Database {
         }
         Update: {
           user_id?: string
-          recipe_id?: string
+          recipe_id?: number
           last_viewed_at?: string | null
           last_shared_at?: string | null
           last_saved_at?: string | null

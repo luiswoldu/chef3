@@ -22,14 +22,13 @@ export interface Recipe {
 
 export interface GroceryItem {
   id: number
-  user_id: string
-  name: string
-  amount: string
-  aisle: string
-  purchased: boolean
-  recipe_id: number
   created_at: string
-  updated_at: string
+  name: string | null
+  quantity: string | null
+  details: string | null
+  purchased: boolean | null
+  recipe_link: string | null
+  amount?: string // Legacy field for compatibility
 }
 
 export type UserRecipeInteraction = {

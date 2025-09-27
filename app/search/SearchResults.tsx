@@ -21,10 +21,19 @@ function SearchResultsContent() {
       
       if (query) {
         try {
+          // Get current user first
+          const { data: { user } } = await supabase.auth.getUser()
+          if (!user) {
+            setResults([])
+            setIsLoading(false)
+            return
+          }
+          
           // Using ILIKE for server-side search with trailing wildcard
           const { data: recipesData, error } = await supabase
             .from('recipes')
             .select('*')
+            .eq('user_id', user.id)
             .ilike('title', `${query}%`)
           
           if (error) {

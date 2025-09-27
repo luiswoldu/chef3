@@ -63,15 +63,8 @@ export async function signUpAndOnboard({
   const user = signUpData.user;
   if (!user) throw new Error('No user returned from signUp');
 
-  // Map taste preference strings to integers
-  const tasteMap: { [key: string]: number } = {
-    'sweet,indulgent': 1,
-    'savoury,healthy': 2, 
-    'sweet,healthy': 3,
-    'savoury,indulgent': 4
-  };
-  
-  const tastePreferenceValue = tastePreference ? tasteMap[tastePreference] || null : null;
+  // Store taste preference as string directly
+  const tastePreferenceValue = tastePreference || null;
 
   const { error: profileError } = await supabase
     .from('Users')

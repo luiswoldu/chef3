@@ -56,9 +56,14 @@ export default function HomePage() {
     }
     try {
       setIsLoading(true)
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      
       const { data: allRecipes, error: fetchError } = await supabase
         .from('recipes')
         .select('*')
+        .eq('user_id', user.id)
       if (fetchError) {
         console.error("Error fetching recipes:", fetchError)
         return
@@ -84,8 +89,12 @@ export default function HomePage() {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
+      // Fallback to regular query since RPC function may not exist
       const { data: recents, error } = await supabase
-        .rpc("get_recent_recipes", { p_user_id: user.id, p_limit: 10 })
+        .from('recipes')
+        .select('*')
+        .eq('user_id', user.id)
+        .limit(10)
       if (error) {
         console.error(error)
         return

@@ -102,10 +102,13 @@ export default function Cart() {
         const { error } = await supabase
           .from('grocery_items')
           .insert([{
-            user_id: currentUser.id,
             name: newItem,
             amount: "",
+            details: "",
+            aisle: "",
             purchased: false,
+            user_id: currentUser.id,
+            created_at: new Date().toISOString()
           }])
         
         if (error) throw error
@@ -146,7 +149,7 @@ export default function Cart() {
       const { error } = await supabase
         .from('grocery_items')
         .delete()
-        .eq('user_id', currentUser.id)
+        .eq('user_id', currentUser.id) // Delete all items for this user
       
       if (error) throw error
       loadGroceryItems(currentUser.id)

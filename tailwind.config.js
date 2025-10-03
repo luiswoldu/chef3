@@ -42,6 +42,37 @@ module.exports = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        chef: {
+          // Core colors
+          core: {
+            white: "#FFFFFF",
+            black: "#000000",
+            strawberry: "#FE303F",
+          },
+
+          // Accent colors
+          accent: {
+            spring: {
+              DEFAULT: "#6ED308",   // Spring Green
+              light: "#A5E765",     // Gradient variant
+            },
+            green: {
+              DEFAULT: "#6CD401",   // Primary (Log In, Save..)
+              lime: "#98E14D",      // 6CD401 @70%
+              honeydew: "#F0FBE5",  // 6CD401 @10%
+            },
+          },
+
+          // Greys
+          grey: {
+            calcium: "#F7F7F7",   // Import input field / Secondary button
+            silver: "#DFE0E1",    // Usage
+            magnesium: "#B2B2B2", // Arrow Up Default / Icons
+            DEFAULT: "#9F9F9F",   // Secondary text / Placeholder
+            iron: "#58575C",      // Unselected navigation text
+            graphite: "#343434",  // Dark text
+          },
+        },
       },
       boxShadow: {
         'custom': '0 2px 10px 2px rgba(0, 0, 0, 0.1)',

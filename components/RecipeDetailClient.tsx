@@ -54,53 +54,47 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           return
         }
         
-        // Try to get recipe from user's recipes first
-        const { data: userRecipeData, error: userRecipeError } = await supabase
-          .from('recipes')
-          .select(`
-            *,
-            ingredients (*)
-          `)
-          .eq('id', recipeId)
-          .eq('user_id', user.id)
+        // Try featured_library first (check both id and recipe_id)
+        let { data: featuredRecipeData, error: featuredRecipeError } = await supabase
+          .from('featured_library')
+          .select('*')
+          .eq('recipe_id', recipeId)
           .single()
+        
+        // If not found by recipe_id, try by id (in case it's a standalone featured recipe)
+        if (featuredRecipeError && featuredRecipeError.code === 'PGRST116') {
+          const { data: featuredById, error: featuredByIdError } = await supabase
+            .from('featured_library')
+            .select('*')
+            .eq('id', recipeId)
+            .single()
+          
+          if (!featuredByIdError && featuredById) {
+            featuredRecipeData = featuredById
+            featuredRecipeError = null
+          }
+        }
         
         let recipeData = null
         
-        if (userRecipeError && userRecipeError.code === 'PGRST116') {
-          // Recipe not found in user recipes, try featured_library
-          const { data: featuredRecipeData, error: featuredRecipeError } = await supabase
-            .from('featured_library')
+        if (!featuredRecipeError && featuredRecipeData) {
+          // Found in featured_library
+          // Get ingredients from ingredients table using recipe_id
+          const ingredientRecipeId = featuredRecipeData.recipe_id || featuredRecipeData.id
+          const { data: ingredientsData, error: ingredientsError } = await supabase
+            .from('ingredients')
             .select('*')
-            .eq('recipe_id', recipeId)
-            .single()
-          
-          if (featuredRecipeError) {
-            if (featuredRecipeError.code === 'PGRST116') {
-              setError('Recipe not found')
-              setRecipe(null)
-            } else {
-              throw featuredRecipeError
-            }
-            return
-          }
-          
-          // For featured recipes, get ingredients from the original recipes table
-          const { data: originalRecipeData, error: originalError } = await supabase
-            .from('recipes')
-            .select(`
-              ingredients (*)
-            `)
-            .eq('id', featuredRecipeData.recipe_id)
-            .single()
+            .eq('recipe_id', ingredientRecipeId)
           
           recipeData = {
             ...featuredRecipeData,
-            id: featuredRecipeData.recipe_id, // Use the original recipe ID
-            ingredients: originalRecipeData?.ingredients || []
+            id: featuredRecipeData.recipe_id || featuredRecipeData.id,
+            ingredients: ingredientsData || []
           }
           
-          // Track that user viewed this featured recipe
+          console.log('Featured recipe ingredients from ingredients table:', ingredientsData)
+          
+          // Track featured recipe view
           await supabase
             .from('recipe_interactions')
             .upsert({
@@ -112,9 +106,28 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
               onConflict: 'user_id,recipe_id,is_featured',
               ignoreDuplicates: false
             })
-        } else if (userRecipeError) {
-          throw userRecipeError
         } else {
+          // Not found in featured_library, try user recipes
+          const { data: userRecipeData, error: userRecipeError } = await supabase
+            .from('recipes')
+            .select(`
+              *,
+              ingredients (*)
+            `)
+            .eq('id', recipeId)
+            .eq('user_id', user.id)
+            .single()
+          
+          if (userRecipeError) {
+            if (userRecipeError.code === 'PGRST116') {
+              setError('Recipe not found')
+              setRecipe(null)
+            } else {
+              throw userRecipeError
+            }
+            return
+          }
+          
           recipeData = userRecipeData
           
           // Track that user viewed this user recipe

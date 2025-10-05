@@ -10,8 +10,6 @@ import { supabase } from "@/lib/supabase/client"
 // Cache outside component to persist across navigations
 let recipeCache: Recipe[] | null = null
 let recipeCacheTime: number = 0
-let recentCache: { heroRecipe: Recipe | null; recentRecipes: Recipe[] } | null = null
-let recentCacheTime: number = 0
 
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
@@ -82,6 +80,8 @@ export default function HomePage() {
 
   const loadFeaturedRecipes = useCallback(async () => {
     try {
+      console.log('🔄 Loading Our Picks...')
+      
       // Get a larger sample of featured recipes to randomize from
       const { data: featured, error } = await supabase
         .from('featured_library')
@@ -89,20 +89,48 @@ export default function HomePage() {
         .limit(50)
       
       if (error) {
-        console.error("Error fetching featured recipes:", error)
+        console.error("❌ Error fetching featured recipes:", error)
         return
       }
       
-      // Randomly select 9 recipes from the larger set
+      console.log(`📊 Fetched ${featured?.length || 0} featured recipes from DB`)
+      
+      // Deduplicate by recipe_id and randomly select 9 recipes
       if (featured && featured.length > 0) {
-        const shuffled = [...featured].sort(() => Math.random() - 0.5)
+        // Remove duplicates based on recipe_id
+        const uniqueFeatured = featured.reduce((acc: any[], recipe: any) => {
+          const recipeId = recipe.recipe_id || recipe.id
+          if (!acc.find(r => (r.recipe_id || r.id) === recipeId)) {
+            acc.push(recipe)
+          } else {
+            console.log(`🔄 Skipped duplicate recipe_id: ${recipeId}`)
+          }
+          return acc
+        }, [])
+        
+        console.log(`✨ After deduplication: ${uniqueFeatured.length} unique recipes`)
+        
+        const shuffled = [...uniqueFeatured].sort(() => Math.random() - 0.5)
         const randomPicks = shuffled.slice(0, 9)
+        
+        console.log(`🎯 Selected ${randomPicks.length} Our Picks:`, randomPicks.map(r => ({ 
+          id: r.recipe_id || r.id, 
+          title: r.title?.substring(0, 30) + '...' 
+        })))
+        
+        // Final duplicate check
+        const pickedIds = randomPicks.map(r => r.recipe_id || r.id)
+        const uniqueIds = [...new Set(pickedIds)]
+        if (pickedIds.length !== uniqueIds.length) {
+          console.error('❌ DUPLICATES in Our Picks!', pickedIds)
+        }
+        
         setFeaturedRecipes(randomPicks as Recipe[] || [])
       } else {
         setFeaturedRecipes([])
       }
     } catch (error) {
-      console.error("Error in loadFeaturedRecipes:", error)
+      console.error("❌ Error in loadFeaturedRecipes:", error)
     }
   }, [])
 
@@ -133,6 +161,8 @@ export default function HomePage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       
+      console.log('🔄 Loading recent recipes for user:', user.id.substring(0, 8) + '...')
+      
       const { data: recent, error } = await supabase
         .rpc('get_recent_recipes', {
           user_id_param: user.id,
@@ -140,14 +170,18 @@ export default function HomePage() {
         })
       
       if (error) {
-        console.error('Error fetching recent recipes:', error)
+        console.error('❌ Error fetching recent recipes:', error)
         console.error('Error details:', JSON.stringify(error, null, 2))
         return
       }
       
+      console.log('✅ Recent recipes loaded:', recent?.length || 0)
+      console.log('Recent recipes data:', recent?.slice(0, 3).map(r => ({ id: r.id, title: r.title?.substring(0, 30) + '...', viewed_at: r.viewed_at })))
+      
+      // Set data directly without additional frontend processing
       setRecentRecipes(recent as Recipe[] || [])
     } catch (error) {
-      console.error('Error in loadRecentRecipes:', error)
+      console.error('❌ Error in loadRecentRecipes:', error)
     }
   }, [])
 
@@ -176,7 +210,7 @@ export default function HomePage() {
       <div className="relative w-full h-[56.4vh]">
         {heroRecipe ? (
           <RecipeCard
-            id={(heroRecipe as any).recipe_id?.toString() || "0"}
+            id={((heroRecipe as any).recipe_id || (heroRecipe as any).id)?.toString() || "0"}
             title={heroRecipe.title || "Untitled Recipe"}
             image={heroRecipe.image || '/placeholder.svg'}
             isHero={true}
@@ -197,8 +231,8 @@ export default function HomePage() {
           <h2 className="text-[28px] tracking-tight font-bold mb-2 px-4">Recents</h2>
           <div className="flex overflow-x-auto space-x-2 px-4 pb-2">
             {recentRecipes && recentRecipes.length > 0 ? (
-              recentRecipes.map((recipe: Recipe) => (
-                <div key={`recent-${recipe.id}`} className="w-48">
+              recentRecipes.map((recipe: Recipe, index: number) => (
+                <div key={`recent-${recipe.id}-${index}`} className="w-48">
                   <RecipeCard 
                     id={recipe.id?.toString() || "0"} 
                     title={recipe.title || "Untitled Recipe"} 
@@ -250,7 +284,7 @@ export default function HomePage() {
               featuredRecipes.map((recipe: any) => (
                 <div key={`featured-${recipe.id}`} className="w-48">
                   <RecipeCard 
-                    id={recipe.recipe_id?.toString() || "0"} 
+                    id={(recipe.recipe_id || recipe.id)?.toString() || "0"} 
                     title={recipe.title || "Untitled Recipe"} 
                     image={recipe.image || '/placeholder.svg'}
                     cardType="thumbnail"

@@ -6,14 +6,15 @@ export async function trackRecipeView(recipeId: string) {
     if (!user) return;
 
     const { error } = await supabase
-      .from("user_recipe_interactions")
+      .from("recipe_interactions")
       .upsert(
         { 
           user_id: user.id, 
           recipe_id: recipeId, 
-          last_viewed_at: new Date().toISOString() 
+          viewed_at: new Date().toISOString(),
+          is_featured: false
         },
-        { onConflict: "user_id,recipe_id" }
+        { onConflict: "user_id,recipe_id,is_featured" }
       );
     
     if (error) {
@@ -39,24 +40,12 @@ export async function trackRecipeInteraction(
     };
 
     // Set the appropriate timestamp based on interaction type
-    switch (interactionType) {
-      case 'view':
-        updateData.last_viewed_at = timestamp;
-        break;
-      case 'tap':
-        updateData.last_viewed_at = timestamp;
-        break;
-      case 'share':
-        updateData.last_shared_at = timestamp;
-        break;
-      case 'save':
-        updateData.last_saved_at = timestamp;
-        break;
-    }
+    updateData.viewed_at = timestamp;
+    updateData.is_featured = false;
 
     const { error } = await supabase
-      .from("user_recipe_interactions")
-      .upsert(updateData, { onConflict: "user_id,recipe_id" });
+      .from("recipe_interactions")
+      .upsert(updateData, { onConflict: "user_id,recipe_id,is_featured" });
     
     if (error) {
       console.error(`Recipe ${interactionType} tracking error:`, error);

@@ -103,7 +103,7 @@ export default function RecipeCard({
         const { data: featuredRecipe, error: featuredRecipeError } = await supabase
           .from('featured_library')
           .select('*')
-          .eq('id', id)
+          .eq('recipe_id', id)
           .single()
         
         if (featuredRecipeError) {

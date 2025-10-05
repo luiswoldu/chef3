@@ -72,7 +72,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           const { data: featuredRecipeData, error: featuredRecipeError } = await supabase
             .from('featured_library')
             .select('*')
-            .eq('id', recipeId)
+            .eq('recipe_id', recipeId)
             .single()
           
           if (featuredRecipeError) {
@@ -85,11 +85,19 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
             return
           }
           
-          // Featured recipe has ingredients as JSONB, convert to expected format
-          const featuredIngredients = featuredRecipeData.ingredients || []
+          // For featured recipes, get ingredients from the original recipes table
+          const { data: originalRecipeData, error: originalError } = await supabase
+            .from('recipes')
+            .select(`
+              ingredients (*)
+            `)
+            .eq('id', featuredRecipeData.recipe_id)
+            .single()
+          
           recipeData = {
             ...featuredRecipeData,
-            ingredients: featuredIngredients
+            id: featuredRecipeData.recipe_id, // Use the original recipe ID
+            ingredients: originalRecipeData?.ingredients || []
           }
           
           // Track that user viewed this featured recipe
@@ -100,6 +108,9 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
               recipe_id: recipeId,
               viewed_at: new Date().toISOString(),
               is_featured: true
+            }, {
+              onConflict: 'user_id,recipe_id,is_featured',
+              ignoreDuplicates: false
             })
         } else if (userRecipeError) {
           throw userRecipeError
@@ -114,6 +125,9 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
               recipe_id: recipeId,
               viewed_at: new Date().toISOString(),
               is_featured: false
+            }, {
+              onConflict: 'user_id,recipe_id,is_featured',
+              ignoreDuplicates: false
             })
         }
         

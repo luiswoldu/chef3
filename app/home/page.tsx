@@ -135,12 +135,13 @@ export default function HomePage() {
       
       const { data: recent, error } = await supabase
         .rpc('get_recent_recipes', {
-          user_id_param: user.id.toString(),
+          user_id_param: user.id,
           limit_param: 9
         })
       
       if (error) {
         console.error('Error fetching recent recipes:', error)
+        console.error('Error details:', JSON.stringify(error, null, 2))
         return
       }
       
@@ -175,7 +176,7 @@ export default function HomePage() {
       <div className="relative w-full h-[56.4vh]">
         {heroRecipe ? (
           <RecipeCard
-            id={heroRecipe.id?.toString() || "0"}
+            id={(heroRecipe as any).recipe_id?.toString() || "0"}
             title={heroRecipe.title || "Untitled Recipe"}
             image={heroRecipe.image || '/placeholder.svg'}
             isHero={true}
@@ -246,10 +247,10 @@ export default function HomePage() {
           <h2 className="text-[28px] tracking-tight font-bold mb-2 px-4">Our Picks</h2>
           <div className="flex overflow-x-auto space-x-2 px-4 pb-4">
             {featuredRecipes && featuredRecipes.length > 0 ? (
-              featuredRecipes.map((recipe: Recipe) => (
+              featuredRecipes.map((recipe: any) => (
                 <div key={`featured-${recipe.id}`} className="w-48">
                   <RecipeCard 
-                    id={recipe.id?.toString() || "0"} 
+                    id={recipe.recipe_id?.toString() || "0"} 
                     title={recipe.title || "Untitled Recipe"} 
                     image={recipe.image || '/placeholder.svg'}
                     cardType="thumbnail"

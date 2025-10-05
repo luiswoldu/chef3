@@ -54,20 +54,15 @@ export default function RecipeCard({
         .select('*')
         .eq('recipe_id', id)
         .eq('user_id', user.id)
-        .single()
+        .limit(1)
       
       if (error) {
-        // If the error is that no rows were returned, it means the recipe is not in the shopping list
-        if (error.code === 'PGRST116') {
-          setIsAdded(false)
-          return
-        }
         console.error('Error checking grocery items:', error)
         return
       }
       
-      // If we got data back, the recipe is in the shopping list
-      setIsAdded(!!data)
+      // If we got data back (array with length > 0), the recipe is in the shopping list
+      setIsAdded(data && data.length > 0)
     } catch (error) {
       console.error('Error in checkIfAdded:', error)
     }
@@ -200,6 +195,7 @@ export default function RecipeCard({
           alt={title}
           fill
           sizes="(max-width: 768px) 100vw, 50vw"
+          priority={cardType === 'hero'} // Add priority for hero images (LCP optimization)
           className={`object-cover transition-transform duration-300 ease-in-out transform hover:scale-105 ${
             cardType === 'thumbnail' ? 'object-center' : 'object-cover'
           }`}

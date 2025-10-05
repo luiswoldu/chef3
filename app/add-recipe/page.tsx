@@ -372,7 +372,11 @@ export default function AddRecipe() {
 
       showNotification("Added to your library")
       
-      router.push('/')
+      // Set multiple flags to ensure cache refresh works
+      localStorage.setItem('recipeJustAdded', 'true')
+      
+      // Navigate back with a flag to indicate recipe was added
+      router.push('/home?recipeAdded=true')
     } catch (error) {
       console.error('Error saving recipe:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'

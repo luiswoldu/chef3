@@ -323,8 +323,15 @@ export default function AddRecipePanel({
       }
 
       showNotification("Added to your library")
+      
+      // Trigger cache refresh directly since we're staying on the same page
+      localStorage.setItem('recipeJustAdded', 'true')
+      
+      // Dispatch a custom event to notify the home page to refresh
+      window.dispatchEvent(new CustomEvent('recipeAdded'))
+      
       onClose()
-      router.push('/')
+      // Don't navigate away since we're already on the home page
     } catch (err) {
       console.error('Error saving recipe:', err)
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'

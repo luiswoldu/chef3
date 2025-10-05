@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState, useMemo, useCallback } from "react"
+import { useEffect, useState, useMemo, useCallback, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import Navigation from "@/components/Navigation"
 import SearchBar from "@/components/SearchBar"
 import RecipeCard from "@/components/RecipeCard"
@@ -13,7 +14,14 @@ let recipeCacheTime: number = 0
 
 const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
-export default function HomePage() {
+// Function to invalidate the cache (can be called when recipes are added/updated)
+const invalidateRecipeCache = () => {
+  recipeCache = null
+  recipeCacheTime = 0
+}
+
+function HomePageContent() {
+  const searchParams = useSearchParams()
   const [recipes, setRecipes] = useState<Recipe[]>(recipeCache || [])
   const [heroRecipe, setHeroRecipe] = useState<Recipe | null>(null)
   const [featuredRecipes, setFeaturedRecipes] = useState<Recipe[]>([])
@@ -47,14 +55,16 @@ export default function HomePage() {
     ]
   }, [recipes])
 
-  const loadRecipes = useCallback(async () => {
+  const loadRecipes = useCallback(async (forceRefresh = false) => {
     const now = Date.now()
-    if (recipeCache && (now - recipeCacheTime) < CACHE_DURATION) {
+    if (!forceRefresh && recipeCache && (now - recipeCacheTime) < CACHE_DURATION) {
+      console.log('Using cached Added Recipes:', recipeCache.length, 'recipes')
       setRecipes(recipeCache)
       return
     }
     try {
       setIsLoading(true)
+      console.log('Loading fresh Added Recipes from database...')
       // Get current user
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -63,6 +73,7 @@ export default function HomePage() {
         .from('recipes')
         .select('*')
         .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
       if (fetchError) {
         console.error("Error fetching recipes:", fetchError)
         return
@@ -70,7 +81,8 @@ export default function HomePage() {
       const recipesData = allRecipes as Recipe[] || []
       recipeCache = recipesData
       recipeCacheTime = now
-      setRecipes(recipesData)
+      setRecipes([...recipesData]) // Ensure new array reference to force re-render
+      console.log('Loaded', recipesData.length, 'Added Recipes from database')
     } catch (error) {
       console.error("Error in loadRecipes:", error)
     } finally {
@@ -80,7 +92,7 @@ export default function HomePage() {
 
   const loadFeaturedRecipes = useCallback(async () => {
     try {
-      console.log('🔄 Loading Our Picks...')
+      console.log('Loading Our Picks...')
       
       // Get a larger sample of featured recipes to randomize from
       const { data: featured, error } = await supabase
@@ -89,11 +101,11 @@ export default function HomePage() {
         .limit(50)
       
       if (error) {
-        console.error("❌ Error fetching featured recipes:", error)
+        console.error("Error fetching featured recipes:", error)
         return
       }
       
-      console.log(`📊 Fetched ${featured?.length || 0} featured recipes from DB`)
+      console.log(`Fetched ${featured?.length || 0} featured recipes from DB`)
       
       // Deduplicate by recipe_id and randomly select 9 recipes
       if (featured && featured.length > 0) {
@@ -103,26 +115,26 @@ export default function HomePage() {
           if (!acc.find(r => (r.recipe_id || r.id) === recipeId)) {
             acc.push(recipe)
           } else {
-            console.log(`🔄 Skipped duplicate recipe_id: ${recipeId}`)
+            console.log(`Skipped duplicate recipe_id: ${recipeId}`)
           }
           return acc
         }, [])
         
-        console.log(`✨ After deduplication: ${uniqueFeatured.length} unique recipes`)
+        console.log(`After deduplication: ${uniqueFeatured.length} unique recipes`)
         
         const shuffled = [...uniqueFeatured].sort(() => Math.random() - 0.5)
         const randomPicks = shuffled.slice(0, 9)
         
-        console.log(`🎯 Selected ${randomPicks.length} Our Picks:`, randomPicks.map(r => ({ 
+        console.log(`Selected ${randomPicks.length} Our Picks:`, randomPicks.map(r => ({ 
           id: r.recipe_id || r.id, 
           title: r.title?.substring(0, 30) + '...' 
         })))
         
         // Final duplicate check
         const pickedIds = randomPicks.map(r => r.recipe_id || r.id)
-        const uniqueIds = [...new Set(pickedIds)]
+        const uniqueIds = Array.from(new Set(pickedIds))
         if (pickedIds.length !== uniqueIds.length) {
-          console.error('❌ DUPLICATES in Our Picks!', pickedIds)
+          console.error('DUPLICATES in Our Picks!', pickedIds)
         }
         
         setFeaturedRecipes(randomPicks as Recipe[] || [])
@@ -130,7 +142,7 @@ export default function HomePage() {
         setFeaturedRecipes([])
       }
     } catch (error) {
-      console.error("❌ Error in loadFeaturedRecipes:", error)
+      console.error("Error in loadFeaturedRecipes:", error)
     }
   }, [])
 
@@ -161,7 +173,7 @@ export default function HomePage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
       
-      console.log('🔄 Loading recent recipes for user:', user.id.substring(0, 8) + '...')
+      console.log('Loading recent recipes for user:', user.id.substring(0, 8) + '...')
       
       const { data: recent, error } = await supabase
         .rpc('get_recent_recipes', {
@@ -170,18 +182,18 @@ export default function HomePage() {
         })
       
       if (error) {
-        console.error('❌ Error fetching recent recipes:', error)
+        console.error('Error fetching recent recipes:', error)
         console.error('Error details:', JSON.stringify(error, null, 2))
         return
       }
       
-      console.log('✅ Recent recipes loaded:', recent?.length || 0)
-      console.log('Recent recipes data:', recent?.slice(0, 3).map(r => ({ id: r.id, title: r.title?.substring(0, 30) + '...', viewed_at: r.viewed_at })))
+      console.log('Recent recipes loaded:', recent?.length || 0)
+      console.log('Recent recipes data:', recent?.slice(0, 3).map((r: any) => ({ id: r.id, title: r.title?.substring(0, 30) + '...', viewed_at: r.viewed_at })))
       
       // Set data directly without additional frontend processing
       setRecentRecipes(recent as Recipe[] || [])
     } catch (error) {
-      console.error('❌ Error in loadRecentRecipes:', error)
+      console.error('Error in loadRecentRecipes:', error)
     }
   }, [])
 
@@ -204,6 +216,99 @@ export default function HomePage() {
   useEffect(() => {
     loadFeaturedRecipes()
   }, [loadFeaturedRecipes])
+
+  // Listen for page visibility changes to refresh recipes when user returns
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        console.log('Page became visible, refreshing recipes...')
+        // Invalidate cache and reload recipes when user returns to the page
+        invalidateRecipeCache()
+        loadRecipes(true) // Force refresh
+        loadRecentRecipes() // Also refresh recent recipes
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    // Also listen for focus events as a fallback
+    const handleFocus = () => {
+      console.log('Window focused, refreshing recipes...')
+      invalidateRecipeCache()
+      loadRecipes(true) // Force refresh
+      loadRecentRecipes()
+    }
+    
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [loadRecipes, loadRecentRecipes])
+
+  // Check for recipeAdded parameter and refresh immediately
+  useEffect(() => {
+    const recipeAdded = searchParams.get('recipeAdded')
+    console.log('Checking URL parameters:', {
+      recipeAdded,
+      fullURL: window.location.href,
+      searchParams: Object.fromEntries(searchParams.entries())
+    })
+    
+    if (recipeAdded === 'true') {
+      console.log('Recipe was just added! Refreshing Added Recipes immediately...')
+      invalidateRecipeCache()
+      loadRecipes(true) // Force refresh by passing true
+      loadRecentRecipes() // Also refresh recent recipes in case the new recipe gets viewed
+      
+      // Clean up the URL parameter
+      const url = new URL(window.location.href)
+      url.searchParams.delete('recipeAdded')
+      window.history.replaceState({}, '', url.toString())
+      console.log('URL cleaned up, new URL:', window.location.href)
+    }
+  }, [searchParams, loadRecipes, loadRecentRecipes])
+
+  // Also check localStorage as a backup trigger
+  useEffect(() => {
+    const checkForNewRecipe = () => {
+      const newRecipeFlag = localStorage.getItem('recipeJustAdded')
+      if (newRecipeFlag === 'true') {
+        console.log('New recipe detected via localStorage! Refreshing...')
+        localStorage.removeItem('recipeJustAdded')
+        invalidateRecipeCache()
+        loadRecipes(true)
+        loadRecentRecipes()
+      }
+    }
+    
+    // Listen for custom event from AddRecipePanel (immediate trigger)
+    const handleRecipeAdded = () => {
+      console.log('Custom recipeAdded event detected! Refreshing immediately...')
+      invalidateRecipeCache()
+      loadRecipes(true)
+      loadRecentRecipes()
+    }
+    
+    // Check immediately
+    checkForNewRecipe()
+    
+    // Listen for custom events (immediate notification)
+    window.addEventListener('recipeAdded', handleRecipeAdded)
+    
+    // Listen for storage events (in case of multiple tabs)
+    window.addEventListener('storage', checkForNewRecipe)
+    
+    // Polling as a fallback (check every 2 seconds)
+    const interval = setInterval(checkForNewRecipe, 2000)
+    
+    return () => {
+      window.removeEventListener('recipeAdded', handleRecipeAdded)
+      window.removeEventListener('storage', checkForNewRecipe)
+      clearInterval(interval)
+    }
+  }, [loadRecipes, loadRecentRecipes])
 
   return (
     <div className="flex flex-col min-h-screen pb-[70px]">
@@ -303,5 +408,13 @@ export default function HomePage() {
       </div>
       <Navigation />
     </div>
+  )
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div></div>}>
+      <HomePageContent />
+    </Suspense>
   )
 }

@@ -4,6 +4,8 @@ import { useState, useEffect, MouseEvent } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { supabase } from "@/lib/supabase/client"
+import { trackRecipeCardView, trackRecipeCardTap } from "@/lib/supabase/track"
+import { showNotification } from '@/hooks/use-notification' // Add this import
 import type { Recipe } from "@/types"
 
 interface Ingredient {
@@ -45,9 +47,12 @@ export default function RecipeCard({
   const checkIfAdded = async () => {
     try {
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-      
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError || !user) {
+        setIsAdded(false)
+        return
+      }
+
       // Check if this recipe is in the grocery_items table for this user
       const { data, error } = await supabase
         .from('grocery_items')
@@ -72,62 +77,39 @@ export default function RecipeCard({
     e.preventDefault()
     try {
       // Get current user
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        console.error('You must be logged in to add items to cart')
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      if (userError || !user) {
+        console.error('User not authenticated:', userError)
+        showNotification("Please log in to add items to cart") // Add notification for auth error
         return
       }
-      
-      // Try to get recipe from user's recipes first
-      const { data: userRecipe, error: userRecipeError } = await supabase
+
+      // First get the recipe with its ingredients
+      const { data: recipe, error: recipeError } = await supabase
         .from('recipes')
         .select(`
           *,
           ingredients (*)
         `)
         .eq('id', id)
-        .eq('user_id', user.id)
         .single()
       
-      let recipe = null
-      let ingredients = []
+      if (recipeError) throw recipeError
       
-      if (userRecipeError && userRecipeError.code === 'PGRST116') {
-        // Recipe not found in user recipes, try featured_library
-        const { data: featuredRecipe, error: featuredRecipeError } = await supabase
-          .from('featured_library')
-          .select('*')
-          .eq('recipe_id', id)
-          .single()
-        
-        if (featuredRecipeError) {
-          console.error('Recipe not found in either recipes or featured_library:', featuredRecipeError)
-          return
-        }
-        
-        recipe = featuredRecipe
-        // Featured recipes have ingredients as JSONB
-        ingredients = featuredRecipe.ingredients || []
-      } else if (userRecipeError) {
-        console.error('Error fetching user recipe:', userRecipeError)
-        return
-      } else {
-        recipe = userRecipe
-        ingredients = userRecipe.ingredients || []
-      }
-      
-      if (!ingredients || ingredients.length === 0) {
+      if (!recipe.ingredients || recipe.ingredients.length === 0) {
         console.error('No ingredients found for this recipe')
+        showNotification("No ingredients found for this recipe") // Add notification for no ingredients
         return
       }
       
-      const groceryItems = ingredients.map((ing: any) => ({
-        name: ing.name || ing.ingredient,
+      // Insert ingredients as grocery items with user_id
+      const groceryItems = recipe.ingredients.map((ing: any) => ({
+        user_id: user.id,
+        name: ing.name,
         amount: ing.amount,
         aisle: "Other",
         purchased: false,
         recipe_id: Number(id),
-        user_id: user.id,
       }))
       
       const { error } = await supabase
@@ -136,12 +118,15 @@ export default function RecipeCard({
       
       if (error) {
         console.error('Error adding to grocery items:', error)
+        showNotification("Failed to add ingredients to cart") // Add notification for database error
         return
       }
       
       setIsAdded(true)
+      showNotification("Added to cart") // Add success notification
     } catch (error) {
       console.error('Error in addToCart:', error)
+      showNotification("Failed to add ingredients to cart") // Add notification for any other errors
     }
   }
 
@@ -150,9 +135,9 @@ export default function RecipeCard({
       case 'hero':
         return 'w-full h-full'
       case 'thumbnail':
-        return 'w-36 md:w-48 lg:w-48 aspect-[1/2]'
+        return 'w-36 md:w-48 lg:w-48 aspect-[1/2]' // 2:1 aspect ratio for thumbnails
       case 'square':
-        return 'max-w-sm aspect-square'
+        return 'max-w-sm aspect-square' // 1:1 aspect ratio for square cards
       default:
         return 'max-w-sm aspect-square'
     }
@@ -207,11 +192,11 @@ export default function RecipeCard({
           <h2 
             className={`text-white leading-[1.1] ${
               cardType === 'hero' 
-                ? 'text-[28px] tracking-[-0.04em] font-extrabold px-3 py-5'
+                ? 'text-[28px] tracking-[-0.04em] font-extrabold px-3 py-5' // controls hero title padding y 6 = 24px
                 : cardType === 'thumbnail'
                 ? 'text-base font-bold tracking-tight'
                 : 'text-lg font-bold'
-                } px-3 py-3 w-full`}
+                } px-3 py-3 w-full`} // controls thumbnail text
             style={{ 
               background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0) 100%)'
             }}

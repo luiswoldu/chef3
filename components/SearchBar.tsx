@@ -17,7 +17,7 @@ export default function SearchBar() {
       <div className="absolute top-0 left-1/2 transform -translate-x-1/2 z-10 p-4 w-full max-w-lg mx-auto" style={{
         background: 'linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0) 100%)'
       }}>
-        <div className="flex items-center gap-3 mt-6 w-full">
+        <div className="flex items-center gap-3 mt-3 w-full">
         <button
          onClick={() => router.push('/profile')}
          className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0 bg-white "

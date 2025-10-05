@@ -222,7 +222,7 @@ export default function AddRecipePanel({
       if (data) {
         setExtractedRecipe(data)
         setTimeout(() => setSheetHeight(EXPANDED_HEIGHT), 80)
-        showNotification("Recipe found! Please review and save.")
+        showNotification("Got it!")
       }
     } catch (e) {
       console.error('Error extracting recipe:', e)
@@ -383,17 +383,16 @@ export default function AddRecipePanel({
                     className="pl-4 pr-12 bg-[#F7F7F7] border-0 focus:ring-0 focus:ring-offset-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:outline-none text-black placeholder:text-gray-400 rounded-full h-[3.3125rem] text-xl"
                     disabled={loading}
                   />
-                  <Button
+<Button
                     type="button"
                     variant="outline"
                     size="icon"
                     onClick={() => handleExtract?.()}
                     disabled={loading || !url}
-                    className={`absolute right-2 top-1/2 -translate-y-1/2 border-0 rounded-full transition-all duration-200 ${loading ? "bg-gray-400 cursor-not-allowed" : url ? "bg-gradient-to-r from-[#6ED308] to-[#A5E765] hover:scale-105" : "bg-white/30"}`}
+                    className={`absolute right-2 top-1/2 -translate-y-1/2 border-0 rounded-full transition-all duration-200 ${loading || url ? "bg-gradient-to-r from-[#6ED308] to-[#A5E765] hover:scale-105" : "bg-white/30"} ${loading ? "cursor-not-allowed" : ""}`}
                   >
                     {loading ? <Loader className="h-6 w-6 animate-spin text-white" /> : <ArrowUp className="!h-6 !w-6 text-white" />}
-                  </Button>
-                </div>
+                  </Button>                </div>
               </div>
             </div>
           </>
@@ -497,8 +496,7 @@ export default function AddRecipePanel({
                   {extractedRecipe.recipe.steps.map((step, i) => (
                     <li key={i} className="text-gray-700">
                       <div className="flex items-start">
-                        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mr-3 mt-0.5 text-sm font-semibold">{i + 1}</span>
-                        <span>{step}</span>
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center mr-3 mt-0.5 text-sm font-semibold" style={{ backgroundColor: '#F0FBE5', color: '#6ED308' }}>{i + 1}</span>                        <span>{step}</span>
                       </div>
                     </li>
                   ))}

@@ -267,7 +267,7 @@ export default function AddRecipe() {
       const data = await extractRecipeFromUrl(url)
       if (data) {
         setExtractedRecipe(data)
-        showNotification("Recipe found! Please review and save.")
+        showNotification("Got it!")
       }
     } catch (error) {
       console.error('Error extracting recipe:', error)
@@ -403,22 +403,20 @@ export default function AddRecipe() {
               className="pl-4 pr-12 bg-[#343434] text-white placeholder:text-white/30 rounded-full focus:ring-0 border-0 focus:border-0 h-[3.3125rem] text-xl"
               disabled={loading}
             />
-            <Button
+<Button
               variant="outline"
               size="icon"
               onClick={handleExtractRecipe}
               disabled={loading || !url}
               className={`absolute right-2 top-1/2 -translate-y-1/2 border-0 rounded-full transition-all duration-200 ${
-                loading
-                  ? 'bg-gray-400 cursor-not-allowed'
-                  : url 
-                    ? 'bg-gradient-to-r from-[#6ED308] to-[#A5E765] hover:scale-105' 
-                    : 'bg-white/30'
-              }`}
+                url 
+                  ? 'bg-gradient-to-r from-[#6ED308] to-[#A5E765] hover:scale-105' 
+                  : 'bg-white/30'
+              } ${loading ? 'cursor-not-allowed' : ''}`}
             >
               {loading ? (
                 <div className="flex items-center justify-center">
-                  <Loader className="h-6 w-6 animate-spin text-white" />
+                  <Loader className="h-6 w-6 animate-spin text-black" />
                 </div>
               ) : (
                 <ArrowUp className="!h-6 !w-6 text-white" />

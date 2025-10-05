@@ -405,7 +405,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
                 recipe.ingredients.map((ingredient: any, index: number) => (
                   <div key={ingredient.id || index} className="bg-white p-3 rounded-xl shadow-custom mb-2">
                     <p className="font-medium">{ingredient.name}</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-[#9F9F9F]">
                       {ingredient.amount}{ingredient.details ? ` ${ingredient.details}` : ''}
                     </p>
                   </div>

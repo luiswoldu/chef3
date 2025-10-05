@@ -82,17 +82,25 @@ export default function HomePage() {
 
   const loadFeaturedRecipes = useCallback(async () => {
     try {
+      // Get a larger sample of featured recipes to randomize from
       const { data: featured, error } = await supabase
         .from('featured_library')
         .select('*')
-        .limit(9)
+        .limit(50)
       
       if (error) {
         console.error("Error fetching featured recipes:", error)
         return
       }
       
-      setFeaturedRecipes(featured as Recipe[] || [])
+      // Randomly select 9 recipes from the larger set
+      if (featured && featured.length > 0) {
+        const shuffled = [...featured].sort(() => Math.random() - 0.5)
+        const randomPicks = shuffled.slice(0, 9)
+        setFeaturedRecipes(randomPicks as Recipe[] || [])
+      } else {
+        setFeaturedRecipes([])
+      }
     } catch (error) {
       console.error("Error in loadFeaturedRecipes:", error)
     }

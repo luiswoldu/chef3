@@ -84,8 +84,8 @@ export default function RecipeCard({
         return
       }
       
-      // First get the recipe with its ingredients
-      const { data: recipe, error: recipeError } = await supabase
+      // Try to get recipe from user's recipes first
+      const { data: userRecipe, error: userRecipeError } = await supabase
         .from('recipes')
         .select(`
           *,
@@ -95,15 +95,40 @@ export default function RecipeCard({
         .eq('user_id', user.id)
         .single()
       
-      if (recipeError) throw recipeError
+      let recipe = null
+      let ingredients = []
       
-      if (!recipe.ingredients || recipe.ingredients.length === 0) {
+      if (userRecipeError && userRecipeError.code === 'PGRST116') {
+        // Recipe not found in user recipes, try featured_library
+        const { data: featuredRecipe, error: featuredRecipeError } = await supabase
+          .from('featured_library')
+          .select('*')
+          .eq('id', id)
+          .single()
+        
+        if (featuredRecipeError) {
+          console.error('Recipe not found in either recipes or featured_library:', featuredRecipeError)
+          return
+        }
+        
+        recipe = featuredRecipe
+        // Featured recipes have ingredients as JSONB
+        ingredients = featuredRecipe.ingredients || []
+      } else if (userRecipeError) {
+        console.error('Error fetching user recipe:', userRecipeError)
+        return
+      } else {
+        recipe = userRecipe
+        ingredients = userRecipe.ingredients || []
+      }
+      
+      if (!ingredients || ingredients.length === 0) {
         console.error('No ingredients found for this recipe')
         return
       }
       
-      const groceryItems = recipe.ingredients.map((ing: any) => ({
-        name: ing.name,
+      const groceryItems = ingredients.map((ing: any) => ({
+        name: ing.name || ing.ingredient,
         amount: ing.amount,
         aisle: "Other",
         purchased: false,

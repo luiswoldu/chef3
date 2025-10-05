@@ -17,8 +17,9 @@ const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 
 export default function HomePage() {
   const [recipes, setRecipes] = useState<Recipe[]>(recipeCache || [])
-  const [recentRecipes, setRecentRecipes] = useState<Recipe[]>(recentCache?.recentRecipes || [])
-  const [heroRecipe, setHeroRecipe] = useState<Recipe | null>(recentCache?.heroRecipe || null)
+  const [heroRecipe, setHeroRecipe] = useState<Recipe | null>(null)
+  const [featuredRecipes, setFeaturedRecipes] = useState<Recipe[]>([])
+  const [recentRecipes, setRecentRecipes] = useState<Recipe[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
   // Memoized random recipe generator with consistent results
@@ -79,81 +80,68 @@ export default function HomePage() {
     }
   }, [])
 
-  const loadRecents = useCallback(async () => {
-    const now = Date.now()
-    if (recentCache && (now - recentCacheTime) < CACHE_DURATION) {
-      setHeroRecipe(recentCache.heroRecipe)
-      setRecentRecipes(recentCache.recentRecipes)
-      return
-    }
+  const loadFeaturedRecipes = useCallback(async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        // If no user, fallback to showing a random recipe from all recipes
-        const { data: fallbackRecipes } = await supabase
-          .from('recipes')
-          .select('*')
-          .limit(10)
-        
-        if (fallbackRecipes && fallbackRecipes.length > 0) {
-          const heroRecipeData = fallbackRecipes[0] as Recipe
-          const recentRecipesData = fallbackRecipes.slice(1) as Recipe[]
-          
-          recentCache = {
-            heroRecipe: heroRecipeData,
-            recentRecipes: recentRecipesData
-          }
-          recentCacheTime = now
-          
-          setHeroRecipe(heroRecipeData)
-          setRecentRecipes(recentRecipesData)
-        }
-        return
-      }
-
-      // Get user's own recipes for logged in users
-      const { data: recents, error } = await supabase
-        .from('recipes')
+      const { data: featured, error } = await supabase
+        .from('featured_library')
         .select('*')
-        .eq('user_id', user.id)
-        .limit(10)
-      if (error) {
-        console.error("Error fetching recipes:", error)
-        return
-      }
-      let heroRecipeData: Recipe | null = null
-      let recentRecipesData: Recipe[] = []
-      if (recents && recents.length > 0) {
-        heroRecipeData = recents[0] as Recipe
-        recentRecipesData = recents.slice(1) as Recipe[]
-      }
-      recentCache = { heroRecipe: heroRecipeData, recentRecipes: recentRecipesData }
-      recentCacheTime = now
-      setHeroRecipe(heroRecipeData)
-      setRecentRecipes(recentRecipesData)
-    } catch (error) {
-      console.error("Error in loadRecents:", error)
-      // Final fallback to show some recipes
-      const { data: fallbackRecipes } = await supabase
-        .from('recipes')
-        .select('*')
-        .limit(10)
+        .limit(9)
       
-      if (fallbackRecipes && fallbackRecipes.length > 0) {
-        const heroRecipeData = fallbackRecipes[0] as Recipe
-        const recentRecipesData = fallbackRecipes.slice(1) as Recipe[]
-        
-        recentCache = {
-          heroRecipe: heroRecipeData,
-          recentRecipes: recentRecipesData
-        }
-        recentCacheTime = now
-        
-        setHeroRecipe(heroRecipeData)
-        setRecentRecipes(recentRecipesData)
+      if (error) {
+        console.error("Error fetching featured recipes:", error)
+        return
       }
+      
+      setFeaturedRecipes(featured as Recipe[] || [])
+    } catch (error) {
+      console.error("Error in loadFeaturedRecipes:", error)
     }
   }, [])
+
+  const loadHeroRecipe = useCallback(async () => {
+    try {
+      // Get random hero recipe from featured_library
+      const { data: featured, error } = await supabase
+        .from('featured_library')
+        .select('*')
+        .limit(50)
+      
+      if (error) {
+        console.error("Error fetching featured for hero:", error)
+        return
+      }
+      
+      if (featured && featured.length > 0) {
+        const randomIndex = Math.floor(Math.random() * featured.length)
+        setHeroRecipe(featured[randomIndex] as Recipe)
+      }
+    } catch (error) {
+      console.error("Error in loadHeroRecipe:", error)
+    }
+  }, [])
+
+  const loadRecentRecipes = useCallback(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      
+      const { data: recent, error } = await supabase
+        .rpc('get_recent_recipes', {
+          user_id_param: user.id.toString(),
+          limit_param: 9
+        })
+      
+      if (error) {
+        console.error('Error fetching recent recipes:', error)
+        return
+      }
+      
+      setRecentRecipes(recent as Recipe[] || [])
+    } catch (error) {
+      console.error('Error in loadRecentRecipes:', error)
+    }
+  }, [])
+
 
   useEffect(() => {
     if (!recipeCache || (Date.now() - recipeCacheTime) >= CACHE_DURATION) {
@@ -162,10 +150,17 @@ export default function HomePage() {
   }, [loadRecipes])
 
   useEffect(() => {
-    if (!recentCache || (Date.now() - recentCacheTime) >= CACHE_DURATION) {
-      loadRecents()
-    }
-  }, [loadRecents])
+    loadHeroRecipe()
+  }, [loadHeroRecipe])
+
+
+  useEffect(() => {
+    loadRecentRecipes()
+  }, [loadRecentRecipes])
+
+  useEffect(() => {
+    loadFeaturedRecipes()
+  }, [loadFeaturedRecipes])
 
   return (
     <div className="flex flex-col min-h-screen pb-[70px]">
@@ -188,12 +183,13 @@ export default function HomePage() {
       </div>
       <SearchBar />
       <div className="flex-1 overflow-y-auto">
+        {/* Recents section */}
         <section className="py-4">
           <h2 className="text-[28px] tracking-tight font-bold mb-2 px-4">Recents</h2>
           <div className="flex overflow-x-auto space-x-2 px-4 pb-2">
             {recentRecipes && recentRecipes.length > 0 ? (
               recentRecipes.map((recipe: Recipe) => (
-                <div key={recipe.id} className="w-48">
+                <div key={`recent-${recipe.id}`} className="w-48">
                   <RecipeCard 
                     id={recipe.id?.toString() || "0"} 
                     title={recipe.title || "Untitled Recipe"} 
@@ -203,45 +199,64 @@ export default function HomePage() {
                 </div>
               ))
             ) : (
-              <div className="flex space-x-4">
-                {[...Array(3)].map((_, index) => (
-                  <div key={index} className="w-48 h-40 flex-shrink-0 rounded-lg bg-gray-700 animate-pulse overflow-hidden">
-                    <div className="w-2/3 h-4 bg-gray-600 absolute bottom-3 left-3 rounded-md animate-shimmer"></div>
-                  </div>
-                ))}
+              <div className="flex space-x-2 px-4">
+                <div className="text-gray-500 text-sm italic py-8">
+                  No recent recipes yet. Start browsing to see your recently viewed recipes here!
+                </div>
               </div>
             )}
           </div>
         </section>
 
-        {/* Render all sections */}
-        {sections.map((section) => (
-          <section key={section.title} className="py-2">
-            <h2 className="text-[28px] tracking-tight font-bold mb-2 px-4">{section.title}</h2>
-            <div className="flex overflow-x-auto space-x-2 px-4 pb-4">
-              {section.recipes && section.recipes.length > 0 ? (
-                section.recipes.map((recipe: Recipe) => (
-                  <div key={`${section.title}-${recipe.id}`} className="w-48">
-                    <RecipeCard 
-                      id={recipe.id?.toString() || "0"} 
-                      title={recipe.title || "Untitled Recipe"} 
-                      image={recipe.image || '/placeholder.svg'}
-                      cardType="thumbnail"
-                    />
-                  </div>
-                ))
-              ) : (
-                <div className="flex space-x-4">
-                  {[...Array(3)].map((_, index) => (
-                    <div key={`${section.title}-skeleton-${index}`} className="w-48 h-40 flex-shrink-0 rounded-lg bg-gray-700 animate-pulse overflow-hidden">
-                      <div className="w-2/3 h-4 bg-gray-600 absolute bottom-3 left-3 rounded-md animate-shimmer"></div>
-                    </div>
-                  ))}
+        {/* Added Recipes section */}
+        <section className="py-2">
+          <h2 className="text-[28px] tracking-tight font-bold mb-2 px-4">Added Recipes</h2>
+          <div className="flex overflow-x-auto space-x-2 px-4 pb-4">
+            {recipes && recipes.length > 0 ? (
+              recipes.slice(0, 9).map((recipe: Recipe) => (
+                <div key={`added-${recipe.id}`} className="w-48">
+                  <RecipeCard 
+                    id={recipe.id?.toString() || "0"} 
+                    title={recipe.title || "Untitled Recipe"} 
+                    image={recipe.image || '/placeholder.svg'}
+                    cardType="thumbnail"
+                  />
                 </div>
-              )}
-            </div>
-          </section>
-        ))}
+              ))
+            ) : (
+              <div className="flex space-x-2 px-4">
+                <div className="text-gray-500 text-sm italic py-8">
+                  No recipes added yet. Create your first recipe to get started!
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Our Picks section (from featured_library) */}
+        <section className="py-2">
+          <h2 className="text-[28px] tracking-tight font-bold mb-2 px-4">Our Picks</h2>
+          <div className="flex overflow-x-auto space-x-2 px-4 pb-4">
+            {featuredRecipes && featuredRecipes.length > 0 ? (
+              featuredRecipes.map((recipe: Recipe) => (
+                <div key={`featured-${recipe.id}`} className="w-48">
+                  <RecipeCard 
+                    id={recipe.id?.toString() || "0"} 
+                    title={recipe.title || "Untitled Recipe"} 
+                    image={recipe.image || '/placeholder.svg'}
+                    cardType="thumbnail"
+                  />
+                </div>
+              ))
+            ) : (
+              <div className="flex space-x-2 px-4">
+                <div className="text-gray-500 text-sm italic py-8">
+                  Loading featured recipes...
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
       </div>
       <Navigation />
     </div>

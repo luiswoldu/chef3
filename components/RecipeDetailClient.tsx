@@ -54,8 +54,8 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           return
         }
         
-        // Get recipe
-        const { data: recipeData, error: recipeError } = await supabase
+        // Try to get recipe from user's recipes first
+        const { data: userRecipeData, error: userRecipeError } = await supabase
           .from('recipes')
           .select(`
             *,
@@ -65,27 +65,71 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           .eq('user_id', user.id)
           .single()
         
-        if (recipeError) {
-          if (recipeError.code === 'PGRST116') {
-            setError('Recipe not found')
-            setRecipe(null)
-          } else {
-            throw recipeError
+        let recipeData = null
+        
+        if (userRecipeError && userRecipeError.code === 'PGRST116') {
+          // Recipe not found in user recipes, try featured_library
+          const { data: featuredRecipeData, error: featuredRecipeError } = await supabase
+            .from('featured_library')
+            .select('*')
+            .eq('id', recipeId)
+            .single()
+          
+          if (featuredRecipeError) {
+            if (featuredRecipeError.code === 'PGRST116') {
+              setError('Recipe not found')
+              setRecipe(null)
+            } else {
+              throw featuredRecipeError
+            }
+            return
           }
-          return
+          
+          // Featured recipe has ingredients as JSONB, convert to expected format
+          const featuredIngredients = featuredRecipeData.ingredients || []
+          recipeData = {
+            ...featuredRecipeData,
+            ingredients: featuredIngredients
+          }
+          
+          // Track that user viewed this featured recipe
+          await supabase
+            .from('recipe_interactions')
+            .upsert({
+              user_id: user.id,
+              recipe_id: recipeId,
+              viewed_at: new Date().toISOString(),
+              is_featured: true
+            })
+        } else if (userRecipeError) {
+          throw userRecipeError
+        } else {
+          recipeData = userRecipeData
+          
+          // Track that user viewed this user recipe
+          await supabase
+            .from('recipe_interactions')
+            .upsert({
+              user_id: user.id,
+              recipe_id: recipeId,
+              viewed_at: new Date().toISOString(),
+              is_featured: false
+            })
         }
         
         setRecipe(recipeData)
         
-        // Check if recipe is in cart
-        const { data: cartItems, error: cartError } = await supabase
-          .from('grocery_items')
-          .select('id')
-          .eq('recipe_id', recipeId)
-          .eq('user_id', user.id)
-        
-        if (cartError) throw cartError
-        setIsAdded(cartItems.length > 0)
+        // Check if recipe is in cart (only for recipes with ingredients)
+        if (recipeData.ingredients && recipeData.ingredients.length > 0) {
+          const { data: cartItems, error: cartError } = await supabase
+            .from('grocery_items')
+            .select('id')
+            .eq('recipe_id', recipeId)
+            .eq('user_id', user.id)
+          
+          if (cartError) throw cartError
+          setIsAdded(cartItems.length > 0)
+        }
       } catch (error) {
         console.error('Loading error:', error)
         setError('Failed to load recipe.')
@@ -207,56 +251,50 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           >
             <MoreHorizontal className="h-6 w-6 text-white" />
           </button>
-          <button 
-            onClick={async (e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              try {
-                // Get current user
-                const { data: { user }, error: userError } = await supabase.auth.getUser()
-                if (userError || !user) {
-                  showNotification("Please log in to add items to cart")
-                  return
-                }
+          {recipe.ingredients && recipe.ingredients.length > 0 && (
+            <button 
+              onClick={async (e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                try {
+                  // Get current user
+                  const { data: { user }, error: userError } = await supabase.auth.getUser()
+                  if (userError || !user) {
+                    showNotification("Please log in to add items to cart")
+                    return
+                  }
 
-                const recipeId = typeof id === 'string' ? Number.parseInt(id) : id
-                
-                if (!recipe.ingredients || recipe.ingredients.length === 0) {
-                  throw new Error('No ingredients found for this recipe')
+                  const recipeId = typeof id === 'string' ? Number.parseInt(id) : id
+                  
+                  if (!recipe.ingredients || recipe.ingredients.length === 0) {
+                    throw new Error('No ingredients found for this recipe')
+                  }
+                  
+                  const groceryItems = recipe.ingredients.map((ing: any) => ({
+                    user_id: user.id,
+                    name: ing.name,
+                    amount: ing.amount,
+                    aisle: "Other",
+                    purchased: false,
+                    recipe_id: recipeId
+                  }))
+                  
+                  const { error } = await supabase
+                    .from('grocery_items')
+                    .insert(groceryItems)
+                  
+                  if (error) throw error
+                  
+                  setIsAdded(true)
+                  showNotification("Added to cart")
+                } catch (error) {
+                  console.error('Error adding to cart:', error)
+                  showNotification("Failed to add ingredients to cart")
                 }
-                
-                // Get current user
-                const { data: { user } } = await supabase.auth.getUser()
-                if (!user) {
-                  throw new Error('You must be logged in to add items to cart')
-                }
-                
-                const groceryItems = recipe.ingredients.map((ing: RecipeIngredient) => ({
-                  user_id: user.id,
-                  name: ing.name,
-                  amount: ing.amount,
-                  aisle: "Other",
-                  purchased: false,
-                  recipe_id: recipeId,
-                  user_id: user.id,
-                }))
-                
-                const { error } = await supabase
-                  .from('grocery_items')
-                  .insert(groceryItems)
-                
-                if (error) throw error
-                
-                setIsAdded(true)
-                showNotification("Added to cart")
-              } catch (error) {
-                console.error('Error adding to cart:', error)
-                showNotification("Failed to add ingredients to cart")
-              }
-            }}
-            className="bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-shadow duration-300"
-            aria-label={isAdded ? "Added to cart" : "Add to cart"}
-          >
+              }}
+              className="bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-shadow duration-300"
+              aria-label={isAdded ? "Added to cart" : "Add to cart"}
+            >
             {isAdded ? (
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -279,6 +317,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
               </svg>
             )}
           </button>
+          )}
         </div>
         <div className="relative w-full h-[56.4vh]">
           <Image 
@@ -335,14 +374,22 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           <section className="mb-6">
             <h2 className="text-2xl font-semibold mb-2">Ingredients</h2>
             <div className="rounded-lg">
-              {recipe.ingredients && recipe.ingredients.map((ingredient: RecipeIngredient, index: number) => (
-                <div key={ingredient.id || index} className="bg-white p-3 rounded-xl shadow-custom mb-2">
-                  <p className="font-medium">{ingredient.name}</p>
-                  <p className="text-sm text-gray-600">
-                    {ingredient.amount} {ingredient.details}
+              {recipe.ingredients && recipe.ingredients.length > 0 ? (
+                recipe.ingredients.map((ingredient: any, index: number) => (
+                  <div key={ingredient.id || index} className="bg-white p-3 rounded-xl shadow-custom mb-2">
+                    <p className="font-medium">{ingredient.name}</p>
+                    <p className="text-sm text-gray-600">
+                      {ingredient.amount}{ingredient.details ? ` ${ingredient.details}` : ''}
+                    </p>
+                  </div>
+                ))
+              ) : (
+                <div className="bg-gray-50 p-4 rounded-xl border-2 border-dashed border-gray-200">
+                  <p className="text-gray-500 text-center italic">
+                    Ingredient details not available for this recipe. Check the full recipe source for complete ingredient information.
                   </p>
                 </div>
-              ))}
+              )}
             </div>
           </section>
           <section>

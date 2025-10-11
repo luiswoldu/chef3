@@ -19,8 +19,8 @@ export default function SearchBar() {
       }}>
         <div className="flex items-center gap-3 mt-3 w-full">
         <button
-         onClick={() => router.push('/profile')}
-         className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0 bg-white "
+        onClick={() => router.push('/profile')}
+        className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0 bg-white "
         >
         <User className="h-6 w-6 text-black" />
         </button>

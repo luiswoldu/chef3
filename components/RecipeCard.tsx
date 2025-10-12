@@ -186,7 +186,6 @@ export default function RecipeCard({
           interaction_type: 'save'
         })
         .then(() => {})
-        .catch(() => {})
       
       setIsAdded(true)
       showNotification("Added to cart")

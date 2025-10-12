@@ -7,14 +7,22 @@ import { type GroceryItem } from "@/types/index"
 import { Plus, User, Trash2, Loader } from "lucide-react"
 import { supabase } from "@/lib/supabase/client"
 import { showNotification } from "@/hooks/use-notification"
-import Image from "next/image"
+
+// New interfaces for recipe data
+interface RecipeInfo {
+  id: number
+  title: string
+  image: string | null
+}
 
 export default function Cart() {
   const [groceryItems, setGroceryItems] = useState<GroceryItem[]>([])
+  const [recipes, setRecipes] = useState<RecipeInfo[]>([])
   const [newItem, setNewItem] = useState("")
   const [currentUser, setCurrentUser] = useState<any>(null)
-  // const [userAvatar, setUserAvatar] = useState<string | null>(null)
-  // const [sortState, setSortState] = useState<'default' | 'loading' | 'sorted'>('default')
+  const [loading, setLoading] = useState(true)
+  const [imageLoading, setImageLoading] = useState<Record<number, boolean>>({}) // Track image loading by recipe ID
+  const [groupByRecipe, setGroupByRecipe] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
@@ -72,17 +80,52 @@ export default function Cart() {
 
   async function loadGroceryItems(userId: string) {
     try {
-      const { data, error } = await supabase
+      setLoading(true)
+      
+      // Load grocery items with recipe_id
+      const { data: groceryData, error: groceryError } = await supabase
         .from('grocery_items')
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: true })
       
-      if (error) throw error
-      setGroceryItems(sortItems(data || []))
+      if (groceryError) throw groceryError
+      
+      // Get unique recipe IDs from grocery items
+      const recipeIds = Array.from(new Set(
+        groceryData
+          ?.filter(item => item.recipe_id !== null)
+          .map(item => item.recipe_id)
+      ))
+      
+      // Load recipe data for those IDs
+      if (recipeIds.length > 0) {
+        const { data: recipeData, error: recipeError } = await supabase
+          .from('recipes')
+          .select('id, title, image')
+          .in('id', recipeIds as number[])
+        
+        if (recipeError) throw recipeError
+        
+        // Initialize image loading state for each recipe with an image
+        const imageLoadingState: Record<number, boolean> = {}
+        recipeData?.forEach(recipe => {
+          if (recipe.image) {
+            imageLoadingState[recipe.id] = true
+          }
+        })
+        setImageLoading(imageLoadingState)
+        
+        setRecipes(recipeData || [])
+        console.log("Loaded recipes:", recipeData?.length || 0)
+      }
+      
+      setGroceryItems(sortItems(groceryData || []))
     } catch (error) {
       console.error('Error loading grocery items:', error)
       showNotification("Failed to load shopping list")
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -93,6 +136,48 @@ export default function Cart() {
       }
       return a.purchased ? 1 : -1
     })
+  }
+
+  function groupItemsByRecipe(items: GroceryItem[]) {
+    const grouped: Record<string, GroceryItem[]> = {
+      'unassigned': []
+    }
+    
+    items.forEach(item => {
+      if (item.recipe_id) {
+        const key = `recipe-${item.recipe_id}`
+        if (!grouped[key]) {
+          grouped[key] = []
+        }
+        grouped[key].push(item)
+      } else {
+        grouped['unassigned'].push(item)
+      }
+    })
+    
+    return grouped
+  }
+
+  function getRecipeInfo(recipeId: number) {
+    return recipes.find(r => r.id === recipeId) || null
+  }
+
+  // Handle image load events
+  const handleImageLoad = (recipeId: number) => {
+    console.log(`✅ Image loaded successfully for recipe ID: ${recipeId}`)
+    setImageLoading(prev => ({
+      ...prev,
+      [recipeId]: false
+    }))
+  }
+
+  // Handle image error events  
+  const handleImageError = (recipeId: number) => {
+    console.error(`❌ Image failed to load for recipe ID: ${recipeId}`)
+    setImageLoading(prev => ({
+      ...prev,
+      [recipeId]: false
+    }))
   }
 
   async function addItem(e: React.FormEvent) {
@@ -198,7 +283,15 @@ onClick={handleProfileClick}
           </button>
         </form>
         
-        <div className="flex items-center justify-end pr-1">
+        <div className="flex items-center justify-between pr-1 mb-2">
+          <button 
+            onClick={() => setGroupByRecipe(!groupByRecipe)}
+            className="px-4 py-1 rounded-full text-sm border border-gray-200"
+            aria-label="Toggle grouping"
+          >
+            {groupByRecipe ? "Show All Items" : "Group by Recipe"}
+          </button>
+
           <button 
             onClick={clearList}
             className="p-2 rounded-full hover:bg-gray-100 transition-colors"
@@ -228,29 +321,113 @@ onClick={handleProfileClick}
           </button> */}
         </div>
       </div>
+      
+      {/* Shopping list content */}
       <div className="flex-grow overflow-auto">
-        <ul>
-          {groceryItems.map((item) => (
-            <li key={item.id} className="flex items-center py-1 px-4">
-              <button
-                onClick={() => item.id && togglePurchased(item.id)}
-                className={`w-[38px] h-[38px] rounded-full mr-4 flex-shrink-0 flex items-center justify-center border-2 ${
-                  item.purchased ? "bg-[#6CD401] border-[#6CD401]" : "border-gray-300"
-                }`}
-              >
-                {item.purchased && (
-                  <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
-              </button>
-              <div className={item.purchased ? "line-through text-gray-500" : ""}>
-                <p className="font-medium">{item.name}</p>
-                {item.amount && <p className="text-sm text-gray-600">{item.amount}</p>}
+        {loading ? (
+          <div className="flex justify-center items-center h-32">
+            <Loader className="h-8 w-8 animate-spin text-gray-400" />
+          </div>
+        ) : (
+          <>
+            {groupByRecipe ? (
+              // Grouped view with recipe images
+              <div className="space-y-6">
+                {Object.entries(groupItemsByRecipe(groceryItems)).map(([key, items]) => {
+                  const isRecipe = key.startsWith('recipe-')
+                  const recipeId = isRecipe ? Number(key.replace('recipe-', '')) : null
+                  const recipe = recipeId ? getRecipeInfo(recipeId) : null
+                  
+                  return (
+                    <div key={key} className={`${isRecipe ? 'bg-gray-50 rounded-t-3xl pb-3' : ''}`}>
+                      {/* Recipe header with image */}
+                      {isRecipe && recipe && (
+                        <div className="mb-2">
+                          {recipe.image ? (
+                            <div className="relative w-full overflow-hidden px-4">
+                              <div className="relative w-full h-[68px] overflow-hidden rounded-3xl">
+                                {imageLoading[recipe.id] && (
+                                  <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                                    <Loader className="h-8 w-8 animate-spin text-gray-400" />
+                                  </div>
+                                )}
+                                <img 
+                                  src={recipe.image} 
+                                  alt={recipe.title}
+                                  className="w-full h-full object-cover" 
+                                  onLoad={() => handleImageLoad(recipe.id)}
+                                  onError={() => handleImageError(recipe.id)}
+                                />
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="h-4"></div>
+                          )}
+                          <h3 className="font-bold text-lg px-4 py-2">{recipe.title}</h3>
+                        </div>
+                      )}
+                      
+                      {/* Group title if not a recipe */}
+                      {!isRecipe && items.length > 0 && (
+                        <h3 className="font-medium text-gray-500 px-4 pb-1">
+                          Other Items
+                        </h3>
+                      )}
+                      
+                      {/* Item list */}
+                      <ul>
+                        {items.map((item) => (
+                          <li key={item.id} className={`flex items-center py-1 px-4 ${isRecipe ? 'border-l-4 border-[#6CD401]' : ''}`}>
+                            <button
+                              onClick={() => item.id && togglePurchased(item.id)}
+                              className={`w-[38px] h-[38px] rounded-full mr-4 flex-shrink-0 flex items-center justify-center border-2 ${
+                                item.purchased ? "bg-[#6CD401] border-[#6CD401]" : "border-gray-300"
+                              }`}
+                            >
+                              {item.purchased && (
+                                <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </button>
+                            <div className={item.purchased ? "line-through text-gray-500" : ""}>
+                              <p className="font-medium">{item.name}</p>
+                              {item.amount && <p className="text-sm text-gray-600">{item.amount}</p>}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )
+                })}
               </div>
-            </li>
-          ))}
-        </ul>
+            ) : (
+              // Original flat view
+              <ul>
+                {groceryItems.map((item) => (
+                  <li key={item.id} className="flex items-center py-1 px-4">
+                    <button
+                      onClick={() => item.id && togglePurchased(item.id)}
+                      className={`w-[38px] h-[38px] rounded-full mr-4 flex-shrink-0 flex items-center justify-center border-2 ${
+                        item.purchased ? "bg-[#6CD401] border-[#6CD401]" : "border-gray-300"
+                      }`}
+                    >
+                      {item.purchased && (
+                        <svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </button>
+                    <div className={item.purchased ? "line-through text-gray-500" : ""}>
+                      <p className="font-medium">{item.name}</p>
+                      {item.amount && <p className="text-sm text-gray-600">{item.amount}</p>}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
+        )}
       </div>
       <Navigation />
     </div>

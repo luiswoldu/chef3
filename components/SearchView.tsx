@@ -82,7 +82,7 @@ export default function SearchView({ onCancel }: SearchViewProps) {
 
   const handleCancel = () => {
     onCancel()
-    router.push("/")
+    // router.push("/")
   }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -54,6 +54,7 @@ export default function RecipeCard({
       }
 
       // Check if this recipe is in the grocery_items table for this user
+      // This works for both user recipes and featured recipes since we use recipe_id
       const { data, error } = await supabase
         .from('grocery_items')
         .select('*')
@@ -80,36 +81,90 @@ export default function RecipeCard({
       const { data: { user }, error: userError } = await supabase.auth.getUser()
       if (userError || !user) {
         console.error('User not authenticated:', userError)
-        showNotification("Please log in to add items to cart") // Add notification for auth error
+        showNotification("Please log in to add items to cart")
         return
       }
 
-      // First get the recipe with its ingredients
-      const { data: recipe, error: recipeError } = await supabase
+      let recipeIngredients: any[] = []
+      let recipeFound = false
+
+      // First try to find recipe in user recipes table
+      const { data: userRecipe, error: userRecipeError } = await supabase
         .from('recipes')
         .select(`
           *,
           ingredients (*)
         `)
         .eq('id', id)
+        .eq('user_id', user.id)
         .single()
       
-      if (recipeError) throw recipeError
+      if (!userRecipeError && userRecipe) {
+        recipeIngredients = userRecipe.ingredients || []
+        recipeFound = true
+        console.log('Found user recipe with ingredients:', recipeIngredients.length)
+      } else {
+        // If not found in user recipes, try featured_library
+        // First try by recipe_id, then by id (matching RecipeDetailClient logic)
+        let { data: featuredRecipe, error: featuredRecipeError } = await supabase
+          .from('featured_library')
+          .select('*')
+          .eq('recipe_id', id)
+          .single()
+        
+        // If not found by recipe_id, try by id (in case it's a standalone featured recipe)
+        if (featuredRecipeError && featuredRecipeError.code === 'PGRST116') {
+          const { data: featuredById, error: featuredByIdError } = await supabase
+            .from('featured_library')
+            .select('*')
+            .eq('id', id)
+            .single()
+          
+          if (!featuredByIdError && featuredById) {
+            featuredRecipe = featuredById
+            featuredRecipeError = null
+          }
+        }
+        
+        if (!featuredRecipeError && featuredRecipe) {
+          // For featured recipes, get ingredients from ingredients table
+          // Use the correct recipe_id from the featured recipe data
+          const ingredientRecipeId = featuredRecipe.recipe_id || featuredRecipe.id
+          const { data: ingredientsData, error: ingredientsError } = await supabase
+            .from('ingredients')
+            .select('*')
+            .eq('recipe_id', ingredientRecipeId)
+          
+          if (!ingredientsError && ingredientsData) {
+            recipeIngredients = ingredientsData
+            recipeFound = true
+            console.log('Found featured recipe with ingredients:', recipeIngredients.length)
+          }
+        }
+      }
       
-      if (!recipe.ingredients || recipe.ingredients.length === 0) {
+      if (!recipeFound) {
+        console.error('Recipe not found')
+        showNotification("Recipe not found")
+        return
+      }
+      
+      if (!recipeIngredients || recipeIngredients.length === 0) {
         console.error('No ingredients found for this recipe')
-        showNotification("No ingredients found for this recipe") // Add notification for no ingredients
+        showNotification("No ingredients found for this recipe")
         return
       }
       
       // Insert ingredients as grocery items with user_id
-      const groceryItems = recipe.ingredients.map((ing: any) => ({
+      const groceryItems = recipeIngredients.map((ing: any) => ({
         user_id: user.id,
         name: ing.name,
         amount: ing.amount,
         aisle: "Other",
         purchased: false,
         recipe_id: Number(id),
+        details: ing.details || "",
+        created_at: new Date().toISOString()
       }))
       
       const { error } = await supabase
@@ -118,15 +173,25 @@ export default function RecipeCard({
       
       if (error) {
         console.error('Error adding to grocery items:', error)
-        showNotification("Failed to add ingredients to cart") // Add notification for database error
+        showNotification("Failed to add ingredients to cart")
         return
       }
       
+      // Track recipe save
+      supabase
+        .from('recipe_interactions')
+        .insert({
+          user_id: user.id,
+          recipe_id: id,
+          interaction_type: 'save'
+        })
+        .then(() => {})
+      
       setIsAdded(true)
-      showNotification("Added to cart") // Add success notification
+      showNotification("Added to cart")
     } catch (error) {
       console.error('Error in addToCart:', error)
-      showNotification("Failed to add ingredients to cart") // Add notification for any other errors
+      showNotification("Failed to add ingredients to cart")
     }
   }
 

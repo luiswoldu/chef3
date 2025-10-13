@@ -26,6 +26,7 @@ function HomePageContent() {
   const [heroRecipe, setHeroRecipe] = useState<Recipe | null>(null)
   const [featuredRecipes, setFeaturedRecipes] = useState<Recipe[]>([])
   const [recentRecipes, setRecentRecipes] = useState<Recipe[]>([])
+  const [popularRecipes, setPopularRecipes] = useState<Recipe[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
   // Memoized random recipe generator with consistent results
@@ -197,6 +198,24 @@ function HomePageContent() {
     }
   }, [])
 
+  const loadPopularRecipes = useCallback(async () => {
+    try {
+      const { data: popular, error } = await supabase
+        .rpc('get_popular_recipes', {
+          days_window: 7,
+          limit_count: 12
+        })
+      
+      if (error) {
+        console.error('Error fetching popular recipes:', error)
+        return
+      }
+      
+      setPopularRecipes(popular as Recipe[] || [])
+    } catch (error) {
+      console.error('Error in loadPopularRecipes:', error)
+    }
+  }, [])
 
   useEffect(() => {
     if (!recipeCache || (Date.now() - recipeCacheTime) >= CACHE_DURATION) {
@@ -216,6 +235,10 @@ function HomePageContent() {
   useEffect(() => {
     loadFeaturedRecipes()
   }, [loadFeaturedRecipes])
+
+  useEffect(() => {
+    loadPopularRecipes()
+  }, [loadPopularRecipes])
 
   // Listen for page visibility changes to refresh recipes when user returns
   useEffect(() => {
@@ -355,6 +378,25 @@ function HomePageContent() {
             )}
           </div>
         </section>
+
+        {/* Trending section */}
+        {popularRecipes && popularRecipes.length > 0 && (
+          <section className="py-2">
+            <h2 className="text-[28px] tracking-tight font-bold mb-2 px-4">Trending</h2>
+            <div className="flex overflow-x-auto space-x-2 px-4 pb-4">
+              {popularRecipes.map((recipe: Recipe) => (
+                <div key={`popular-${recipe.id}`} className="w-48">
+                  <RecipeCard 
+                    id={recipe.id?.toString() || "0"} 
+                    title={recipe.title || "Untitled Recipe"} 
+                    image={recipe.image || '/placeholder.svg'}
+                    cardType="thumbnail"
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* Added Recipes section */}
         <section className="py-2">

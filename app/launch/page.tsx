@@ -20,10 +20,10 @@ export default function Launch() {
   return (
     <div className="flex flex-col items-center justify-start min-h-screen p-6 pt-9 bg-white">
       <div className="w-full max-w-md space-y-8">
-        <p className="text-3xl text-[#98E14D] font-black tracking-tighter text-center mb-24">Hands</p>
+        <p className="text-3xl text-[#98E14D] font-black tracking-tighter text-center mb-16">Hands</p>
         <div className="space-y-5">
-          <h1 className="text-5xl font-black text-black tracking-tighter leading-none">Dinner, sorted.</h1>
-          <h2 className="text-3xl font-extrabold text-black tracking-tighter leading-none">Organize recipes, find inspiration, and shop like a pro.</h2>
+        <h1 className="text-5xl font-black text-black tracking-tighter leading-none"> Your kitchen <br className="lg:hidden" />co-pilot. </h1> 
+        <h2 className="text-3xl font-extrabold text-black tracking-tighter leading-none">Organize recipes, find inspiration, and shop like a pro.</h2>
         </div>
         <div className="flex flex-col space-y-4 mt-10">
           <Button

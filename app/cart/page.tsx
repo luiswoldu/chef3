@@ -174,19 +174,6 @@ export default function Cart() {
       <div className="p-4">
         <div className="flex justify-between items-center mb-4 pr-1.5">
           <h1 className="text-3xl font-bold pt-2 tracking-tight">Shopping List</h1>
-          {/* Profile avatar commented out - will be relocated */}
-          {/* <div 
-        className="w-[34px] h-[34px] mt-1.5 rounded-full border border-[#F4F4F4] overflow-hidden  cursor-pointer bg-[#FFFFFF] flex items-center justify-center"
-onClick={handleProfileClick}
-          >
-            <Image
-              src={userAvatar || "/avatar.png"}
-              alt="User avatar"
-              width={34}
-              height={34}
-              className="object-cover w-full h-full"
-            />
-          </div> */}
         </div>
         <form onSubmit={addItem} className="relative mb-4">
           <input
@@ -247,10 +234,12 @@ onClick={handleProfileClick}
                   </svg>
                 )}
               </button>
-              <div className={item.purchased ? "line-through text-gray-500" : ""}>
-                <p className="font-medium">{item.name}</p>
-                {item.amount && <p className="text-sm text-gray-600">{item.amount}</p>}
-              </div>
+              <div className={item.purchased ? "line-through text-gray-500" : ""}> 
+                <p className="font-medium leading-tight tracking-tight">{item.name}</p> 
+                {item.amount && (
+                  <p className="text-sm text-[#9F9F9F]"> {item.amount}
+                  </p> )}
+                  </div>
             </li>
           ))}
         </ul>

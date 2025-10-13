@@ -132,20 +132,24 @@ export default function Profile() {
       <div className="p-4">
         <button 
           onClick={goBack}
-          className="flex items-center text-gray-600 mt-[42px] mb-4"
+          className="flex items-center text-gray-600 mt-8 mb-4"
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
 
         <div className="flex flex-col items-center mb-8">
-          <div className="w-[113px] h-[113px] rounded-full overflow-hidden mb-4">
-            <Image
-              src={userAvatar || "/avatar.png"}
-              alt="User avatar"
-              width={113}
-              height={113}
-              className="object-cover w-full h-full"
-            />
+          <div className="w-[113px] h-[113px] rounded-full bg-white flex items-center justify-center border-2 border-chef-grey-calcium mb-2">
+            {userAvatar ? (
+              <Image
+                src={userAvatar}
+                alt="User avatar"
+                width={113}
+                height={113}
+                className="object-cover w-full h-full rounded-full"
+              />
+            ) : (
+              <User className="w-14 h-14 text-black" />
+            )}
           </div>
 
           <h1 className="text-2xl font-extrabold text-black">
@@ -174,8 +178,8 @@ export default function Profile() {
             className="w-full p-4 bg-white rounded-xl shadow-custom mb-2 flex items-center justify-between text-left"
           >
             <div className="flex items-center">
-              <LogOut className="w-5 h-5 text-red-500 mr-3" />
-              <span className="text-red-500">Logout</span>
+              <LogOut className="w-5 h-5 text-black mr-3" />
+              <span className="text-black">Logout</span>
             </div>
           </button>
 

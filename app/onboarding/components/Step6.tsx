@@ -36,7 +36,7 @@ export default function Step6({ onComplete, formData }: Step6Props) {
             username: formData.username,
             taste_preference: formData.tastePreference,
           },
-          emailRedirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`
+          emailRedirectTo: `${window.location.origin}/auth/callback`
         }
       });
 

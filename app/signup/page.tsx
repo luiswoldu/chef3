@@ -122,10 +122,13 @@ export default function SignUp() {
         // Set initial cooldown
         const { remainingSeconds } = getResendCooldownTime(formData.email)
         setResendCountdown(remainingSeconds)
-      } else {
+      } else if (result.user && result.signupData) {
         // User is automatically logged in (email confirmation disabled)
+        // Store signup data for onboarding
         showNotification("Account created successfully!")
         router.push('/onboarding-profile')
+      } else {
+        throw new Error('Unexpected signup result - please try again')
       }
     } catch (error: any) {
       console.error('Signup error:', error)

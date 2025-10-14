@@ -363,10 +363,10 @@ export default function AddRecipePanel({
           <>
             {/* Add headers at the top */}
             <div className="text-center mb-6">
-              <h6 className="text-lg font-semibold text-gray-800">
+              <h6 className="text-lg font-semibold tracking-tight text-black">
                 Import from your favorite recipe website
               </h6>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-chef-grey">
                 Soon: Instagram, TikTok, and YouTube.
               </p>
             </div>

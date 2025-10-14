@@ -177,6 +177,16 @@ export default function RecipeCard({
         return
       }
       
+      // Track recipe save
+      supabase
+        .from('recipe_interactions')
+        .insert({
+          user_id: user.id,
+          recipe_id: id,
+          interaction_type: 'save'
+        })
+        .then(() => {})
+      
       setIsAdded(true)
       showNotification("Added to cart")
     } catch (error) {

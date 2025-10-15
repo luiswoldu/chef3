@@ -291,19 +291,26 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
                     return
                   }
 
-                  const recipeId = typeof id === 'string' ? Number.parseInt(id) : id
+                  const recipeIdNumber = typeof id === 'string' ? Number.parseInt(id) : id
                   
-                  if (!recipe.ingredients || recipe.ingredients.length === 0) {
+                   //filtering ingredients by recipe_id just to be safe
+                  const currentIngredients = recipe.ingredients?.filter(
+                  (ing) => ing.recipe_id === recipeIdNumber
+                 )
+                  if (!currentIngredients || currentIngredients.length === 0) {
                     throw new Error('No ingredients found for this recipe')
                   }
-                  
-                  const groceryItems = recipe.ingredients.map((ing: any) => ({
+
+                  // ---- DEBUGGING STEP ----
+                  console.log("Ingredients to add to cart:", recipe.ingredients)
+
+                  const groceryItems = currentIngredients.map((ing: any) => ({
                     user_id: user.id,
                     name: ing.name,
                     amount: ing.amount,
                     aisle: "Other",
                     purchased: false,
-                    recipe_id: recipeId
+                    recipe_id: recipeIdNumber 
                   }))
                   
                   const { error } = await supabase
@@ -314,10 +321,15 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
                   
                   setIsAdded(true)
                   showNotification("Added to cart")
-                } catch (error) {
-                  console.error('Error adding to cart:', error)
-                  showNotification("Failed to add ingredients to cart")
-                }
+                  
+                  } catch (error: any) {
+                  console.error('Error adding to cart:', error?.message || error)
+                  showNotification(error?.message || "Failed to add ingredients to cart")
+                  }
+               // } catch (error) {
+               //  console.error('Error adding to cart:', error)
+               //   showNotification("Failed to add ingredients to cart")
+               // }
               }}
               className="bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-shadow duration-300"
               aria-label={isAdded ? "Added to cart" : "Add to cart"}

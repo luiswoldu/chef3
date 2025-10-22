@@ -16,6 +16,7 @@ export interface Recipe {
   steps: string[]
   tags: string[]
   caption: string
+  user_id: string
   created_at: string
   updated_at: string
 }

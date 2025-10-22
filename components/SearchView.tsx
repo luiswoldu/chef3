@@ -102,19 +102,19 @@ export default function SearchView({ onCancel }: SearchViewProps) {
   const hasResults = searchResults.recipes.length > 0
 
   return (
-    <div className="fixed inset-0 bg-black z-50">
+    <div className="fixed inset-0 bg-white z-50">
       <div className="flex flex-col h-full">
         {/* Search Header */}
         <div className="p-4 flex items-center mt-8">
-          <div className="flex-1 flex items-center bg-[#ffffff]/50 backdrop-blur-[4px] rounded-full px-4 py-2">
+          <div className="flex-1 flex items-center bg-chef-grey-calcium rounded-full px-4 py-2">
             {isSearching ? (
-              <Loader className="w-5 h-5 text-white animate-spin" />
+              <Loader className="w-5 h-5 text-black animate-spin" />
             ) : (
-              <Search className="w-5 h-5 text-white" />
+              <Search className="w-5 h-5 text-black" />
             )}
             <input
               type="text"
-              className="flex-1 bg-transparent text-white pl-3 focus:outline-none placeholder-white"
+              className="flex-1 bg-transparent text-black pl-3 focus:outline-none placeholder-chef-grey"
               placeholder="Search recipes"
               autoFocus
               value={searchQuery}
@@ -124,7 +124,7 @@ export default function SearchView({ onCancel }: SearchViewProps) {
             {searchQuery.trim() && (
               <button
                 onClick={handleClear}
-                className="ml-2 text-white"
+                className="ml-2 text-black"
                 aria-label="Clear search"
               >
                 <X className="h-5 w-5" />
@@ -133,7 +133,7 @@ export default function SearchView({ onCancel }: SearchViewProps) {
           </div>
           <button
             onClick={handleCancel}
-            className="text-white ml-3"
+            className="text-black ml-3"
           >
             Cancel
           </button>
@@ -143,7 +143,7 @@ export default function SearchView({ onCancel }: SearchViewProps) {
         <div className="flex-1 overflow-auto px-4 pb-4">
           {isSearching ? (
             <div className="flex justify-center items-center h-32">
-              <Loader className="h-8 w-8 text-white animate-spin" />
+              <Loader className="h-8 w-8 text-black animate-spin" />
             </div>
           ) : searchQuery.trim() ? (
             hasResults ? (
@@ -151,18 +151,17 @@ export default function SearchView({ onCancel }: SearchViewProps) {
                 {/* Recipes Section */}
                 {searchResults.recipes.length > 0 && (
                   <div>
-                    <h2 className="text-white text-xl font-semibold mb-4">Recipes</h2>
                     <div className="space-y-4">
                       {searchResults.recipes.map((recipe, idx) => (
                         <button
                           key={`recipe-${idx}`}
-                          className="w-full flex items-center justify-between text-left p-3 bg-zinc-900/50 rounded-lg hover:bg-zinc-800/50"
+                          className="w-full flex items-center justify-between text-left p-3 bg-chef-grey-calcium rounded-xl hover:bg-gray-100"
                           onClick={() => handleItemClick(recipe)}
                         >
                           <div>
-                            <h3 className="text-white text-lg">{recipe.name}</h3>
+                            <h3 className="text-black text-lg leading-tight">{recipe.name}</h3>
                           </div>
-                          <ChevronRight className="text-gray-400 h-5 w-5" />
+                          <ChevronRight className="text-chef-grey-graphite h-5 w-5" />
                         </button>
                       ))}
                     </div>
@@ -171,12 +170,12 @@ export default function SearchView({ onCancel }: SearchViewProps) {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-64">
-                <p className="text-gray-400 text-center">No results for "{searchQuery.trim()}"</p>
+                <p className="text-chef-grey-iron text-center">No results for "{searchQuery.trim()}"</p>
               </div>
             )
           ) : (
             <div className="flex flex-col items-center justify-center h-64">
-              <p className="text-gray-400 text-center">Type to search recipes</p>
+              <p className="text-chef-grey-iron text-center">Type to search recipes</p>
             </div>
           )}
         </div>

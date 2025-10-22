@@ -9,7 +9,7 @@ import type { Database } from '@/types/supabase'
 import { supabase } from '@/lib/supabase/client'
 import { showNotification } from '@/hooks/use-notification'
 import { useRouter } from 'next/navigation'
-import { MoreHorizontal, Trash2 } from 'lucide-react'
+import { MoreHorizontal, Trash2, Loader } from 'lucide-react'
 import Navigation from '@/components/Navigation'
 
 // Define ingredient interface that matches what we get from the database
@@ -224,15 +224,12 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen">
-        <div className="flex-1 flex items-center justify-center">
-          <div>Loading...</div>
-        </div>
-        <Navigation />
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader className="h-10 w-10 animate-spin text-[#6CD401]" />
       </div>
     )
   }
-
+  
   if (error) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -397,12 +394,12 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           </div>
           {recipe.caption ? (
             <div className="relative mb-6">
-              <p className={`text-[15px] text-gray-600 ${isExpanded ? '' : 'line-clamp-2'}`}>
+              <p className={`text-[15px] text-chef-grey ${isExpanded ? '' : 'line-clamp-2'}`}>
                 {recipe.caption}
               </p>
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="text-[15px] font-medium text-gray-500 hover:text-gray-700 absolute bottom-0 right-0 pl-12 bg-gradient-to-l from-white via-white to-transparent"
+                className="text-[15px] font-medium text-chef-grey-iron hover:text-chef-grey-graphite absolute bottom-0 right-0 pl-12 bg-gradient-to-l from-white via-white to-transparent"
               >
                 {isExpanded ? 'Less' : 'More'}
               </button>

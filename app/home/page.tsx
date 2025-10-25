@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
+import { usePathname } from "next/navigation" // change for refresh issue
 import Navigation from "@/components/Navigation"
 import SearchBar from "@/components/SearchBar"
 import RecipeCard from "@/components/RecipeCard"
@@ -332,6 +333,19 @@ function HomePageContent() {
       clearInterval(interval)
     }
   }, [loadRecipes, loadRecentRecipes])
+  
+
+
+  const pathname = usePathname(); // change for refresh
+
+useEffect(() => {
+  if (pathname === "/" || pathname === "/home") {
+    console.log("Detected navigation back to Home → refreshing...");
+    invalidateRecipeCache();
+    loadRecipes(true);
+    loadRecentRecipes();
+  }
+}, [pathname]);
 
   return (
     <div className="flex flex-col min-h-screen pb-[70px]">

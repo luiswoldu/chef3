@@ -4,6 +4,7 @@ import RecipeCard from "../../components/RecipeCard"
 import type { Recipe } from "@/types"
 import { Loader2 } from "lucide-react"
 import { supabase } from "@/lib/supabase/client"
+import { basicSearch } from "@/lib/search/adapters"
 
 // Component that uses useSearchParams
 function SearchResultsContent() {
@@ -29,19 +30,9 @@ function SearchResultsContent() {
             return
           }
 
-          // Using ILIKE for server-side search with trailing wildcard
-          const { data: recipesData, error } = await supabase
-            .from('recipes')
-            .select('*')
-            .eq('user_id', user.id)
-            .ilike('title', `${query}%`)
-
-          if (error) {
-            console.error('Supabase query error:', error)
-            setResults([])
-          } else {
-            setResults(recipesData as Recipe[] || [])
-          }
+          // Use search adapter (preserves current behavior: prefix match, user-scoped)
+          const { recipes } = await basicSearch(query, user.id)
+          setResults(recipes)
         } catch (error) {
           console.error('Error in searchRecipes:', error)
           setResults([])

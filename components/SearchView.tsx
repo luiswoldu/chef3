@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 import { fullTextSearch } from "@/lib/supabase/client"
+import { LIVE_DEBOUNCE_MS } from "@/lib/search/constants"
 
 interface SearchItem {
   id: string
@@ -61,7 +62,7 @@ export default function SearchView({ onCancel }: SearchViewProps) {
       } finally {
         setIsSearching(false)
       }
-    }, 200) // Reduced from 300ms to 200ms for faster feedback
+    }, LIVE_DEBOUNCE_MS)
 
     return () => clearTimeout(handler)
   }, [searchQuery])

@@ -242,37 +242,51 @@ export async function createUserProfile({
   tastePreference?: string
 }) {
   try {
+    // Validate required fields
+    if (!userId || !firstName?.trim() || !email?.trim()) {
+      throw new Error('User ID, first name, and email are required')
+    }
     
     // Store taste preference as text directly
     const tastePreferenceValue = tastePreference || null
     
+    const profileData = {
+      id: userId,
+      first_name: firstName.trim(),
+      username: username?.trim() || null,
+      email: email.trim(),
+      taste_preference: tastePreferenceValue,
+      created_at: new Date().toISOString()
+    }
+    
     const { data, error } = await supabase
       .from('Users')
-      .insert({
-        id: userId,
-        first_name: firstName,
-        username: username || null,
-        email,
-        taste_preference: tastePreferenceValue,
-        created_at: new Date().toISOString()
-      })
+      .insert(profileData)
       .select()
       .single()
 
     if (error) {
       // If profile already exists, try to update it instead
       if (error.code === '23505' || error.message?.includes('duplicate key')) {
+        console.log('Profile already exists, updating instead')
         return await updateUserProfile(userId, {
-          first_name: firstName,
-          username: username || null,
+          first_name: firstName.trim(),
+          username: username?.trim() || null,
           taste_preference: tastePreferenceValue as any
         })
       }
+      
+      // If the Users table doesn't exist, provide a helpful error
+      if (error.code === '42P01' || error.message?.includes('relation "public.Users" does not exist')) {
+        throw new Error('Database not properly configured - Users table missing')
+      }
+      
       throw error
     }
 
     return data
   } catch (error) {
+    console.error('Profile creation error:', error)
     throw new Error((error as AuthError).message || 'Failed to create user profile')
   }
 }

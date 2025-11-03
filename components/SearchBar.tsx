@@ -25,7 +25,7 @@ export default function SearchBar() {
         <User className="h-6 w-6 text-black" />
         </button>
           <motion.div
-            className="flex flex-grow items-center bg-[#ffffff]/50 backdrop-blur-[4px] rounded-full px-4 py-2 text-white cursor-pointer"
+            className="flex flex-grow items-center bg-[#ffffff]/50 backdrop-blur-[4px] rounded-full px-4 py-2.5 text-white cursor-pointer"
             style={{ width: isSearching ? "81%" : "87%" }}
             animate={{
               width: isSearching ? "81%" : "87%",
@@ -41,7 +41,7 @@ export default function SearchBar() {
                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
               />
             </svg>
-            <span className="pl-3 font-medium">Search</span>
+            <span className="pl-2.5 font-medium">Search</span>
           </motion.div>
           <AnimatePresence>
             {isSearching && (

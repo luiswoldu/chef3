@@ -103,11 +103,11 @@ export default function SearchView({ onCancel }: SearchViewProps) {
   const hasResults = searchResults.recipes.length > 0
 
   return (
-    <div className="fixed inset-0 bg-white z-50">
+    <div className="absolute inset-0 bg-white z-50">
       <div className="flex flex-col h-full">
         {/* Search Header */}
-        <div className="p-4 flex items-center mt-8">
-          <div className="flex-1 flex items-center bg-chef-grey-calcium rounded-full px-4 py-2">
+        <div className="p-4 flex items-center mt-3">
+          <div className="flex-1 flex items-center bg-chef-grey-calcium rounded-full px-4 py-2.5">
             {isSearching ? (
               <Loader className="w-5 h-5 text-black animate-spin" />
             ) : (

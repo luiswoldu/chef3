@@ -120,7 +120,7 @@ function NavItem({
         className={`relative text-base ${
           isActive
             ? "text-black tracking-tight font-bold"
-            : "text-gray-600 font-semibold"
+            : "text-chef-grey font-semibold"
         }`}
       >
         {label}

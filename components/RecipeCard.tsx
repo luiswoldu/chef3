@@ -257,7 +257,7 @@ export default function RecipeCard({
           <h2 
             className={`text-white leading-[1.1] ${
               cardType === 'hero' 
-                ? 'text-[28px] tracking-[-0.04em] font-extrabold px-3 py-5' // controls hero title padding y 6 = 24px
+                ? 'text-[28px] tracking-[-0.04em] font-extrabold px-4 py-5' // controls hero title padding
                 : cardType === 'thumbnail'
                 ? 'text-base font-bold tracking-tight'
                 : 'text-lg font-bold'
@@ -289,7 +289,7 @@ export default function RecipeCard({
           ) : (
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-gray-700"
+              className="h-6 w-6 text-black"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"

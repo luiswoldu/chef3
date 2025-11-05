@@ -429,15 +429,15 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
             </div>
           </section>
           <section>
-            <h2 className="text-2xl font-semibold mb-2">Steps</h2>
-            <ol className="list-decimal list-inside space-y-1">
-              {recipe.steps && recipe.steps.map((step: string, index: number) => (
-                <li key={index} className="py-2 text-lg font-medium tracking-tight leading-normal">
-                  {step}
-                </li>
-              ))}
-            </ol>
-          </section>
+  <h2 className="text-2xl font-semibold mb-2">Steps</h2>
+  <div className="space-y-1">
+    {recipe.steps && recipe.steps.map((step: string, index: number) => (
+      <div key={index} className="py-2 px-3 text-base font-regular tracking-tight leading-1.4">
+        {step}
+      </div>
+    ))}
+  </div>
+</section>
         </div>
       </div>
 

@@ -1,8 +1,7 @@
 "use client"
 
-import { ChevronRight, Loader, Search, X } from "lucide-react"
+import { ChevronRight, Loader, Search, X, Sparkle } from "lucide-react"
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { useEffect, useState } from "react"
 import { fullTextSearch } from "@/lib/supabase/client"
 import { LIVE_DEBOUNCE_MS } from "@/lib/search/constants"
@@ -11,7 +10,7 @@ interface SearchItem {
   id: string
   name: string
   category: string
-  type: string  // used for routing; e.g. 'recipe' or 'ingredient'
+  type: string
 }
 
 interface SearchViewProps {
@@ -20,17 +19,17 @@ interface SearchViewProps {
 
 export default function SearchView({ onCancel }: SearchViewProps) {
   const router = useRouter()
-  const [searchQuery, setSearchQuery] = useState('')
+  const [searchQuery, setSearchQuery] = useState("")
   const [isSearching, setIsSearching] = useState(false)
+  const [aiSearchOn, setAiSearchOn] = useState(false)
   const [searchResults, setSearchResults] = useState<{
-    recipes: SearchItem[],
+    recipes: SearchItem[]
     ingredients: SearchItem[]
   }>({
     recipes: [],
-    ingredients: []
+    ingredients: [],
   })
 
-  // Debounced full-text search with a shorter timeout
   useEffect(() => {
     const handler = setTimeout(async () => {
       if (!searchQuery.trim()) {
@@ -42,23 +41,22 @@ export default function SearchView({ onCancel }: SearchViewProps) {
       setIsSearching(true)
       try {
         const { recipes, ingredients } = await fullTextSearch(searchQuery)
-        
         setSearchResults({
-          recipes: recipes.map(r => ({ 
-            id: r.id.toString(), 
-            name: r.title, 
-            category: 'Recipe', 
-            type: 'recipe' 
+          recipes: recipes.map((r) => ({
+            id: r.id.toString(),
+            name: r.title,
+            category: "Recipe",
+            type: "recipe",
           })),
-          ingredients: ingredients.map(i => ({ 
-            id: i.id.toString(), 
-            name: i.name, 
-            category: 'Ingredient', 
-            type: 'ingredients' 
-          }))
+          ingredients: ingredients.map((i) => ({
+            id: i.id.toString(),
+            name: i.name,
+            category: "Ingredient",
+            type: "ingredients",
+          })),
         })
       } catch (err) {
-        console.error('Search error:', err)
+        console.error("Search error:", err)
       } finally {
         setIsSearching(false)
       }
@@ -69,35 +67,27 @@ export default function SearchView({ onCancel }: SearchViewProps) {
 
   const handleSearch = async (query: string) => {
     if (!query.trim()) return
-
     try {
       router.push(`/search?q=${encodeURIComponent(query)}`)
     } catch (error) {
-      console.error('Error navigating to search:', error)
+      console.error("Error navigating to search:", error)
     }
   }
 
-  const handleClear = () => {
-    setSearchQuery('')
-  }
-
-  const handleCancel = () => {
-    onCancel()
-    // router.push("/")
-  }
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleClear = () => setSearchQuery("")
+  const handleCancel = () => onCancel()
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     setSearchQuery(e.target.value)
-  }
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && searchQuery.trim()) {
-      handleSearch(searchQuery.trim())
-    }
+    if (e.key === "Enter" && searchQuery.trim()) handleSearch(searchQuery.trim())
   }
 
-  const handleItemClick = (item: SearchItem) => {
+  const handleItemClick = (item: SearchItem) =>
     router.push(`/${item.type}/${item.id}`)
+
+  const toggleAISearch = () => {
+    setAiSearchOn((prev) => !prev)
+    setSearchQuery("") // optional: clear when switching modes
   }
 
   const hasResults = searchResults.recipes.length > 0
@@ -107,21 +97,23 @@ export default function SearchView({ onCancel }: SearchViewProps) {
       <div className="flex flex-col h-full">
         {/* Search Header */}
         <div className="p-4 flex items-center mt-3">
-          <div className="flex-1 flex items-center bg-chef-grey-calcium rounded-full px-4 py-2.5">
+          <div className="flex-1 flex items-center bg-chef-grey-calcium rounded-full px-4 py-2.5 relative">
             {isSearching ? (
               <Loader className="w-5 h-5 text-black animate-spin" />
             ) : (
               <Search className="w-5 h-5 text-black" />
             )}
+
             <input
               type="text"
               className="flex-1 bg-transparent text-black pl-3 focus:outline-none placeholder-chef-grey"
-              placeholder="Search recipes"
+              placeholder={aiSearchOn ? "Ask" : "Search"}
               autoFocus
               value={searchQuery}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
             />
+
             {searchQuery.trim() && (
               <button
                 onClick={handleClear}
@@ -131,11 +123,22 @@ export default function SearchView({ onCancel }: SearchViewProps) {
                 <X className="h-5 w-5" />
               </button>
             )}
+
+            {/* AI Toggle Button */}
+            <button
+              onClick={toggleAISearch}
+              aria-label="Toggle AI Search"
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center active:scale-95 transition-transform"
+              style={{ padding: "6px" }}
+            >
+              <Sparkle
+                className="w-6 h-6 transition-colors"
+                color={aiSearchOn ? "#6ED308" : "rgba(0,0,0,0.3)"}
+              />
+            </button>
           </div>
-          <button
-            onClick={handleCancel}
-            className="text-black ml-3"
-          >
+
+          <button onClick={handleCancel} className="text-black ml-3">
             Cancel
           </button>
         </div>
@@ -149,7 +152,6 @@ export default function SearchView({ onCancel }: SearchViewProps) {
           ) : searchQuery.trim() ? (
             hasResults ? (
               <div className="space-y-8">
-                {/* Recipes Section */}
                 {searchResults.recipes.length > 0 && (
                   <div>
                     <div className="space-y-4">
@@ -160,7 +162,9 @@ export default function SearchView({ onCancel }: SearchViewProps) {
                           onClick={() => handleItemClick(recipe)}
                         >
                           <div>
-                            <h3 className="text-black text-lg leading-tight">{recipe.name}</h3>
+                            <h3 className="text-black text-lg leading-tight">
+                              {recipe.name}
+                            </h3>
                           </div>
                           <ChevronRight className="text-chef-grey-graphite h-5 w-5" />
                         </button>
@@ -171,14 +175,26 @@ export default function SearchView({ onCancel }: SearchViewProps) {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-64">
-                <p className="text-chef-grey-iron text-center">No results for "{searchQuery.trim()}"</p>
+                <p className="text-chef-grey-iron text-center">
+                  No results for "{searchQuery.trim()}"
+                </p>
               </div>
             )
           ) : (
-            <div className="flex flex-col items-center justify-center h-64">
-              <p className="text-chef-grey-iron text-center">Type to search recipes</p>
-            </div>
-          )}
+<div className="flex flex-col items-center justify-center h-64">
+  <p className="text-chef-grey-iron text-center">
+    {aiSearchOn ? (
+      <>
+        <span className="text-xl text-black mb-0.5 block">
+          Make dinner from leftovers.
+        </span>
+        Try 'I've got broccoli and chicken. Give me recipe ideas for tonight.'
+      </>
+    ) : (
+      "Type to search recipes"
+    )}
+  </p>
+</div>          )}
         </div>
       </div>
     </div>

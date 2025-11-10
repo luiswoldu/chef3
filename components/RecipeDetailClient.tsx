@@ -429,7 +429,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
             </div>
           </section>
           <section>
-  <h2 className="text-2xl font-semibold mb-2">Steps</h2>
+  <h2 className="text-2xl font-semibold">Steps</h2>
   <div className="space-y-1">
     {recipe.steps && recipe.steps.map((step: string, index: number) => (
       <div key={index} className="py-2 px-3 text-base font-regular tracking-tight leading-1.4">

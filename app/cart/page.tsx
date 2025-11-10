@@ -175,28 +175,32 @@ export default function Cart() {
         <div className="flex justify-between items-center mb-4 pr-1.5">
           <h1 className="text-3xl font-bold pt-2 tracking-tight">Shopping List</h1>
         </div>
-        <form onSubmit={addItem} className="relative mb-4">
+        <form onSubmit={addItem} className="relative mb-3">
           <input
             type="text"
             value={newItem}
             onChange={(e) => setNewItem(e.target.value)}
             placeholder="New grocery item"
-            className="w-full p-2 pl-4 pr-12 border rounded-full focus:outline-none placeholder:text-[#9F9F9F]"
+            className="w-full p-2.5 pl-4 pr-12 border rounded-full focus:outline-none placeholder:text-[#9F9F9F]"
           />
           <button type="submit" className={`absolute top-1/2 right-1.5 transform -translate-y-1/2 flex items-center justify-center rounded-full p-1 border border-[#DFE0E1] bg-transparent`}>
             <Plus className={`w-6 h-6 ${newItem.trim() ? 'text-black' : 'text-[#B2B2B2]'}`} />
           </button>
         </form>
         
-        <div className="flex items-center justify-end pr-1">
-          <button 
-            onClick={clearList}
-            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-            aria-label="Clear all items"
-          >
-            <Trash2 className="w-6 h-6 text-[#9f9f9f]" />
-          </button>
-          
+        {groceryItems.length > 0 && (
+  <div className="flex items-center justify-end pr-1">
+    <button 
+      onClick={clearList}
+      className="px-6 py-2 rounded-full text-base font-semibold transition-colors bg-[#F7F7F7] text-[#58575C] hover:bg-gray-200"
+    >
+      <div className="flex items-center gap-2">
+        <span>Clear</span>
+      </div>
+    </button>
+  </div>
+)}
+
           {/* Sort button commented out for simplification */}
           {/* <button 
             onClick={handleSort}
@@ -216,7 +220,6 @@ export default function Cart() {
               </span>
             </div>
           </button> */}
-        </div>
       </div>
       <div className="flex-grow overflow-auto">
         <ul>

@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronRight, Loader, Search, X, Sparkle } from "lucide-react"
+import { ChevronRight, Loader, X, Sparkle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { fullTextSearch } from "@/lib/supabase/client"
@@ -98,15 +98,9 @@ export default function SearchView({ onCancel }: SearchViewProps) {
         {/* Search Header */}
         <div className="p-4 flex items-center mt-3">
           <div className="flex-1 flex items-center bg-chef-grey-calcium rounded-full px-4 py-2.5 relative">
-            {isSearching ? (
-              <Loader className="w-5 h-5 text-black animate-spin" />
-            ) : (
-              <Search className="w-5 h-5 text-black" />
-            )}
-
             <input
               type="text"
-              className="flex-1 bg-transparent text-black pl-3 focus:outline-none placeholder-chef-grey"
+              className="flex-1 bg-transparent text-black pl-0 focus:outline-none placeholder-chef-grey"
               placeholder={aiSearchOn ? "Ask" : "Search"}
               autoFocus
               value={searchQuery}
@@ -114,6 +108,7 @@ export default function SearchView({ onCancel }: SearchViewProps) {
               onKeyDown={handleKeyDown}
             />
 
+            {/* Clear Button */}
             {searchQuery.trim() && (
               <button
                 onClick={handleClear}
@@ -124,18 +119,21 @@ export default function SearchView({ onCancel }: SearchViewProps) {
               </button>
             )}
 
-            {/* AI Toggle Button */}
-            <button
-              onClick={toggleAISearch}
-              aria-label="Toggle AI Search"
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 bg-white rounded-full flex items-center justify-center active:scale-95 transition-transform"
-              style={{ padding: "6px" }}
-            >
-              <Sparkle
-                className="w-6 h-6 transition-colors"
-                color={aiSearchOn ? "#6ED308" : "rgba(0,0,0,0.3)"}
-              />
-            </button>
+{/* AI Toggle Button */}
+<button
+  onClick={toggleAISearch}
+  aria-label="Toggle AI Search"
+  className={`absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-all ${
+    aiSearchOn ? 'bg-white' : 'bg-transparent'
+  }`}
+  style={{ padding: "6px" }}
+>
+  <Sparkle
+    className="w-6 h-6 transition-colors"
+    fill={aiSearchOn ? "#6ED308" : "#B2B2B2"}
+    color={aiSearchOn ? "#6ED308" : "#B2B2B2"}
+  />
+</button>
           </div>
 
           <button onClick={handleCancel} className="text-black ml-3">
@@ -181,20 +179,25 @@ export default function SearchView({ onCancel }: SearchViewProps) {
               </div>
             )
           ) : (
-<div className="flex flex-col items-center justify-center h-64">
-  <p className="text-chef-grey-iron text-center">
-    {aiSearchOn ? (
-      <>
-        <span className="text-xl text-black mb-0.5 block">
-          Make dinner from leftovers.
-        </span>
-        Try 'I've got broccoli and chicken. Give me recipe ideas for tonight.'
-      </>
-    ) : (
-      "Type to search recipes"
-    )}
-  </p>
-</div>          )}
+            // Show example only when searchQuery is empty
+            <div className="flex flex-col items-center justify-center h-64 transition-opacity duration-300">
+              {aiSearchOn && !searchQuery.trim() ? (
+                <p className="text-chef-grey-iron text-center">
+                  <span className="text-xl text-black mb-0.5 block">
+                    Make dinner from leftovers.
+                  </span>
+                  Try “I've got broccoli and chicken. Give me recipe ideas for tonight.”
+                </p>
+              ) : (
+                !aiSearchOn &&
+                !searchQuery.trim() && (
+                  <p className="text-chef-grey-iron text-center">
+                    Type to search recipes
+                  </p>
+                )
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

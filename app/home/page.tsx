@@ -373,7 +373,7 @@ useEffect(() => {
           <h2 className="text-[28px] tracking-tight font-bold mb-2 px-4">Recents</h2>
           <div className="flex overflow-x-auto space-x-2 px-4 pb-2">
             {recentRecipes && recentRecipes.length > 0 ? (
-              recentRecipes.map((recipe: Recipe, index: number) => (
+             recentRecipes.slice(0, 9).map((recipe: Recipe, index: number) => (
                 <div key={`recent-${recipe.id}-${index}`} className="w-48">
                   <RecipeCard 
                     id={recipe.id?.toString() || "0"} 

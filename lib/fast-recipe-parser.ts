@@ -235,7 +235,10 @@ export class FastRecipeParser {
       '.instruction',
       '.recipe-instructions li',
       '.instructions li',
-      '.recipe-method li'
+      '.recipe-method li',
+      '.steps li',
+      '.method li',
+      '.preperation li'
     ]
 
     for (const selector of selectors) {
@@ -290,11 +293,33 @@ export class FastRecipeParser {
   }
 
   private extractSteps(instructions: any[]): string[] {
-    return instructions.map(inst => {
-      if (typeof inst === 'string') return inst
-      return inst.text || ''
-    }).filter(step => step.length > 5)
+    const steps: string[] = []
+
+    const extract = (inst: any) => {
+      if (!inst) return
+
+      if (typeof inst === 'string') {
+      const text = inst.trim()
+      if (/[a-zA-Z]/.test(text)) steps.push(text)
+      return
+    }
+
+
+      if (inst.text) {
+        steps.push(inst.text.trim())
+        return
+      }
+
+      if (inst.itemListElement && Array.isArray(inst.itemListElement)) {
+        inst.itemListElement.forEach(extract)
+      }
+    }
+
+    instructions.forEach(extract)
+
+    return steps
   }
+
 
   private extractTags(data: any): string[] {
     const tags: string[] = []
@@ -366,3 +391,4 @@ export class FastRecipeParser {
     }
   }
 }
+

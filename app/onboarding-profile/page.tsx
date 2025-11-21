@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { ChevronLeft, Loader2, Check } from "lucide-react"
 import { getCurrentUser, createUserProfile, checkOnboardingStatus, getAndClearSignupData } from "@/lib/auth"
@@ -24,7 +24,18 @@ export default function OnboardingProfile() {
     { id: 'savoury,indulgent', label: 'Breakfast burrito', image: '/onboarding-option4.jpg' }
   ]
 
+  // inorder to avoid computing auth twice
+  const hasCheckedAuth = useRef(false)
+
   useEffect(() => {
+    // since react runs effects twice in dev mode,
+    // if auth has already been checked, skip
+    if (hasCheckedAuth.current) {
+      return
+    }
+    
+    hasCheckedAuth.current = true
+
     async function checkAuth() {
       try {
         const currentUser = await getCurrentUser()

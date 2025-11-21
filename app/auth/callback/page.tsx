@@ -1,63 +1,52 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
-import { checkOnboardingStatus } from '@/lib/auth';
 import { Loader2 } from 'lucide-react';
 
 function AuthCallbackContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [status, setStatus] = useState('Verifying your email...');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function handleAuth() {
-      try {
-        console.log('Auth callback started');
+      try {        
+        // parse hash fragment (parameters after #)
+        // supabase sends tokens in the URL hash for email verification
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
         
-        // Check if searchParams is available
-        if (!searchParams) {
-          console.error('Search parameters not available');
-          throw new Error('Search parameters not available');
-        }
-
-        // First, handle the auth callback with the URL parameters
-        const code = searchParams.get('code');
-        const error_param = searchParams.get('error');
-        const error_description = searchParams.get('error_description');
-        
-        console.log('URL params:', { code: !!code, error_param, error_description });
-        
-        // Check for error parameters first
+        // extracts the Supabase tokens from URL hash
+        const access_token = hashParams.get('access_token');
+        const refresh_token = hashParams.get('refresh_token');
+        const error_param = hashParams.get('error');
+        const error_description = hashParams.get('error_description');
+               
+        // check for error parameters first
         if (error_param) {
           throw new Error(error_description || error_param);
         }
         
-        if (!code) {
-          // If no code but no error either, user might have clicked verification link without params
-          // Redirect to login instead of showing error
-          console.log('No verification code, redirecting to login');
+        // verify we have the required tokens
+        if (!access_token || !refresh_token) {
+          console.log('No verification tokens, redirecting to login');
           router.push('/login');
           return;
         }
-
-        setStatus('Verifying your account...');
-        console.log('Exchanging code for session');
         
-        const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-
-        console.log('Exchange result:', { 
-          hasData: !!data, 
-          hasSession: !!data?.session, 
-          hasUser: !!data?.user,
-          error: exchangeError 
+        // start process of passing the tokens to supabase to set the session
+        setStatus('Verifying your account...');
+        
+        // Set the session using the tokens from the hash
+        const { data, error: sessionError } = await supabase.auth.setSession({
+          access_token,
+          refresh_token,
         });
 
-        if (exchangeError) {
-          console.error('Exchange error:', exchangeError);
-          throw exchangeError;
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          throw sessionError;
         }
 
         if (!data.session) {
@@ -68,33 +57,25 @@ function AuthCallbackContent() {
         console.log('Session established for user:', session.user.id);
         setStatus('Email verified! Setting up your account...');
 
-        // For new users after email verification, always redirect to onboarding
-        // The onboarding-profile page will handle checking existing profile data
+        // Redirect to onboarding-profile
         setStatus('Redirecting to complete your profile...');
         
-        // Shorter delay for better UX
         setTimeout(() => {
-          console.log('Redirecting to onboarding-profile');
           router.push('/onboarding-profile');
         }, 500);
         
       } catch (err) {
-        console.error('Auth callback error:', err);
         const errorMessage = err instanceof Error ? err.message : 'An unexpected error occurred';
-        console.error('Error details:', errorMessage);
         setError(errorMessage);
         
-        // Redirect to login after error with more info
         setTimeout(() => {
-          console.log('Redirecting to login due to error');
           router.push(`/login?error=${encodeURIComponent(errorMessage)}`);
         }, 3000);
       }
     }
 
     handleAuth();
-  }, [router, searchParams]);
-
+  }, [router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">

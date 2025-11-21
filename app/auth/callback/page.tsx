@@ -30,7 +30,9 @@ function AuthCallbackContent() {
         
         // verify we have the required tokens
         if (!access_token || !refresh_token) {
-          throw new Error('Email verification failed - missing authentication tokens');
+          console.log('No verification tokens, redirecting to login');
+          router.push('/login');
+          return;
         }
         
         // start process of passing the tokens to supabase to set the session
@@ -43,6 +45,7 @@ function AuthCallbackContent() {
         });
 
         if (sessionError) {
+          console.error('Session error:', sessionError);
           throw sessionError;
         }
 
@@ -50,6 +53,8 @@ function AuthCallbackContent() {
           throw new Error('Email verification failed - no valid session created');
         }
 
+        const session = data.session;
+        console.log('Session established for user:', session.user.id);
         setStatus('Email verified! Setting up your account...');
 
         // Redirect to onboarding-profile

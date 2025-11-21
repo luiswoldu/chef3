@@ -106,7 +106,7 @@ export default function SignUp() {
     e.preventDefault()
     
     if (!validateForm()) return
-  
+
     setLoading(true)
     
     try {
@@ -116,30 +116,16 @@ export default function SignUp() {
         firstName: formData.firstName,
         username: formData.username
       })
-  
-      // temporarily stores name and username in localStorage to use in onboarding profile verification
-      // no sensitive info is stored
-      if (result.user) {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(`signup_${result.user.id}`, JSON.stringify({
-            firstName: formData.firstName,
-            username: formData.username
-          }))
-        }
-      }
-  
+
       if (result.needsEmailVerification) {
         setStep('verification')
         // Set initial cooldown
         const { remainingSeconds } = getResendCooldownTime(formData.email)
         setResendCountdown(remainingSeconds)
-      } else if (result.user && result.signupData) {
+      } else {
         // User is automatically logged in (email confirmation disabled)
-        // Store signup data for onboarding
         showNotification("Account created successfully!")
         router.push('/onboarding-profile')
-      } else {
-        throw new Error('Unexpected signup result - please try again')
       }
     } catch (error: any) {
       console.error('Signup error:', error)

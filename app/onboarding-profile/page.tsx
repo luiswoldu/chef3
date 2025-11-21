@@ -46,50 +46,41 @@ export default function OnboardingProfile() {
         
         setUser(currentUser)
         
-        // Read localStorage directly
+        // Try to get stored signup data first
         let signupData = null
-        const storageKey = `signup_${currentUser.id}`
-        
         try {
-          const storedData = localStorage.getItem(storageKey)
-          
-          // check if onboarding successfully stored data
-          if (storedData) {
-            signupData = JSON.parse(storedData)
-          }
+          signupData = getAndClearSignupData(currentUser.id)
         } catch (jsonError) {
           showNotification('Error loading signup data. Proceeding with manual setup.')
         }
         
-        if (signupData && signupData.firstName) {
+        if (signupData) {
+          // User just signed up and verified email - skip to taste preference
           setFirstName(signupData.firstName)
           setUsername(signupData.username)
-          setStep('tastePreference')
+          setStep('tastePreference') // Skip first name, go straight to breakfast
+        } else {
+          // Check what onboarding steps are needed for existing users
+          const status = await checkOnboardingStatus(currentUser.id)
           
-          // clears local storage to ensure no memory leaks within browser
-          localStorage.removeItem(storageKey)
-        } else {  
-          try {
-            const status = await checkOnboardingStatus(currentUser.id)
-            
-            if (!status.needsOnboarding) {
-              router.push('/home')
-              return
-            }
-            
-            if (!status.hasFirstName) {
-              setStep('firstName')
-            } else if (!status.hasTastePreference) {
-              setStep('tastePreference')
-            } else {
-              setStep('complete')
-            }
-          } catch (statusError) {
+          if (!status.needsOnboarding) {
+            // Already completed onboarding
+            router.push('/home')
+            return
+          }
+          
+          // Determine which step to show
+          if (!status.hasFirstName) {
             setStep('firstName')
+          } else if (!status.hasTastePreference) {
+            setStep('tastePreference')
+          } else {
+            setStep('complete')
           }
         }
         
       } catch (error) {
+        console.error('Error checking auth:', error)
         showNotification('Error loading profile. Please try again.')
         router.push('/login')
       } finally {

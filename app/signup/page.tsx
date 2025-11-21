@@ -106,7 +106,7 @@ export default function SignUp() {
     e.preventDefault()
     
     if (!validateForm()) return
-
+  
     setLoading(true)
     
     try {
@@ -116,7 +116,18 @@ export default function SignUp() {
         firstName: formData.firstName,
         username: formData.username
       })
-
+  
+      // temporarily stores name and username in localStorage to use in onboarding profile verification
+      // no sensitive info is stored
+      if (result.user) {
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(`signup_${result.user.id}`, JSON.stringify({
+            firstName: formData.firstName,
+            username: formData.username
+          }))
+        }
+      }
+  
       if (result.needsEmailVerification) {
         setStep('verification')
         // Set initial cooldown

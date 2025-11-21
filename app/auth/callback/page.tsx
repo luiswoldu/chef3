@@ -60,8 +60,8 @@ function AuthCallbackContent() {
           throw exchangeError;
         }
 
-        if (!data.session || !data.user) {
-          throw new Error('Email verification failed - no valid session created');
+        if (!data.session) {
+          throw new Error('No session found after email verification');
         }
 
         const session = data.session;

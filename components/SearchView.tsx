@@ -1,6 +1,6 @@
 "use client"
 
-import { ChevronRight, Loader, X, Sparkle } from "lucide-react"
+import { ChevronRight, Loader, ArrowUp, Sparkle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { fullTextSearch } from "@/lib/supabase/client"
@@ -21,7 +21,8 @@ export default function SearchView({ onCancel }: SearchViewProps) {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [isSearching, setIsSearching] = useState(false)
-  const [aiSearchOn, setAiSearchOn] = useState(false)
+  const [aiSearchOn, setAiSearchOn] = useState(true)
+  const isTyping = searchQuery.trim().length > 0
   const [searchResults, setSearchResults] = useState<{
     recipes: SearchItem[]
     ingredients: SearchItem[]
@@ -108,34 +109,37 @@ export default function SearchView({ onCancel }: SearchViewProps) {
               onKeyDown={handleKeyDown}
             />
 
-            {/* Clear Button */}
-            {searchQuery.trim() && (
-              <button
-                onClick={handleClear}
-                className="ml-2 text-black"
-                aria-label="Clear search"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            )}
-
-{/* AI Toggle Button */}
+{/* Ask Hands Button */}
 <button
   onClick={toggleAISearch}
   aria-label="Toggle AI Search"
-  className={`absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-all ${
-    aiSearchOn ? 'bg-white' : 'bg-transparent'
-  }`}
+  className={`
+    absolute right-1.5 top-1/2 -translate-y-1/2
+    w-8 h-8 rounded-full flex items-center justify-center
+    active:scale-95 transition-all
+    ${isTyping
+      ? "bg-gradient-to-r from-[#6ED308] to-[#A5E765]"
+      : aiSearchOn
+      ? "bg-white"
+      : "bg-transparent"
+    }
+  `}
   style={{ padding: "6px" }}
 >
-  <Sparkle
-    className="w-6 h-6 transition-colors"
-    fill={aiSearchOn ? "#6ED308" : "#B2B2B2"}
-    color={aiSearchOn ? "#6ED308" : "#B2B2B2"}
-  />
+  {isTyping ? (
+    // When typing → ArrowUp icon in white
+    <ArrowUp className="w-5 h-5 text-white" />
+  ) : (
+    // Default Sparkle icon
+    <Sparkle
+      className="w-6 h-6 transition-colors"
+      fill={aiSearchOn ? "#6ED308" : "#B2B2B2"}
+      color={aiSearchOn ? "#6ED308" : "#B2B2B2"}
+    />
+  )}
 </button>
-          </div>
 
+          </div>
           <button onClick={handleCancel} className="text-black ml-3">
             Cancel
           </button>

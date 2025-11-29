@@ -227,13 +227,32 @@ export async function getUserProfile(userId: string): Promise<Profile | null> {
   }
 }
 
+export async function getUserTasteProfile(userId: string) {
+  const { data, error } = await supabase
+    .from("UserTasteProfiles")
+    .select("*")
+    .eq("id", userId)
+    .single();
+
+  if (error) {
+    // If no row exists, supabase returns error code "PGRST116"
+    if (error.code === "PGRST116") {
+      return null; // no taste profile yet
+    }
+
+    console.error("Error fetching user taste profile:", error);
+    throw error;
+  }
+
+  return data;
+}
+
 // Create user profile
 export async function createUserProfile({
   userId,
   firstName,
   username,
-  email,
-  tastePreference
+  email
 }: {
   userId: string
   firstName: string
@@ -241,11 +260,7 @@ export async function createUserProfile({
   email: string
   tastePreference?: string
 }) {
-  try {
-    
-    // Store taste preference as text directly
-    const tastePreferenceValue = tastePreference || null
-    
+  try {    
     const { data, error } = await supabase
       .from('Users')
       .insert({
@@ -253,7 +268,6 @@ export async function createUserProfile({
         first_name: firstName,
         username: username || null,
         email,
-        taste_preference: tastePreferenceValue,
         created_at: new Date().toISOString()
       })
       .select()
@@ -264,8 +278,7 @@ export async function createUserProfile({
       if (error.code === '23505' || error.message?.includes('duplicate key')) {
         return await updateUserProfile(userId, {
           first_name: firstName,
-          username: username || null,
-          taste_preference: tastePreferenceValue as any
+          username: username || null
         })
       }
       throw error
@@ -275,6 +288,31 @@ export async function createUserProfile({
   } catch (error) {
     throw new Error((error as AuthError).message || 'Failed to create user profile')
   }
+}
+
+// Add Taste Profile for New User
+export async function createTasteProfile(
+  userId: string,
+  tasteText: string,
+  vectors: any
+) {
+  const { data, error } = await supabase
+    .from("UserTasteProfiles")
+    .insert({
+      id: userId,
+      taste_text: tasteText,
+      vectors: vectors,
+      created_at: new Date().toISOString(),
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error inserting taste profile:", error);
+    throw error;
+  }
+
+  return data;
 }
 
 // Update user profile
@@ -316,6 +354,7 @@ export async function checkOnboardingStatus(userId: string): Promise<{
     
     const checkPromise = (async () => {
       const profile = await getUserProfile(userId)
+      const taste_profile = await getUserTasteProfile(userId)
       
       if (!profile) {
         return {
@@ -326,7 +365,7 @@ export async function checkOnboardingStatus(userId: string): Promise<{
       }
 
       const hasFirstName = Boolean(profile.first_name?.trim())
-      const hasTastePreference = Boolean(profile.taste_preference !== null && profile.taste_preference !== undefined && profile.taste_preference.trim())
+      const hasTastePreference = Boolean(taste_profile !== null && taste_profile !== undefined)
       
       return {
         needsOnboarding: !hasFirstName || !hasTastePreference,

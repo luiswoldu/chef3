@@ -1,31 +1,44 @@
-// app/ask/page.tsx
 "use client"
 
 import { useState } from "react"
 import ChatView from "@/components/ChatView"
-import { ArrowUp, Sparkle } from "lucide-react"
+import SearchView from "@/components/SearchView"
+import { ChevronLeft, ArrowUp, Sparkle, Search as SearchIcon } from "lucide-react"
+import { motion } from "framer-motion"
+import { useRouter } from "next/navigation"
 
 export default function AskPage() {
   const [input, setInput] = useState("")
   const [messages, setMessages] = useState([])
   const [isChatStarted, setIsChatStarted] = useState(false)
-  const [aiSearchOn, setAiSearchOn] = useState(true)
-const isTyping = input.trim().length > 0
 
+  // NEW: Search mode toggle
+  const [aiSearchOn, setAiSearchOn] = useState(true)
+  const [showSearchView, setShowSearchView] = useState(false)
+
+  const isTyping = input.trim().length > 0
+  const router = useRouter()
+
+  const toggleSearchMode = () => {
+    setAiSearchOn((prev) => !prev)
+    setShowSearchView((prev) => !prev)
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim()) return
 
+    if (!aiSearchOn) {
+      // Search mode → no submit allowed
+      return
+    }
+
     // FIRST message — flip UI to conversation mode
-if (!isChatStarted) setIsChatStarted(true)
+    if (!isChatStarted) setIsChatStarted(true)
 
     const userMessage = { role: "user", content: input }
-  //   setMessages((prev) => [...prev, userMessage])
 
-    // temp fake AI response (will replace this with streaming)
     const aiMessage = { role: "assistant", content: "…" }
-    // setMessages((prev) => [...prev, aiMessage])
 
     setInput("")
   }
@@ -35,54 +48,83 @@ if (!isChatStarted) setIsChatStarted(true)
 
       {/* ========== TOP INPUT (only before conversation) ========== */}
       {!isChatStarted && (
-  <div className="p-4 flex items-center mt-3">
-    <form onSubmit={handleSubmit} className="flex-1">
-      <div className="flex items-center bg-chef-grey-calcium rounded-full px-4 py-2.5 relative">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Ask"
-          autoFocus
-          className="flex-1 bg-transparent outline-none text-black pl-0"
-        />
-<button
-  type="submit"
-  aria-label="Ask Hands"
-  disabled={!aiSearchOn && !isTyping} // optional
-  className={`
-    absolute right-1.5 top-1/2 -translate-y-1/2
-    w-8 h-8 rounded-full flex items-center justify-center
-    active:scale-95 transition-all
-    ${isTyping
-      ? "bg-gradient-to-r from-[#6ED308] to-[#A5E765]"
-      : aiSearchOn
-      ? "bg-white"
-      : "bg-transparent"
-    }
-  `}
-  style={{ padding: "6px" }}
->
-  {isTyping ? (
-    <ArrowUp className="w-5 h-5 text-white" />
-  ) : (
-    <Sparkle
-      className="w-6 h-6 transition-colors"
-      fill={aiSearchOn ? "#6ED308" : "#B2B2B2"}
-      color={aiSearchOn ? "#6ED308" : "#B2B2B2"}
-    />
-  )}
-</button>
-      </div>
-    </form>
-  </div>
-)}
+        <div
+          className="absolute top-0 left-1/2 transform -translate-x-1/2 z-10 p-4 w-full max-w-lg mx-auto"
+        >
+          <div className="flex items-center gap-3 mt-3 w-full">
 
-      {/* ========== CHAT AREA ========== */}
-      <div className="flex-1 overflow-y-auto px-4">
-        <ChatView messages={messages} />
+            {/* Back Button */}
+            <button
+              onClick={() => router.back()}
+              className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0 bg-chef-grey-calcium"
+            >
+              <ChevronLeft className="h-6 w-6 text-black" />
+            </button>
+
+            {/* Input */}
+            <motion.div
+              className="relative flex flex-grow items-center bg-chef-grey-calcium rounded-full px-4 py-2.5 cursor-text"
+            >
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={aiSearchOn ? "Ask" : "Search"}
+                autoFocus
+                className="flex-1 bg-transparent outline-none text-black placeholder-chef-grey"
+              />
+
+              {/* Submit / Sparkle Button */}
+              <button
+                type="submit"
+                aria-label="Ask Hands"
+                onClick={
+                  isTyping && aiSearchOn
+                    ? handleSubmit
+                    : toggleSearchMode
+                }
+                className={`
+                  absolute right-1.5 top-1/2 -translate-y-1/2
+                  w-8 h-8 rounded-full flex items-center justify-center
+                  active:scale-95 transition-all
+                  ${isTyping && aiSearchOn
+                    ? "bg-gradient-to-r from-[#6ED308] to-[#A5E765]"
+                    : "bg-white"
+                  }
+                `}
+                style={{ padding: "6px" }}
+              >
+                {isTyping && aiSearchOn ? (
+                  <ArrowUp className="w-5 h-5 text-white" />
+                ) : aiSearchOn ? (
+                  <Sparkle
+                    className="w-5 h-5 transition-colors"
+                    fill="#6ED308"
+                    color="#6ED308"
+                  />
+                ) : (
+                  <SearchIcon className="w-5 h-5 text-black" />
+                )}
+              </button>
+            </motion.div>
+          </div>
+        </div>
+      )}
+
+      {/* ========== CENTER AREA ========== */}
+      <div className="flex-1 overflow-y-auto px-4 pt-24">
+
+        {/* MODE 1 → Search */}
+        {showSearchView && !isChatStarted && (
+          <SearchView query={input} />
+        )}
+
+        {/* MODE 2 → Chat */}
+        {!showSearchView && (
+          <ChatView messages={messages} />
+        )}
       </div>
 
-      {/* ========== BOTTOM INPUT (after conversation starts) ========== */}
+      {/* ========== BOTTOM INPUT (chat only) ========== */}
       {isChatStarted && (
         <div className="p-4 pb-8 bg-white">
           <form onSubmit={handleSubmit}>

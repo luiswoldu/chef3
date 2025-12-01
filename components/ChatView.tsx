@@ -48,11 +48,15 @@ export default function ChatView({ messages, onSendMessage }: ChatViewProps) {
 
   if (!messages || messages.length === 0) {
     return (
-      <div className="w-full h-full flex items-center justify-center text-chef-grey-iron text-center px-6">
-        <p className="text-[17px] leading-snug">
-          Ask anything — Hands can help with cooking, ingredients, substitutions,
-          meal ideas, and more.
-        </p>
+      <div className="flex items-center justify-center h-48 text-center">
+        <div>
+          <h2 className="text-lg font-semibold text-black">
+          Turn leftovers into dinner
+          </h2>
+          <p className="text-sm text-chef-grey">
+            Ask Hands to help with cooking, ingredients, substitutions, meal ideas, and more.
+          </p>
+        </div>
       </div>
     )
   }
@@ -68,26 +72,6 @@ export default function ChatView({ messages, onSendMessage }: ChatViewProps) {
         }}
       >
         <div className="flex items-center gap-3 mt-3 w-full">
-          {/* Back Button */}
-          <Link
-            href="/"
-            className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0 bg-white shadow-sm"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-black"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 19l-7-7 7-7"
-              />
-            </svg>
-          </Link>
 
           {/* Middle label */}
           <div className="text-white font-medium text-[17px] flex-1 text-center">

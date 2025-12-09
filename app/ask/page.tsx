@@ -7,9 +7,16 @@ import { ChevronLeft, ArrowUp, Sparkle, Search as SearchIcon } from "lucide-reac
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 
+
+
 export default function AskPage() {
+  type ChatMessage = {
+  role: "user" | "assistant"
+  content: string
+}
+
   const [input, setInput] = useState("")
-  const [messages, setMessages] = useState([])
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [isChatStarted, setIsChatStarted] = useState(false)
 
   // NEW: Search mode toggle
@@ -24,24 +31,55 @@ export default function AskPage() {
     setShowSearchView((prev) => !prev)
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!input.trim()) return
+  const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!input.trim()) return;
 
-    if (!aiSearchOn) {
-      // Search mode → no submit allowed
-      return
-    }
+  if (!isChatStarted) setIsChatStarted(true);
 
-    // FIRST message — flip UI to conversation mode
-    if (!isChatStarted) setIsChatStarted(true)
+  const userText = input;
+  setInput("");
 
-    const userMessage = { role: "user", content: input }
+  let assistantIndex = -1;
 
-    const aiMessage = { role: "assistant", content: "…" }
+  // Add user + assistant placeholder correctly
+  setMessages(prev => {
+    const next = [
+      ...prev,
+      { role: "user" as const, content: userText },
+      { role: "assistant" as const, content: "" }
+    ];
 
-    setInput("")
+    assistantIndex = next.length - 1; // The assistant message is last
+    return next;
+  });
+
+  // Send request
+  const response = await fetch("/api/stream", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt: userText }),
+  });
+
+  const reader = response.body?.getReader();
+  const decoder = new TextDecoder();
+
+  while (true) {
+    const { value, done } = await reader!.read();
+    if (done) break;
+
+    const text = decoder.decode(value, { stream: true });
+
+    // Update assistant message content
+    setMessages(prev =>
+      prev.map((msg, index) =>
+        index === assistantIndex
+          ? { ...msg, content: msg.content + text }
+          : msg
+      )
+    );
   }
+};
 
   return (
     <div className="relative flex flex-col h-screen bg-white">
@@ -132,7 +170,7 @@ export default function AskPage() {
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask something else…"
+                placeholder="Ask something"
                 className="flex-1 bg-transparent outline-none text-black"
               />
 

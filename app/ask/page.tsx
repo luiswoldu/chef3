@@ -37,6 +37,11 @@ export default function AskPage() {
 
   if (!isChatStarted) setIsChatStarted(true);
 
+  if (!aiSearchOn) {
+      // Search mode → no submit allowed
+      return
+    }
+
   const userText = input;
   setInput("");
 

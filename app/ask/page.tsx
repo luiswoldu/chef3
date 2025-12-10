@@ -7,13 +7,11 @@ import { ChevronLeft, ArrowUp, Sparkle, Search as SearchIcon } from "lucide-reac
 import { motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 
-
-
 export default function AskPage() {
   type ChatMessage = {
-  role: "user" | "assistant"
-  content: string
-}
+    role: "user" | "assistant"
+    content: string
+  }
 
   const [input, setInput] = useState("")
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -26,65 +24,79 @@ export default function AskPage() {
   const isTyping = input.trim().length > 0
   const router = useRouter()
 
+  const autoResize = (el: HTMLTextAreaElement) => {
+    el.style.height = "auto"
+    el.style.height = `${el.scrollHeight}px`
+  }
+
   const toggleSearchMode = () => {
     setAiSearchOn((prev) => !prev)
     setShowSearchView((prev) => !prev)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  if (!input.trim()) return;
+    e.preventDefault()
+    if (!input.trim()) return
 
-  if (!isChatStarted) setIsChatStarted(true);
+    if (!isChatStarted) setIsChatStarted(true)
 
-  if (!aiSearchOn) {
+    if (!aiSearchOn) {
       // Search mode → no submit allowed
       return
     }
 
-  const userText = input;
-  setInput("");
+    const userText = input
+    setInput("")
 
-  let assistantIndex = -1;
+    let assistantIndex = -1
 
-  // Add user + assistant placeholder correctly
-  setMessages(prev => {
-    const next = [
-      ...prev,
-      { role: "user" as const, content: userText },
-      { role: "assistant" as const, content: "" }
-    ];
+    // Add user + assistant placeholder correctly
+    setMessages(prev => {
+      const next = [
+        ...prev,
+        { role: "user" as const, content: userText },
+        { role: "assistant" as const, content: "" }
+      ]
 
-    assistantIndex = next.length - 1; // The assistant message is last
-    return next;
-  });
+      assistantIndex = next.length - 1 // The assistant message is last
+      return next
+    })
 
-  // Send request
-  const response = await fetch("/api/stream", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt: userText }),
-  });
+    // Send request
+    const response = await fetch("/api/stream", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: userText }),
+    })
 
-  const reader = response.body?.getReader();
-  const decoder = new TextDecoder();
+    const reader = response.body?.getReader()
+    const decoder = new TextDecoder()
 
-  while (true) {
-    const { value, done } = await reader!.read();
-    if (done) break;
+    while (true) {
+      const { value, done } = await reader!.read()
+      if (done) break
 
-    const text = decoder.decode(value, { stream: true });
+      const text = decoder.decode(value, { stream: true })
 
-    // Update assistant message content
-    setMessages(prev =>
-      prev.map((msg, index) =>
-        index === assistantIndex
-          ? { ...msg, content: msg.content + text }
-          : msg
+      // Update assistant message content
+      setMessages(prev =>
+        prev.map((msg, index) =>
+          index === assistantIndex
+            ? { ...msg, content: msg.content + text }
+            : msg
+        )
       )
-    );
+    }
   }
-};
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      if (aiSearchOn && input.trim()) {
+        handleSubmit(e)
+      }
+    }
+  }
 
   return (
     <div className="relative flex flex-col h-screen bg-white">
@@ -108,17 +120,23 @@ export default function AskPage() {
             <motion.div
               className="relative flex flex-grow items-center bg-chef-grey-calcium rounded-full px-4 py-2.5 cursor-text"
             >
-              <input
+              <textarea
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value)
+                  autoResize(e.target)
+                }}
+                onKeyDown={handleKeyDown}
                 placeholder={aiSearchOn ? "Ask" : "Search"}
                 autoFocus
-                className="flex-1 bg-transparent outline-none text-black placeholder-chef-grey"
+                rows={1}
+                className="flex-1 bg-transparent outline-none text-black placeholder-chef-grey resize-none overflow-hidden pr-10"
+                style={{ minHeight: "24px", maxHeight: "200px" }}
               />
 
               {/* Submit / Sparkle Button */}
               <button
-                type="submit"
+                type="button"
                 aria-label="Ask Hands"
                 onClick={
                   isTyping && aiSearchOn
@@ -154,7 +172,7 @@ export default function AskPage() {
       )}
 
       {/* ========== CENTER AREA ========== */}
-      <div className="flex-1 overflow-y-auto px-4 pt-24">
+      <div className="flex-1 overflow-y-auto px-4 pt-4">
 
         {/* MODE 1 → Search */}
         {showSearchView && !isChatStarted && (
@@ -171,17 +189,23 @@ export default function AskPage() {
       {isChatStarted && (
         <div className="p-4 pb-8 bg-white">
           <form onSubmit={handleSubmit}>
-            <div className="flex items-center bg-chef-grey-calcium rounded-full px-4 py-3">
-              <input
+            <div className="flex items-end bg-chef-grey-calcium rounded-full px-4 py-3">
+              <textarea
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => {
+                  setInput(e.target.value)
+                  autoResize(e.target)
+                }}
+                onKeyDown={handleKeyDown}
                 placeholder="Ask something"
-                className="flex-1 bg-transparent outline-none text-black"
+                rows={1}
+                className="flex-1 bg-transparent outline-none text-black resize-none overflow-hidden"
+                style={{ minHeight: "24px", maxHeight: "200px" }}
               />
 
               <button
                 type="submit"
-                className="w-9 h-9 flex items-center justify-center rounded-full bg-gradient-to-r from-[#6ED308] to-[#A5E765]"
+                className="w-9 h-9 flex items-center justify-center rounded-full bg-gradient-to-r from-[#6ED308] to-[#A5E765] ml-2 flex-shrink-0"
               >
                 <ArrowUp className="w-6 h-6 text-white" />
               </button>

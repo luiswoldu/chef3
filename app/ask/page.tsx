@@ -115,7 +115,7 @@ export default function AskPage() {
 
             {/* Input */}
             <motion.div
-  className={`relative flex flex-grow items-center bg-white shadow-hands ${isMultiline ? "rounded-lg" : "rounded-full"} px-4 py-2.5 cursor-text transition-all`}
+  className={`relative flex flex-grow items-center bg-white shadow-hands rounded-full px-4 py-2.5 cursor-text`}
 >
               <textarea
                 value={input}
@@ -193,7 +193,7 @@ export default function AskPage() {
                         <SFIcon icon={sfMagnifyingglass}
                           className="w-4 h-4"
                           style={{
-                            color: !aiSearchOn ? "black" : "rgba(0,0,0,0.30)",
+                            color: !aiSearchOn ? "black" : "#B2B2B2",
                           }}
                         />
                       </button>

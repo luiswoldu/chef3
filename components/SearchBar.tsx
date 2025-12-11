@@ -1,6 +1,8 @@
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { User, Sparkle } from "lucide-react"
+import { sfSparkle } from "@bradleyhodges/sfsymbols";
+import { SFIcon } from "@bradleyhodges/sfsymbols-react";
 
 export default function SearchBar() {
   const router = useRouter()
@@ -42,8 +44,8 @@ export default function SearchBar() {
             style={{ padding: "6px" }}
             onClick={openAskPage}
           >
-            <Sparkle
-              className="w-6 h-6 transition-colors"
+      <SFIcon icon={sfSparkle}
+              className="w-4 h-4 transition-colors"
               fill="#FFFFFF"
               color="#FFFFFF"
             />

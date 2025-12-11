@@ -6,6 +6,8 @@ import SearchView from "@/components/SearchView"
 import { ArrowUp, Sparkle, Search } from "lucide-react"
 import { motion } from "framer-motion"
 import { Back } from "@/components/Controls"
+import { sfSparkle, sfMagnifyingglass } from "@bradleyhodges/sfsymbols";
+import { SFIcon } from "@bradleyhodges/sfsymbols-react";
 
 export default function AskPage() {
   type ChatMessage = {
@@ -20,6 +22,7 @@ export default function AskPage() {
   // NEW: Search mode toggle
   const [aiSearchOn, setAiSearchOn] = useState(true)
   const [showSearchView, setShowSearchView] = useState(false)
+  const [isMultiline, setIsMultiline] = useState(false)
 
   const isTyping = input.trim().length > 0
 
@@ -112,8 +115,8 @@ export default function AskPage() {
 
             {/* Input */}
             <motion.div
-              className="relative flex flex-grow items-center bg-white shadow-lg rounded-full px-4 py-2.5 cursor-text"
-            >
+  className={`relative flex flex-grow items-center bg-white shadow-hands ${isMultiline ? "rounded-lg" : "rounded-full"} px-4 py-2.5 cursor-text transition-all`}
+>
               <textarea
                 value={input}
                 onChange={(e) => {
@@ -163,12 +166,13 @@ export default function AskPage() {
                         className={`
                           w-8 h-8 rounded-full flex items-center justify-center
                           active:scale-95 transition-all
-                          ${aiSearchOn ? "bg-white shadow-lg" : ""}
+                          ${aiSearchOn ? "bg-white shadow-hands" : ""}
                         `}
                         style={{ padding: "6px" }}
                       >
-                        <Sparkle
-                          className="w-5 h-5 transition-colors"
+                        <SFIcon icon={sfSparkle}
+
+                          className="w-4 h-4 transition-colors"
                           fill={aiSearchOn ? "#6ED308" : "#B2B2B2"}
                           color={aiSearchOn ? "#6ED308" : "#B2B2B2"}
                         />
@@ -182,12 +186,12 @@ export default function AskPage() {
                         className={`
                           w-8 h-8 rounded-full flex items-center justify-center
                           active:scale-95 transition-all
-                          ${!aiSearchOn ? "bg-white shadow-lg" : ""}
+                          ${!aiSearchOn ? "bg-white shadow-hands" : ""}
                         `}
                         style={{ padding: "6px" }}
                       >
-                        <Search
-                          className="w-5 h-5"
+                        <SFIcon icon={sfMagnifyingglass}
+                          className="w-4 h-4"
                           style={{
                             color: !aiSearchOn ? "black" : "rgba(0,0,0,0.30)",
                           }}

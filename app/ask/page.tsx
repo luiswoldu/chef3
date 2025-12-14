@@ -127,7 +127,7 @@ export default function AskPage() {
                 placeholder={aiSearchOn ? "Ask" : "Search"}
                 autoFocus
                 rows={1}
-                className="flex-1 bg-transparent outline-none text-black placeholder-chef-grey leading-none resize-none overflow-hidden pr-10"
+                className="flex-1 bg-transparent outline-none text-black placeholder-chef-grey resize-none overflow-hidden pr-10"
                 style={{ minHeight: "24px", maxHeight: "200px" }}
               />
 
@@ -225,7 +225,7 @@ export default function AskPage() {
       {isChatStarted && (
         <div className="p-4 pb-8 bg-white">
           <div>
-            <div className="flex items-end bg-chef-grey-calcium rounded-full px-4 py-3">
+            <div className="flex items-end bg-chef-grey-calcium rounded-full px-2 py-2.5">
               <textarea
                 value={input}
                 onChange={(e) => {

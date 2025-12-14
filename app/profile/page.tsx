@@ -132,7 +132,7 @@ export default function Profile() {
         </div>
 
         <div className="flex flex-col items-center mb-8">
-          <div className="w-[113px] h-[113px] rounded-full bg-white flex items-center justify-center border-2 border-chef-grey-calcium mb-2">
+          <div className="w-[113px] h-[113px] rounded-full bg-white flex items-center justify-center mb-2">
             {userAvatar ? (
               <Image
                 src={userAvatar}
@@ -146,7 +146,7 @@ export default function Profile() {
             )}
           </div>
 
-          <h1 className="text-2xl font-extrabold text-black">
+          <h1 className="text-2xl font-bold tracking-tight text-black">
             {loading ? (
               <span className="inline-block flex-shrink-0 rounded-lg bg-gray-700 animate-pulse overflow-hidden w-24 h-7">
                 <span className="block w-full h-full bg-gray-600 rounded-md animate-shimmer"></span>
@@ -155,7 +155,7 @@ export default function Profile() {
               userName || "User"
             )}
           </h1>
-          <p className="text-[#B2B2B2] font-medium">
+          <p className="text-[#B2B2B2] font-regular">
             {loading ? (
               <span className="inline-block flex-shrink-0 rounded-lg bg-gray-700 animate-pulse overflow-hidden w-48 h-4 mt-1">
                 <span className="block w-full h-full bg-gray-600 rounded-md animate-shimmer"></span>
@@ -169,7 +169,7 @@ export default function Profile() {
         <div>
           <button
             onClick={handleLogout}
-            className="w-full p-4 bg-white rounded-xl shadow-custom mb-2 flex items-center justify-between text-left"
+            className="w-full p-4 bg-white rounded-xl shadow-hands mb-2 flex items-center justify-between text-left"
           >
             <div className="flex items-center">
               <LogOut className="w-5 h-5 text-black mr-3" />
@@ -179,7 +179,7 @@ export default function Profile() {
 
           <button
             onClick={handleDeleteAccount}
-            className="w-full p-4 bg-white rounded-xl shadow-custom mb-2 flex items-center justify-between text-left"
+            className="w-full p-4 bg-white rounded-xl shadow-hands mb-2 flex items-center justify-between text-left"
           >
             <div className="flex items-center">
               <Trash2 className="w-5 h-5 text-red-600 mr-3" />

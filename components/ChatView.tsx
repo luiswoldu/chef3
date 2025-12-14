@@ -2,6 +2,7 @@
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { Sparkle, ArrowUp } from "lucide-react"
+import { Back } from "@/components/Controls"
 
 interface Message {
   role: "user" | "assistant"
@@ -45,9 +46,10 @@ export default function ChatView({ messages, onSendMessage, isTyping }: ChatView
     }
   }
 
-  // 🔥 KEY CHANGE: Hide placeholder when typing
+  //
   if ((!messages || messages.length === 0) && !isTyping) {
     return (
+      
       <div className="flex items-center justify-center h-48 text-center">
         <div>
           <h2 className="text-lg font-semibold text-black">

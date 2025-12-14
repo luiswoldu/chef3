@@ -52,14 +52,16 @@ export default function SearchView({ query, onSelect }: SearchViewProps) {
 
 {/* Empty State */}
 {!loading && query.length === 0 && (
-  <div className="flex items-center justify-center h-48 text-center">
-    <div>
-      <h2 className="text-lg font-semibold text-black">Find your favorites</h2>
-      <p className="text-sm text-chef-grey">
-        Start typing to search for any recipe.
-      </p>
+      <div className="flex items-center justify-center h-72 text-center">
+      <div>
+        <h2 className="text-2xl font-semibold text-black">
+          Find your favorites
+        </h2>
+        <p className="text-sm text-chef-grey max-w-80">
+        Start typing to find any recipe.
+        </p>
+      </div>
     </div>
-  </div>
 )}
 
 

@@ -24,7 +24,7 @@ export default function SearchBar() {
         {/* Profile Button */}
         <button
           onClick={() => router.push("/profile")}
-          className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0 bg-white"
+          className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 bg-white"
         >
           <User className="h-6 w-6 text-black" />
         </button>

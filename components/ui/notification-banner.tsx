@@ -9,7 +9,7 @@ interface NotificationBannerProps {
 
 const NotificationBanner: React.FC<NotificationBannerProps> = ({ notification }) => {
   return (
-    <div className="bg-white rounded-full px-6 py-3 shadow-xl border border-gray-100 animate-in slide-in-from-top-4 duration-300 ease-out">
+    <div className="bg-white rounded-full px-6 py-3 shadow-xl animate-in slide-in-from-top-4 duration-300 ease-out">
       <p className="text-base text-black font-medium whitespace-nowrap">
         {notification.message}
       </p>

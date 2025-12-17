@@ -28,7 +28,7 @@ export default function Launch() {
             Your kitchen <br className="lg:hidden" />co-pilot.
           </h1> 
           <h2 className="text-3xl font-extrabold text-black tracking-tighter leading-none">
-            Organize recipes, find inspiration, and shop like a pro.
+          Get recipe ideas, plan meals, and grocery shop faster.
           </h2>
         </div>
         

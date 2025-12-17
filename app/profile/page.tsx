@@ -3,10 +3,11 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Navigation from "../../components/Navigation"
-import { User, Settings, ChevronLeft, LogOut, Trash2 } from "lucide-react"
+import { User, LogOut, Trash2 } from "lucide-react"
 import { supabase } from "@/lib/supabase/client"
 import { showNotification } from "@/hooks/use-notification"
 import Image from "next/image"
+import { Back } from "@/components/Controls"
 
 export default function Profile() {
   const [userName, setUserName] = useState<string | null>(null)
@@ -123,19 +124,12 @@ export default function Profile() {
     }
   }
 
-  const goBack = () => {
-    router.back()
-  }
-
   return (
     <div className="flex flex-col min-h-screen pb-[70px]">
       <div className="p-4">
-        <button 
-          onClick={goBack}
-          className="flex items-center text-gray-600 mt-8 mb-4"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
+        <div className="mt-4 mb-4">
+          <Back />
+        </div>
 
         <div className="flex flex-col items-center mb-8">
           <div className="w-[113px] h-[113px] rounded-full bg-white flex items-center justify-center border-2 border-chef-grey-calcium mb-2">

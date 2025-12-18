@@ -1,45 +1,35 @@
 import { createClient } from '@supabase/supabase-js'
 import { Database } from '@/types/supabase'
-import type { Recipe } from '@/types'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
-export const getSupabaseClient = () => supabase
+export const getSupabaseClient = () => supabase 
 
-export async function fullTextSearch(query: string): Promise<{ recipes: Recipe[]; ingredients: any[] }> {
-  const q = query.trim()
-  if (!q) return { recipes: [], ingredients: [] }
+export type SearchResults = {
+  recipes: { id: number; title: string }[];
+  ingredients: { id: number; name: string }[];
+};
 
-  const { data: featuredData, error: featuredError } = await supabase
-    .from('featured_library')
-    .select('*')
-    .or(`title.ilike.%${q}%,caption.ilike.%${q}%`)
-  if (featuredError) console.error('Supabase featured_library search error:', featuredError)
+export async function fullTextSearch(query: string): Promise<SearchResults> {
+  const q = query.trim();
+  if (!q) {
+    return { recipes: [], ingredients: [] };
+  }
 
-  const { data: userData, error: userError } = await supabase
+  // Only search recipes, not ingredients
+  const { data: recipeRes, error: recipeError } = await supabase
     .from('recipes')
-    .select('*')
-    .or(`title.ilike.%${q}%,caption.ilike.%${q}%`)
-  if (userError) console.error('Supabase user recipes search error:', userError)
+    .select('id, title')
+    .ilike('title', `%${q}%`); // Changed to include matches anywhere in title
 
-  const allData = [...(featuredData || []), ...(userData || [])]
+  if (recipeError) throw recipeError;
 
-  const recipes: Recipe[] = allData.map((r: any) => ({
-    id: r.id,
-    title: r.title || '',
-    image: r.image || '',
-    caption: r.caption || '',
-    ingredients: Array.isArray(r.ingredients) ? r.ingredients : [],
-    steps: Array.isArray(r.steps) ? r.steps : [],
-    tags: Array.isArray(r.tags) ? r.tags : [],
-    user_id: r.user_id || '',
-    created_at: r.created_at,
-    updated_at: r.updated_at || '',
-  }))
-
-  return { recipes, ingredients: [] }
+  return {
+    recipes: recipeRes || [],
+    ingredients: [], // Always return empty ingredients array
+  };
 }
 
 export async function signUpAndOnboard({ 
@@ -55,13 +45,19 @@ export async function signUpAndOnboard({
   username: string;
   tastePreference?: string;
 }) {
-  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
+  const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+    email,
+    password,
+  });
+  
   if (signUpError) throw signUpError;
 
-  const user = signUpData.user
-  if (!user) throw new Error('No user returned from signUp')
+  const user = signUpData.user;
+  if (!user) throw new Error('No user returned from signUp');
 
-  const tastePreferenceValue = tastePreference || null
+  // Store taste preference as string directly
+  const tastePreferenceValue = tastePreference || null;
+
   const { error: profileError } = await supabase
     .from('Users')
     .insert({
@@ -71,8 +67,9 @@ export async function signUpAndOnboard({
       email: user.email,
       taste_preference: tastePreferenceValue,
       created_at: new Date().toISOString()
-    })
-  if (profileError) throw profileError
+    });
 
-  return user
+  if (profileError) throw profileError;
+
+  return user;
 }

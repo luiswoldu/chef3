@@ -1,16 +1,18 @@
 'use client'
 
-import { useEffect, useState, Fragment } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Dialog, Transition } from '@headlessui/react'
+import { Fragment } from 'react'
+import type { Database } from '@/types/supabase'
+import { supabase } from '@/lib/supabase/client'
+import { showNotification } from '@/hooks/use-notification'
 import { useRouter } from 'next/navigation'
 import { MoreHorizontal, Trash2, Loader } from 'lucide-react'
 import Navigation from '@/components/Navigation'
-import { supabase } from '@/lib/supabase/client'
-import { showNotification } from '@/hooks/use-notification'
-import type { Database } from '@/types/supabase'
 
+// Define ingredient interface that matches what we get from the database
 interface RecipeIngredient {
   id: number;
   recipe_id: number;
@@ -21,12 +23,13 @@ interface RecipeIngredient {
   updated_at: string;
 }
 
+// Use the database types
 type Recipe = Database['public']['Tables']['recipes']['Row'] & {
   ingredients?: RecipeIngredient[];
 }
 
 interface RecipeDetailClientProps {
-  id: string | number
+  id: string | number  // Allow for both string and number types
 }
 
 export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
@@ -41,43 +44,122 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
   useEffect(() => {
     async function loadRecipe() {
       try {
-        setLoading(true)
-        const recipeIdNumber = typeof id === 'string' ? parseInt(id) : id
-
-        const { data: featuredRecipe } = await supabase
-          .from('featured_library')
-          .select('*')
-          .eq('id', recipeIdNumber)
-          .single()
-
-        let recipeData = null
-
-        if (featuredRecipe) {
-          recipeData = {
-            ...featuredRecipe,
-            title: featuredRecipe.title && featuredRecipe.title.trim() !== '' 
-              ? featuredRecipe.title 
-              : featuredRecipe.searchable_title ?? '',
-            ingredients: featuredRecipe.ingredients || [],
-          }
-        } else {
-          const { data: userRecipe } = await supabase
-            .from('recipes')
-            .select('*')
-            .eq('id', recipeIdNumber)
-            .single()
-          if (userRecipe) recipeData = { ...userRecipe, ingredients: userRecipe.ingredients || [] }
-        }
-
-        if (!recipeData) {
-          setError('Recipe not found')
+        const recipeId = typeof id === 'string' ? Number.parseInt(id) : id;
+        
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          setError('You must be logged in to view recipes')
+          setLoading(false)
           return
         }
-
+        
+        // Try featured_library first (check both id and recipe_id)
+        let { data: featuredRecipeData, error: featuredRecipeError } = await supabase
+          .from('featured_library')
+          .select('*')
+          .eq('recipe_id', recipeId)
+          .single()
+        
+        // If not found by recipe_id, try by id (in case it's a standalone featured recipe)
+        if (featuredRecipeError && featuredRecipeError.code === 'PGRST116') {
+          const { data: featuredById, error: featuredByIdError } = await supabase
+            .from('featured_library')
+            .select('*')
+            .eq('id', recipeId)
+            .single()
+          
+          if (!featuredByIdError && featuredById) {
+            featuredRecipeData = featuredById
+            featuredRecipeError = null
+          }
+        }
+        
+        let recipeData = null
+        
+        if (!featuredRecipeError && featuredRecipeData) {
+          // Found in featured_library
+          // Get ingredients from ingredients table using recipe_id
+          const ingredientRecipeId = featuredRecipeData.recipe_id || featuredRecipeData.id
+          const { data: ingredientsData, error: ingredientsError } = await supabase
+            .from('ingredients')
+            .select('*')
+            .eq('recipe_id', ingredientRecipeId)
+          
+          recipeData = {
+            ...featuredRecipeData,
+            id: featuredRecipeData.recipe_id || featuredRecipeData.id,
+            ingredients: ingredientsData || []
+          }
+          
+          console.log('Featured recipe ingredients from ingredients table:', ingredientsData)
+          
+          // Track featured recipe view
+          await supabase
+            .from('recipe_interactions')
+            .upsert({
+              user_id: user.id,
+              recipe_id: recipeId,
+              viewed_at: new Date().toISOString(),
+              is_featured: true
+            }, {
+              onConflict: 'user_id,recipe_id,is_featured',
+              ignoreDuplicates: false
+            })
+        } else {
+          // Not found in featured_library, try user recipes
+          const { data: userRecipeData, error: userRecipeError } = await supabase
+            .from('recipes')
+            .select(`
+              *,
+              ingredients (*)
+            `)
+            .eq('id', recipeId)
+            .eq('user_id', user.id)
+            .single()
+          
+          if (userRecipeError) {
+            if (userRecipeError.code === 'PGRST116') {
+              setError('Recipe not found')
+              setRecipe(null)
+            } else {
+              throw userRecipeError
+            }
+            return
+          }
+          
+          recipeData = userRecipeData
+          
+          // Track that user viewed this user recipe
+          await supabase
+            .from('recipe_interactions')
+            .upsert({
+              user_id: user.id,
+              recipe_id: recipeId,
+              viewed_at: new Date().toISOString(),
+              is_featured: false
+            }, {
+              onConflict: 'user_id,recipe_id,is_featured',
+              ignoreDuplicates: false
+            })
+        }
+        
         setRecipe(recipeData)
-      } catch (err) {
-        console.error(err)
-        setError('Failed to load recipe')
+        
+        // Check if recipe is in cart (only for recipes with ingredients)
+        if (recipeData.ingredients && recipeData.ingredients.length > 0) {
+          const { data: cartItems, error: cartError } = await supabase
+            .from('grocery_items')
+            .select('id')
+            .eq('recipe_id', recipeId)
+            .eq('user_id', user.id)
+          
+          if (cartError) throw cartError
+          setIsAdded(cartItems.length > 0)
+        }
+      } catch (error) {
+        console.error('Loading error:', error)
+        setError('Failed to load recipe.')
       } finally {
         setLoading(false)
       }
@@ -89,31 +171,48 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
   const handleDelete = async () => {
     try {
       const recipeId = typeof id === 'string' ? parseInt(id) : id
+      
+      // Get current user
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('You must be logged in to delete recipes')
+      if (!user) {
+        throw new Error('You must be logged in to delete recipes')
+      }
 
+      // First delete grocery items
       const { error: groceryError } = await supabase
         .from('grocery_items')
         .delete()
         .eq('recipe_id', recipeId)
         .eq('user_id', user.id)
-      if (groceryError) throw new Error('Failed to delete grocery items: ' + groceryError.message)
 
+      if (groceryError) {
+        throw new Error('Failed to delete grocery items: ' + groceryError.message)
+      }
+
+      // Then delete ingredients
       const { error: ingredientsError } = await supabase
         .from('ingredients')
         .delete()
         .eq('recipe_id', recipeId)
         .eq('user_id', user.id)
-      if (ingredientsError) throw new Error('Failed to delete ingredients: ' + ingredientsError.message)
 
+      if (ingredientsError) {
+        throw new Error('Failed to delete ingredients: ' + ingredientsError.message)
+      }
+
+      // Finally delete the recipe
       const { error: recipeError } = await supabase
         .from('recipes')
         .delete()
         .eq('id', recipeId)
         .eq('user_id', user.id)
-      if (recipeError) throw new Error('Failed to delete recipe: ' + recipeError.message)
+
+      if (recipeError) {
+        throw new Error('Failed to delete recipe: ' + recipeError.message)
+      }
 
       showNotification("Recipe deleted successfully")
+      
       router.push('/')
     } catch (error) {
       console.error('Error in deletion process:', error)
@@ -130,12 +229,23 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
       </div>
     )
   }
-
-  if (error || !recipe) {
+  
+  if (error) {
     return (
       <div className="flex flex-col min-h-screen">
         <div className="flex-1 flex items-center justify-center">
-          <div>{error || "Recipe not found"}</div>
+          <div>{error}</div>
+        </div>
+        <Navigation />
+      </div>
+    )
+  }
+
+  if (!recipe) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <div className="flex-1 flex items-center justify-center">
+          <div>Recipe not found</div>
         </div>
         <Navigation />
       </div>
@@ -144,13 +254,19 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
 
   return (
     <div className="flex flex-col min-h-screen">
+      {/* Main content with bottom padding to account for tab bar */}
       <div className="flex-1 pb-20" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
         <Link href="/" className="absolute top-4 left-4 z-10 bg-white rounded-full p-2">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
         </Link>
-
         <div className="absolute top-4 right-4 z-20 flex gap-[0.75rem]">
           <button
             onClick={() => setIsOptionsOpen(true)}
@@ -159,13 +275,13 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
           >
             <MoreHorizontal className="h-6 w-6 text-white" />
           </button>
-
           {recipe.ingredients && recipe.ingredients.length > 0 && (
             <button 
               onClick={async (e) => {
                 e.preventDefault()
                 e.stopPropagation()
                 try {
+                  // Get current user
                   const { data: { user }, error: userError } = await supabase.auth.getUser()
                   if (userError || !user) {
                     showNotification("Please log in to add items to cart")
@@ -173,10 +289,19 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
                   }
 
                   const recipeIdNumber = typeof id === 'string' ? Number.parseInt(id) : id
-                  const currentIngredients = recipe.ingredients?.filter(ing => ing.recipe_id === recipeIdNumber)
-                  if (!currentIngredients || currentIngredients.length === 0) throw new Error('No ingredients found for this recipe')
+                  
+                   //filtering ingredients by recipe_id just to be safe
+                  const currentIngredients = recipe.ingredients?.filter(
+                  (ing) => ing.recipe_id === recipeIdNumber
+                 )
+                  if (!currentIngredients || currentIngredients.length === 0) {
+                    throw new Error('No ingredients found for this recipe')
+                  }
 
-                  const groceryItems = currentIngredients.map(ing => ({
+                  // ---- DEBUGGING STEP ----
+                  console.log("Ingredients to add to cart:", recipe.ingredients)
+
+                  const groceryItems = currentIngredients.map((ing: any) => ({
                     user_id: user.id,
                     name: ing.name,
                     amount: ing.amount,
@@ -185,32 +310,51 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
                     recipe_id: recipeIdNumber 
                   }))
                   
-                  const { error } = await supabase.from('grocery_items').insert(groceryItems)
+                  const { error } = await supabase
+                    .from('grocery_items')
+                    .insert(groceryItems)
+                  
                   if (error) throw error
-
+                  
                   setIsAdded(true)
                   showNotification("Added to cart")
-                } catch (error: any) {
+                  
+                  } catch (error: any) {
                   console.error('Error adding to cart:', error?.message || error)
                   showNotification(error?.message || "Failed to add ingredients to cart")
-                }
+                  }
+               // } catch (error) {
+               //  console.error('Error adding to cart:', error)
+               //   showNotification("Failed to add ingredients to cart")
+               // }
               }}
               className="bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-shadow duration-300"
               aria-label={isAdded ? "Added to cart" : "Add to cart"}
             >
-              {isAdded ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-green-500" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-700" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-              )}
-            </button>
+            {isAdded ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-green-500"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6 text-gray-700"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+            )}
+          </button>
           )}
         </div>
-
         <div className="relative w-full h-[56.4vh]">
           <Image 
             src={recipe.image || "/placeholder.svg"} 
@@ -220,29 +364,61 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
             priority
           />
         </div>
-
         <div className="p-4">
-          <h1 className="text-2xl font-bold leading-[1.1] tracking-tight mb-3">{recipe.title}</h1>
-
-          {/* Ingredients Section */}
+          <div className="mb-3">
+            <h1 className="text-2xl font-bold leading-[1.1] tracking-tight">{recipe.title}</h1>
+          </div>
+          <div className="flex flex-wrap gap-2 mb-4">
+            {recipe.tags && recipe.tags.map((tag: string, i: number) => {
+              let tagClass = '';
+              let tagStyle = {};
+              if (i === 0) {
+                tagClass = 'bg-[#6CD401] text-white';
+              } else if (i === 1) {
+                tagClass = 'text-white';
+                tagStyle = { backgroundColor: '#98E14D' };
+              } else {
+                tagClass = 'text-[#6ED308]';
+                tagStyle = { backgroundColor: '#F0FBE5' };
+              }
+              return (
+                <span
+                  key={`${tag}-${i}`}
+                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${tagClass}`}
+                  style={tagStyle}
+                >
+                  {tag}
+                </span>
+              );
+            })}
+          </div>
+          {recipe.caption ? (
+            <div className="relative mb-6">
+              <p className={`text-[15px] text-chef-grey ${isExpanded ? '' : 'line-clamp-2'}`}>
+                {recipe.caption}
+              </p>
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="text-[15px] font-medium text-chef-grey-iron hover:text-chef-grey-graphite absolute bottom-0 right-0 pl-12 bg-gradient-to-l from-white via-white to-transparent"
+              >
+                {isExpanded ? 'Less' : 'More'}
+              </button>
+            </div>
+          ) : (
+            <p className="text-[15px] text-gray-400 mb-6 italic">No caption provided.</p>
+          )}
           <section className="mb-6">
             <h2 className="text-2xl font-semibold mb-2">Ingredients</h2>
             <div className="rounded-lg">
               {recipe.ingredients && recipe.ingredients.length > 0 ? (
-                Array.isArray(recipe.ingredients) && recipe.ingredients.every(ing => typeof ing === 'string') ? (
-                  recipe.ingredients.map((ingredientLine, index) => (
-                    <div key={index} className="bg-white p-3 rounded-xl shadow-custom mb-2">
-                      <p className="font-medium leading-tight tracking-tight">{ingredientLine}</p>
-                    </div>
-                  ))
-                ) : (
-                  recipe.ingredients.map((ingredient, index) => (
-                    <div key={ingredient.id || index} className="bg-white p-3 rounded-xl shadow-custom mb-2">
-                      <p className="font-medium leading-tight tracking-tight">{ingredient.name}</p>
-                      <p className="text-sm text-[#9F9F9F]">{ingredient.amount}{ingredient.details ? ` ${ingredient.details}` : ''}</p>
-                    </div>
-                  ))
-                )
+                recipe.ingredients.map((ingredient: any, index: number) => (
+                  <div key={ingredient.id || index} className="bg-white p-3 rounded-xl shadow-custom mb-2">
+                    <p className="font-medium leading-tight tracking-tight">{ingredient.name}</p>
+                    <p className="text-sm text-[#9F9F9F]">
+                      {ingredient.amount}{ingredient.details ? ` ${ingredient.details}` : ''}
+                    </p>
+                  </div>
+                ))
               ) : (
                 <div className="bg-gray-50 p-4 rounded-xl border-2 border-dashed border-gray-200">
                   <p className="text-gray-500 text-center italic">
@@ -252,19 +428,20 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
               )}
             </div>
           </section>
-
-          {/* Steps Section */}
           <section>
-            <h2 className="text-2xl font-semibold">Steps</h2>
-            <div className="space-y-1">
-              {recipe.steps && recipe.steps.map((step, index) => (
-                <div key={index} className="py-2 px-3 text-base font-regular tracking-tight leading-1.4">{step}</div>
-              ))}
-            </div>
-          </section>
+  <h2 className="text-2xl font-semibold">Steps</h2>
+  <div className="space-y-1">
+    {recipe.steps && recipe.steps.map((step: string, index: number) => (
+      <div key={index} className="py-2 px-3 text-base font-regular tracking-tight leading-1.4">
+        {step}
+      </div>
+    ))}
+  </div>
+</section>
         </div>
       </div>
 
+      {/* Tab Bar Navigation */}
       <Navigation />
 
       <Transition.Root show={isOptionsOpen} as={Fragment}>
@@ -294,6 +471,18 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
               >
                 <Dialog.Panel className="w-full transform rounded-t-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
                   <div className="space-y-4">
+                    {/* Edit button commented out until database supports update operations */}
+                    {/* 
+                    <button 
+                      className="flex items-center gap-2 w-full py-2 hover:bg-gray-100 rounded-md"
+                      onClick={() => {
+                        router.push(`/recipes/${id}/edit`)
+                        setIsOptionsOpen(false)
+                      }}
+                    >
+                      <Edit2 className="h-5 w-5" /> Edit
+                    </button>
+                    */}
                     <button
                       className="flex items-center gap-2 w-full py-2 text-red-600 hover:bg-red-50 rounded-md"
                       onClick={handleDelete}

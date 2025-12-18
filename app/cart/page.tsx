@@ -227,8 +227,8 @@ export default function Cart() {
             <li key={item.id} className="flex items-center py-1 px-4">
               <button
                 onClick={() => item.id && togglePurchased(item.id)}
-                className={`w-[38px] h-[38px] rounded-full mr-4 flex-shrink-0 flex items-center justify-center border-2 ${
-                  item.purchased ? "bg-[#6CD401] border-[#6CD401]" : "border-gray-300"
+                className={`w-8 h-8 rounded-full mr-3 flex-shrink-0 flex items-center justify-center border-2 ${
+                  item.purchased ? "bg-[#6CD401] border-[#6CD401]" : "border-[#DFE0E1]"
                 }`}
               >
                 {item.purchased && (
@@ -237,7 +237,7 @@ export default function Cart() {
                   </svg>
                 )}
               </button>
-              <div className={item.purchased ? "line-through text-gray-500" : ""}> 
+              <div className={item.purchased ? "line-through text-chef-grey" : ""}> 
                 <p className="font-medium leading-tight tracking-tight">{item.name}</p> 
                 {item.amount && (
                   <p className="text-sm text-[#9F9F9F]"> {item.amount}

@@ -43,40 +43,38 @@ module.exports = {
           foreground: "hsl(var(--card-foreground))",
         },
         chef: {
-          // Core colors
           core: {
             white: "#FFFFFF",
             black: "#000000",
             strawberry: "#FE303F",
           },
-
-          // Accent colors
           accent: {
             spring: {
-              DEFAULT: "#6ED308",   // Spring Green
-              light: "#A5E765",     // Gradient variant
+              DEFAULT: "#6ED308",
+              light: "#A5E765",
             },
             green: {
-              DEFAULT: "#6CD401",   // Primary (Log In, Save..)
-              lime: "#98E14D",      // 6CD401 @70%
-              honeydew: "#F0FBE5",  // 6CD401 @10%
+              DEFAULT: "#6CD401",
+              lime: "#98E14D",
+              honeydew: "#F0FBE5",
             },
           },
-
-          // Greys
           grey: {
-            calcium: "#F7F7F7",   // Import input field / Secondary button
-            silver: "#DFE0E1",    // Usage
-            magnesium: "#B2B2B2", // Arrow Up Default / Icons
-            DEFAULT: "#9F9F9F",   // Secondary text / Placeholder
-            iron: "#58575C",      // Unselected navigation text
-            graphite: "#343434",  // Dark text
+            calcium: "#F7F7F7",
+            silver: "#DFE0E1",
+            magnesium: "#B2B2B2",
+            DEFAULT: "#9F9F9F",
+            iron: "#58575C",
+            graphite: "#343434",
           },
         },
       },
+
       boxShadow: {
-        'custom': '0 2px 10px 2px rgba(0, 0, 0, 0.1)',
+        custom: '0 2px 10px 2px rgba(0, 0, 0, 0.1)',
+        hands: '0 2px 18px 0 rgba(0, 0, 0, 0.06)',
       },
+
       keyframes: {
         shimmer: {
           "0%": { backgroundColor: "hsl(var(--muted))" },
@@ -93,11 +91,11 @@ module.exports = {
         sm: "calc(var(--radius) - 4px)",
       },
       screens: {
-        'sm': '375px',   // Small iPhones (375px) and up to ~440px
-        'md': '440px',   // Medium tablets 440px to ~834px  
-        'lg': '834px',   // Large screens 834px and above (no upper limit)
+        'sm': '375px',
+        'md': '440px',
+        'lg': '834px',
       },
     },
   },
   plugins: [],
-} 
+}

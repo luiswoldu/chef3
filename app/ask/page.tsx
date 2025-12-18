@@ -3,9 +3,11 @@
 import { useState } from "react"
 import ChatView from "@/components/ChatView"
 import SearchView from "@/components/SearchView"
-import { ChevronLeft, ArrowUp, Sparkle, Search as SearchIcon } from "lucide-react"
+import { ArrowUp, Sparkle, Search } from "lucide-react"
 import { motion } from "framer-motion"
-import { useRouter } from "next/navigation"
+import { Back } from "@/components/Controls"
+import { sfSparkle, sfMagnifyingglass } from "@bradleyhodges/sfsymbols";
+import { SFIcon } from "@bradleyhodges/sfsymbols-react";
 
 export default function AskPage() {
   type ChatMessage = {
@@ -20,9 +22,9 @@ export default function AskPage() {
   // NEW: Search mode toggle
   const [aiSearchOn, setAiSearchOn] = useState(true)
   const [showSearchView, setShowSearchView] = useState(false)
+  const [isMultiline, setIsMultiline] = useState(false)
 
   const isTyping = input.trim().length > 0
-  const router = useRouter()
 
   const autoResize = (el: HTMLTextAreaElement) => {
     el.style.height = "auto"
@@ -108,18 +110,13 @@ export default function AskPage() {
         >
           <div className="flex items-center gap-3 mt-3 w-full">
 
-            {/* Back Button */}
-            <button
-              onClick={() => router.back()}
-              className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0 bg-chef-grey-calcium"
-            >
-              <ChevronLeft className="h-6 w-6 text-black" />
-            </button>
+            {/* Back Button Component */}
+            <Back />
 
             {/* Input */}
             <motion.div
-              className="relative flex flex-grow items-center bg-chef-grey-calcium rounded-full px-4 py-2.5 cursor-text"
-            >
+  className={`relative flex flex-grow items-center bg-white shadow-hands rounded-full px-4 py-2.5 cursor-text`}
+>
               <textarea
                 value={input}
                 onChange={(e) => {
@@ -134,38 +131,78 @@ export default function AskPage() {
                 style={{ minHeight: "24px", maxHeight: "200px" }}
               />
 
-              {/* Submit / Sparkle Button */}
-              <button
-                type="button"
-                aria-label="Ask Hands"
-                onClick={
-                  isTyping && aiSearchOn
-                    ? handleSubmit
-                    : toggleSearchMode
-                }
-                className={`
+              {/* Buttons: Sparkle + Search OR Single Submit */}
+              <div
+                className="
                   absolute right-1.5 top-1/2 -translate-y-1/2
-                  w-8 h-8 rounded-full flex items-center justify-center
-                  active:scale-95 transition-all
-                  ${isTyping && aiSearchOn
-                    ? "bg-gradient-to-r from-[#6ED308] to-[#A5E765]"
-                    : "bg-white"
-                  }
-                `}
-                style={{ padding: "6px" }}
+                  flex items-center
+                "
               >
+                {/* If typing & AI mode → SHOW ONLY THE ARROW BUTTON */}
                 {isTyping && aiSearchOn ? (
-                  <ArrowUp className="w-5 h-5 text-white" />
-                ) : aiSearchOn ? (
-                  <Sparkle
-                    className="w-5 h-5 transition-colors"
-                    fill="#6ED308"
-                    color="#6ED308"
-                  />
+                  <button
+                    type="button"
+                    aria-label="Submit"
+                    onClick={handleSubmit}
+                    className={`
+                      w-8 h-8 rounded-full flex items-center justify-center
+                      active:scale-95 transition-all
+                      bg-gradient-to-r from-[#6ED308] to-[#A5E765]
+                    `}
+                    style={{ padding: "6px" }}
+                  >
+                    <ArrowUp className="w-5 h-5 text-white" />
+                  </button>
                 ) : (
-                  <SearchIcon className="w-5 h-5 text-black" />
+                  <>
+                    {/* TWO BUTTONS (default state) */}
+                    <div className="flex items-center gap-1.5">
+
+                      {/* LEFT — Sparkle button */}
+                      <button
+                        type="button"
+                        aria-label="AI Mode"
+                        onClick={aiSearchOn ? undefined : toggleSearchMode}
+                        className={`
+                          w-8 h-8 rounded-full flex items-center justify-center
+                          active:scale-95 transition-all
+                          ${aiSearchOn ? "bg-white shadow-hands" : ""}
+                        `}
+                        style={{ padding: "6px" }}
+                      >
+                        <SFIcon icon={sfSparkle}
+
+                          className="w-4 h-4 transition-colors"
+                          fill={aiSearchOn ? "#6ED308" : "#B2B2B2"}
+                          color={aiSearchOn ? "#6ED308" : "#B2B2B2"}
+                        />
+                      </button>
+
+                      {/* RIGHT — Search button */}
+                      <button
+                        type="button"
+                        aria-label="Search Mode"
+                        onClick={!aiSearchOn ? undefined : toggleSearchMode}
+                        className={`
+                          w-8 h-8 rounded-full flex items-center justify-center
+                          active:scale-95 transition-all
+                          ${!aiSearchOn ? "bg-white shadow-hands" : ""}
+                        `}
+                        style={{ padding: "6px" }}
+                      >
+                        <SFIcon icon={sfMagnifyingglass}
+                          className="w-4 h-4"
+                          style={{
+                            color: !aiSearchOn ? "black" : "#B2B2B2",
+                          }}
+                        />
+                      </button>
+
+                    </div>
+                  </>
                 )}
-              </button>
+              </div>
+
             </motion.div>
           </div>
         </div>
@@ -181,15 +218,14 @@ export default function AskPage() {
 
         {/* MODE 2 → Chat */}
         {!showSearchView && (
-          <ChatView messages={messages} />
-        )}
+          <ChatView messages={messages} isTyping={isTyping} />        )}
       </div>
 
       {/* ========== BOTTOM INPUT (chat only) ========== */}
       {isChatStarted && (
         <div className="p-4 pb-8 bg-white">
-          <form onSubmit={handleSubmit}>
-            <div className="flex items-end bg-chef-grey-calcium rounded-full px-4 py-3">
+          <div>
+            <div className="flex items-end bg-chef-grey-calcium rounded-full px-2 py-2.5">
               <textarea
                 value={input}
                 onChange={(e) => {
@@ -205,12 +241,13 @@ export default function AskPage() {
 
               <button
                 type="submit"
+                onClick={handleSubmit}
                 className="w-9 h-9 flex items-center justify-center rounded-full bg-gradient-to-r from-[#6ED308] to-[#A5E765] ml-2 flex-shrink-0"
               >
                 <ArrowUp className="w-6 h-6 text-white" />
               </button>
             </div>
-          </form>
+          </div>
         </div>
       )}
 

@@ -412,7 +412,7 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
             <div className="rounded-lg">
               {recipe.ingredients && recipe.ingredients.length > 0 ? (
                 recipe.ingredients.map((ingredient: any, index: number) => (
-                  <div key={ingredient.id || index} className="bg-white p-3 rounded-xl shadow-custom mb-2">
+                  <div key={ingredient.id || index} className="bg-white p-3 rounded-xl shadow-hands mb-2">
                     <p className="font-medium leading-tight tracking-tight">{ingredient.name}</p>
                     <p className="text-sm text-[#9F9F9F]">
                       {ingredient.amount}{ingredient.details ? ` ${ingredient.details}` : ''}

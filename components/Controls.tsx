@@ -11,7 +11,7 @@ export function Back() {
       onClick={() => router.back()}
       className="
         h-11 w-11 flex items-center justify-center
-        rounded-full shadow-lg bg-white" 
+        rounded-full shadow-hands bg-white" 
     >
       <ChevronLeft className="h-8 w-8" />
     </button>

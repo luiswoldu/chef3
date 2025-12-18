@@ -2,6 +2,7 @@
 import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { Sparkle, ArrowUp } from "lucide-react"
+import { Back } from "@/components/Controls"
 
 interface Message {
   role: "user" | "assistant"
@@ -11,9 +12,10 @@ interface Message {
 interface ChatViewProps {
   messages: Message[]
   onSendMessage?: (message: string) => void
+  isTyping?: boolean
 }
 
-export default function ChatView({ messages, onSendMessage }: ChatViewProps) {
+export default function ChatView({ messages, onSendMessage, isTyping }: ChatViewProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [inputValue, setInputValue] = useState("")
   const [aiSearchOn, setAiSearchOn] = useState(true)
@@ -21,8 +23,6 @@ export default function ChatView({ messages, onSendMessage }: ChatViewProps) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
-
-  const isTyping = inputValue.trim().length > 0
 
   const handleSend = () => {
     if (inputValue.trim() && onSendMessage) {
@@ -39,22 +39,24 @@ export default function ChatView({ messages, onSendMessage }: ChatViewProps) {
   }
 
   const toggleAISearch = () => {
-    if (isTyping) {
+    if (inputValue.trim().length > 0) {
       handleSend()
     } else {
       setAiSearchOn(!aiSearchOn)
     }
-  }  
+  }
 
-  if (!messages || messages.length === 0) {
+  //
+  if ((!messages || messages.length === 0) && !isTyping) {
     return (
-      <div className="flex items-center justify-center h-48 text-center">
+      
+      <div className="flex items-center justify-center h-72 text-center">
         <div>
-          <h2 className="text-lg font-semibold text-black">
-          Turn leftovers into dinner
+          <h2 className="text-2xl font-semibold text-black">
+            Make dinner from leftovers
           </h2>
-          <p className="text-sm text-chef-grey">
-            Ask Hands to help with cooking, ingredients, substitutions, meal ideas, and more.
+          <p className="text-sm text-chef-grey max-w-80">
+          Get recipe ideas, meal plans, substitutions, and budget-friendly tips.
           </p>
         </div>
       </div>
@@ -63,7 +65,6 @@ export default function ChatView({ messages, onSendMessage }: ChatViewProps) {
 
   return (
     <div className="relative h-full">
-
       {/* Messages Container - with top padding to avoid overlap */}
       <div className="pt-8 pb-8 h-full overflow-y-auto">
         {messages.map((msg, i) => (
@@ -86,6 +87,8 @@ export default function ChatView({ messages, onSendMessage }: ChatViewProps) {
           </div>
         ))}
       </div>
+
+      <div ref={bottomRef} />
     </div>
   )
 }

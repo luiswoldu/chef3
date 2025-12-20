@@ -230,34 +230,33 @@ export default function AskPage() {
       {/* ========== CENTER AREA ========== */}
       <div className="flex-1 overflow-y-auto px-4 pt-4">
 
-  {/* MODE 1 → Search */}
-  {showSearchView && !isChatStarted && (
-    <SearchView query={input} />
-  )}
+        {/* MODE 1 → Search */}
+        {showSearchView && !isChatStarted && (
+          <SearchView query={input} />
+        )}
 
-  {/* MODE 2 → Chat */}
-  {!showSearchView && (
-    <>
-      <ChatView messages={messages} isTyping={isTyping} />
+        {/* MODE 2 → Chat */}
+        {!showSearchView && (
+          <>
+            <ChatView messages={messages} isTyping={isTyping} />
 
-      {/* Recipe Cards are Rendered Here - Can change here */}
-      {assistantCards && assistantCards.items.length > 0 && (
-        <div className="mt-2 space-y-4">
-          {assistantCards.items.map(recipe => (
-            <RecipeCard
-              key={recipe.id}
-              id={recipe.id}
-              title={recipe.title}
-              image={recipe.image}
-              cardType="square"
-              showAddButton
-            />
-          ))}
-        </div>
-      )}
-    </>
-  )}
-
+            {/* Recipe Cards are Rendered Here - Can change here */}
+            {assistantCards && assistantCards.items.length > 0 && (
+              <div className="mt-2 space-y-4">
+                {assistantCards.items.map(recipe => (
+                  <RecipeCard
+                    key={recipe.id}
+                    id={recipe.id}
+                    title={recipe.title}
+                    image={recipe.image}
+                    cardType="square"
+                    showAddButton
+                  />
+                ))}
+              </div>
+            )}
+          </>
+        )}
     </div>
 
 

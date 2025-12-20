@@ -13,9 +13,6 @@ export async function POST(req: Request) {
   // Retrieve semantically relevant recipes (RAG step)
   const recipes = await retrieveRecipes(prompt);
 
-  // remove when committing
-  console.log(recipes)
-
   // Build grounding context for the LLM
   const recipeContext = recipes
     .map(

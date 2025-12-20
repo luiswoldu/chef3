@@ -3,28 +3,38 @@
 import { useState } from "react"
 import ChatView from "@/components/ChatView"
 import SearchView from "@/components/SearchView"
+import RecipeCard from "@/components/RecipeCard"
 import { ArrowUp, Sparkle, Search } from "lucide-react"
 import { motion } from "framer-motion"
 import { Back } from "@/components/Controls"
-import { sfSparkle, sfMagnifyingglass } from "@bradleyhodges/sfsymbols";
-import { SFIcon } from "@bradleyhodges/sfsymbols-react";
+import { sfSparkle, sfMagnifyingglass } from "@bradleyhodges/sfsymbols"
+import { SFIcon } from "@bradleyhodges/sfsymbols-react"
+import { parseAnswerXml } from "@/lib/parseAnswerXml"
+
+type ChatMessage = {
+  role: "user" | "assistant"
+  content: string
+}
+
+type AssistantContent = {
+  text: string
+  items: {
+    id: string
+    title: string
+    caption: string
+    image: string
+  }[]
+}
 
 export default function AskPage() {
-  type ChatMessage = {
-    role: "user" | "assistant"
-    content: string
-  }
-
   const [input, setInput] = useState("")
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [isChatStarted, setIsChatStarted] = useState(false)
+  const [assistantCards, setAssistantCards] = useState<AssistantContent | null>(null)
 
-  // NEW: Search mode toggle
+  const [isChatStarted, setIsChatStarted] = useState(false)
   const [aiSearchOn, setAiSearchOn] = useState(true)
   const [showSearchView, setShowSearchView] = useState(false)
-  const [isMultiline, setIsMultiline] = useState(false)
-
-  const isTyping = input.trim().length > 0
+  const [isTyping, setIsTyping] = useState(false)
 
   const autoResize = (el: HTMLTextAreaElement) => {
     el.style.height = "auto"
@@ -32,39 +42,46 @@ export default function AskPage() {
   }
 
   const toggleSearchMode = () => {
-    setAiSearchOn((prev) => !prev)
-    setShowSearchView((prev) => !prev)
+    setAiSearchOn(prev => !prev)
+    setShowSearchView(prev => !prev)
+  }
+
+  const typeAssistantText = async (
+    text: string,
+    delay = 6
+  ) => {
+    let current = ""
+
+    for (let i = 0; i < text.length; i++) {
+      current += text[i]
+
+      setMessages(prev =>
+        prev.map((msg, idx) =>
+          idx === prev.length - 1
+            ? { ...msg, content: current }
+            : msg
+        )
+      )
+
+      await new Promise(res => setTimeout(res, delay))
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!input.trim()) return
+    if (!input.trim() || !aiSearchOn) return
 
     if (!isChatStarted) setIsChatStarted(true)
 
-    if (!aiSearchOn) {
-      // Search mode → no submit allowed
-      return
-    }
-
     const userText = input
     setInput("")
+    setAssistantCards(null)
 
-    let assistantIndex = -1
+    setMessages(prev => [
+      ...prev,
+      { role: "user", content: userText }
+    ])
 
-    // Add user + assistant placeholder correctly
-    setMessages(prev => {
-      const next = [
-        ...prev,
-        { role: "user" as const, content: userText },
-        { role: "assistant" as const, content: "" }
-      ]
-
-      assistantIndex = next.length - 1 // The assistant message is last
-      return next
-    })
-
-    // Send request
     const response = await fetch("/api/stream", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -74,29 +91,34 @@ export default function AskPage() {
     const reader = response.body?.getReader()
     const decoder = new TextDecoder()
 
+    let fullResponse = ""
+    setIsTyping(true)
+
     while (true) {
       const { value, done } = await reader!.read()
       if (done) break
+      fullResponse += decoder.decode(value, { stream: true })
+    }
 
-      const text = decoder.decode(value, { stream: true })
+    setIsTyping(false)
 
-      // Update assistant message content
-      setMessages(prev =>
-        prev.map((msg, index) =>
-          index === assistantIndex
-            ? { ...msg, content: msg.content + text }
-            : msg
-        )
-      )
+    const parsed = parseAnswerXml(fullResponse)
+    
+    setMessages(prev => [...prev,
+      { role: "assistant", content: "" }])
+
+    if (parsed) {
+      await typeAssistantText(parsed.text)
+      setAssistantCards(parsed) } 
+    else {
+      await typeAssistantText(fullResponse)
     }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
-      if (aiSearchOn && input.trim()) {
-        handleSubmit(e)
-      }
+      if (aiSearchOn && input.trim()) handleSubmit(e)
     }
   }
 
@@ -114,9 +136,7 @@ export default function AskPage() {
             <Back />
 
             {/* Input */}
-            <motion.div
-  className={`relative flex flex-grow items-center bg-white shadow-hands rounded-full px-4 py-2.5 cursor-text`}
->
+            <motion.div className={`relative flex flex-grow items-center bg-white shadow-hands rounded-full px-4 py-2.5 cursor-text`}>
               <textarea
                 value={input}
                 onChange={(e) => {
@@ -168,8 +188,7 @@ export default function AskPage() {
                           active:scale-95 transition-all
                           ${aiSearchOn ? "bg-white shadow-hands" : ""}
                         `}
-                        style={{ padding: "6px" }}
-                      >
+                        style={{ padding: "6px" }}>
                         <SFIcon icon={sfSparkle}
 
                           className="w-4 h-4 transition-colors"
@@ -211,15 +230,36 @@ export default function AskPage() {
       {/* ========== CENTER AREA ========== */}
       <div className="flex-1 overflow-y-auto px-4 pt-4">
 
-        {/* MODE 1 → Search */}
-        {showSearchView && !isChatStarted && (
-          <SearchView query={input} />
-        )}
+  {/* MODE 1 → Search */}
+  {showSearchView && !isChatStarted && (
+    <SearchView query={input} />
+  )}
 
-        {/* MODE 2 → Chat */}
-        {!showSearchView && (
-          <ChatView messages={messages} isTyping={isTyping} />        )}
-      </div>
+  {/* MODE 2 → Chat */}
+  {!showSearchView && (
+    <>
+      <ChatView messages={messages} isTyping={isTyping} />
+
+      {/* Recipe Cards are Rendered Here - Can change here */}
+      {assistantCards && assistantCards.items.length > 0 && (
+        <div className="mt-2 space-y-4">
+          {assistantCards.items.map(recipe => (
+            <RecipeCard
+              key={recipe.id}
+              id={recipe.id}
+              title={recipe.title}
+              image={recipe.image}
+              cardType="square"
+              showAddButton
+            />
+          ))}
+        </div>
+      )}
+    </>
+  )}
+
+    </div>
+
 
       {/* ========== BOTTOM INPUT (chat only) ========== */}
       {isChatStarted && (

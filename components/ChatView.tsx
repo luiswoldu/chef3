@@ -46,17 +46,15 @@ export default function ChatView({ messages, onSendMessage, isTyping }: ChatView
     }
   }
 
-  //
   if ((!messages || messages.length === 0) && !isTyping) {
     return (
-      
       <div className="flex items-center justify-center h-72 text-center">
         <div>
           <h2 className="text-2xl font-semibold text-black">
             Make dinner from leftovers
           </h2>
           <p className="text-sm text-chef-grey max-w-80">
-          Get recipe ideas, meal plans, substitutions, and budget-friendly tips.
+            Get recipe ideas, meal plans, substitutions, and budget-friendly tips.
           </p>
         </div>
       </div>
@@ -64,9 +62,14 @@ export default function ChatView({ messages, onSendMessage, isTyping }: ChatView
   }
 
   return (
-    <div className="relative h-full">
-      {/* Messages Container - with top padding to avoid overlap */}
-      <div className="pt-8 pb-8 h-full overflow-y-auto">
+    <div className="relative">
+      {/* Sticky Back Button */}
+      <div className="sticky top-0 z-10">
+        <Back />
+      </div>
+
+      {/* Messages Container */}
+      <div>
         {messages.map((msg, i) => (
           <div key={i} className="mb-6">
             {msg.role === "user" ? (
@@ -79,7 +82,7 @@ export default function ChatView({ messages, onSendMessage, isTyping }: ChatView
             ) : (
               /* ASSISTANT BUBBLE */
               <div className="flex justify-start">
-                <div className="max-w-[82%] bg-transparent text-black px-4 py-3 text-base leading-snug">
+                <div className="max-w-[82%] bg-transparent text-black py-3 text-base leading-snug">
                   {msg.content}
                 </div>
               </div>

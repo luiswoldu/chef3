@@ -158,22 +158,22 @@ export default function AskPage() {
                   flex items-center
                 "
               >
-                {/* If typing & AI mode → SHOW ONLY THE ARROW BUTTON */}
-                {isTyping && aiSearchOn ? (
-                  <button
-                    type="button"
-                    aria-label="Submit"
-                    onClick={handleSubmit}
-                    className={`
-                      w-8 h-8 rounded-full flex items-center justify-center
-                      active:scale-95 transition-all
-                      bg-gradient-to-r from-[#6ED308] to-[#A5E765]
-                    `}
-                    style={{ padding: "6px" }}
-                  >
-                    <ArrowUp className="w-5 h-5 text-white" />
-                  </button>
-                ) : (
+{/* If typing & AI mode → SHOW ONLY THE ARROW BUTTON */}
+{input.trim() && aiSearchOn ? (
+  <button
+    type="button"
+    aria-label="Submit"
+    onClick={handleSubmit}
+    className={`
+      w-8 h-8 rounded-full flex items-center justify-center
+      active:scale-95 transition-all
+      bg-gradient-to-r from-[#6ED308] to-[#A5E765]
+    `}
+    style={{ padding: "6px" }}
+  >
+    <ArrowUp className="w-5 h-5 text-white" />
+  </button>
+) : (
                   <>
                     {/* TWO BUTTONS (default state) */}
                     <div className="flex items-center gap-1.5">
@@ -216,12 +216,10 @@ export default function AskPage() {
                           }}
                         />
                       </button>
-
                     </div>
                   </>
                 )}
               </div>
-
             </motion.div>
           </div>
         </div>
@@ -242,27 +240,42 @@ export default function AskPage() {
 
             {/* Recipe Cards are Rendered Here - Can change here */}
             {assistantCards && assistantCards.items.length > 0 && (
-              <div className="mt-2 space-y-4">
-                {assistantCards.items.map(recipe => (
-                  <RecipeCard
-                    key={recipe.id}
-                    id={recipe.id}
-                    title={recipe.title}
-                    image={recipe.image}
-                    cardType="square"
-                    showAddButton
-                  />
-                ))}
-              </div>
-            )}
+  <div className="relative mt-2">
+    <div
+      className="
+        flex gap-3
+        overflow-x-auto
+        overscroll-x-contain
+        px-4 pb-3
+        snap-x snap-mandatory
+        scrollbar-hide
+      "
+    >
+      {assistantCards.items.map(recipe => (
+        <div
+          key={recipe.id}
+          className="flex-shrink-0 snap-start"
+        >
+          <RecipeCard
+            id={recipe.id}
+            title={recipe.title}
+            image={recipe.image}
+            cardType="thumbnail"
+            showAddButton
+          />
+        </div>
+      ))}
+    </div>
+  </div>
+)}
+
           </>
         )}
     </div>
 
-
       {/* ========== BOTTOM INPUT (chat only) ========== */}
       {isChatStarted && (
-        <div className="p-4 pb-8 bg-white">
+        <div className="p-4 pb-8 bg-white/80 backdrop-blur-sm">
           <div>
             <div className="flex items-end bg-chef-grey-calcium rounded-full px-2 py-2.5">
               <textarea

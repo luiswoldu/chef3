@@ -473,10 +473,10 @@ const handleSave = async () => {
             {/* Add headers at the top */}
             <div className="text-center mb-6">
               <h6 className="text-lg font-semibold tracking-tight text-black">
-                Import from your favorite recipe website
+                Add your favorite recipes.
               </h6>
               <p className="text-sm text-chef-grey">
-                Soon: Instagram, TikTok, and YouTube.
+              Import from any recipe website or blog.
               </p>
             </div>
 

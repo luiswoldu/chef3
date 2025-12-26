@@ -18,7 +18,7 @@ const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes
 // Function to invalidate the cache (can be called when recipes are added/updated)
 const invalidateRecipeCache = () => {
   recipeCache = null
-  recipeCacheTime = 0
+  recipeCacheTime = 0 
 }
 
 function HomePageContent() {

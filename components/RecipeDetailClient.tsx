@@ -44,122 +44,81 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
   useEffect(() => {
     async function loadRecipe() {
       try {
-        const recipeId = typeof id === 'string' ? Number.parseInt(id) : id;
-        
-        // Get current user
+        const recipeId = typeof id === "string" ? Number.parseInt(id) : id
+
+        // Get current user (not strictly needed for viewing public recipes, keep for future)
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) {
-          setError('You must be logged in to view recipes')
+          setError("You must be logged in to view recipes")
           setLoading(false)
           return
         }
-        
-        // Try featured_library first (check both id and recipe_id)
-        let { data: featuredRecipeData, error: featuredRecipeError } = await supabase
-          .from('featured_library')
-          .select('*')
-          .eq('recipe_id', recipeId)
-          .single()
-        
-        // If not found by recipe_id, try by id (in case it's a standalone featured recipe)
-        if (featuredRecipeError && featuredRecipeError.code === 'PGRST116') {
-          const { data: featuredById, error: featuredByIdError } = await supabase
-            .from('featured_library')
-            .select('*')
-            .eq('id', recipeId)
-            .single()
-          
-          if (!featuredByIdError && featuredById) {
-            featuredRecipeData = featuredById
-            featuredRecipeError = null
-          }
-        }
-        
-        let recipeData = null
-        
-        if (!featuredRecipeError && featuredRecipeData) {
-          // Found in featured_library
-          // Get ingredients from ingredients table using recipe_id
-          const ingredientRecipeId = featuredRecipeData.recipe_id || featuredRecipeData.id
-          const { data: ingredientsData, error: ingredientsError } = await supabase
-            .from('ingredients')
-            .select('*')
-            .eq('recipe_id', ingredientRecipeId)
-          
-          recipeData = {
-            ...featuredRecipeData,
-            id: featuredRecipeData.recipe_id || featuredRecipeData.id,
-            ingredients: ingredientsData || []
-          }
-          
-          console.log('Featured recipe ingredients from ingredients table:', ingredientsData)
-          
-          // Track featured recipe view
-          await supabase
-            .from('recipe_interactions')
-            .upsert({
-              user_id: user.id,
-              recipe_id: recipeId,
-              viewed_at: new Date().toISOString(),
-              is_featured: true
-            }, {
-              onConflict: 'user_id,recipe_id,is_featured',
-              ignoreDuplicates: false
-            })
-        } else {
-          // Not found in featured_library, try user recipes
-          const { data: userRecipeData, error: userRecipeError } = await supabase
-            .from('recipes')
-            .select(`
-              *,
-              ingredients (*)
-            `)
-            .eq('id', recipeId)
-            .eq('user_id', user.id)
-            .single()
-          
-          if (userRecipeError) {
-            if (userRecipeError.code === 'PGRST116') {
-              setError('Recipe not found')
-              setRecipe(null)
-            } else {
-              throw userRecipeError
-            }
+
+        // ✅ Fetch directly from `recipes` table only
+        console.log('🧭 Fetching recipe id:', recipeId)
+        const { data: recipeData, error: recipeError } = await supabase
+          .from("recipes")
+          .select("*")
+          .eq("id", recipeId)
+          .maybeSingle()
+
+          if (recipeError) {
+            console.error("Error fetching recipe:", recipeError)
+            setError("Failed to load recipe")
+            setLoading(false)
             return
           }
-          
-          recipeData = userRecipeData
-          
-          // Track that user viewed this user recipe
-          await supabase
-            .from('recipe_interactions')
-            .upsert({
-              user_id: user.id,
-              recipe_id: recipeId,
-              viewed_at: new Date().toISOString(),
-              is_featured: false
-            }, {
-              onConflict: 'user_id,recipe_id,is_featured',
-              ignoreDuplicates: false
-            })
-        }
-        
-        setRecipe(recipeData)
-        
-        // Check if recipe is in cart (only for recipes with ingredients)
+
+          if (!recipeData) {
+            setError("Recipe not found")
+            setRecipe(null)
+            setLoading(false)
+            return
+          }
+
+        let ingredientsArray = recipeData.ingredients
+
+          if (
+            ingredientsArray &&
+            typeof ingredientsArray === "string"
+          ) {
+            try {
+              ingredientsArray = JSON.parse(ingredientsArray)
+            } catch {
+              ingredientsArray = []
+            }
+          }
+
+          setRecipe({
+            ...recipeData,
+            ingredients: ingredientsArray,
+          })
+
+        // Optionally log interaction
+        await supabase.from("recipe_interactions").upsert(
+          {
+            user_id: user.id,
+            recipe_id: recipeId,
+            viewed_at: new Date().toISOString(),
+            is_featured: false,
+          },
+          { onConflict: "user_id,recipe_id,is_featured", ignoreDuplicates: false }
+        )
+
+        // Check if recipe is already in grocery_items
         if (recipeData.ingredients && recipeData.ingredients.length > 0) {
           const { data: cartItems, error: cartError } = await supabase
-            .from('grocery_items')
-            .select('id')
-            .eq('recipe_id', recipeId)
-            .eq('user_id', user.id)
-          
+            .from("grocery_items")
+            .select("id")
+            .eq("recipe_id", recipeId)
+            .eq("user_id", user.id)
+
           if (cartError) throw cartError
           setIsAdded(cartItems.length > 0)
         }
       } catch (error) {
-        console.error('Loading error:', error)
-        setError('Failed to load recipe.')
+        console.error("Loading error:", error)
+        setError("Failed to load recipe.")
       } finally {
         setLoading(false)
       }
@@ -411,16 +370,27 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
             <h2 className="text-2xl font-semibold mb-2">Ingredients</h2>
             <div className="rounded-lg">
               {recipe.ingredients && recipe.ingredients.length > 0 ? (
-                recipe.ingredients.map((ingredient: any, index: number) => (
-                  <div key={ingredient.id || index} className="bg-white p-3 rounded-xl shadow-hands mb-2">
-                    <p className="font-medium leading-tight tracking-tight">{ingredient.name}</p>
-                    <p className="text-sm text-[#9F9F9F]">
-                      {ingredient.amount}{ingredient.details ? ` ${ingredient.details}` : ''}
-                    </p>
-                  </div>
-                ))
+                recipe.ingredients.map((ingredient: any, index: number) => {
+                  const name =
+                    typeof ingredient === "string" ? ingredient : ingredient.name || ""
+                  const amount =
+                    typeof ingredient === "string" ? "" : ingredient.amount || ""
+                  const details =
+                    typeof ingredient === "string" ? "" : ingredient.details || ""
+
+                  return (
+                    <div key={index} className="bg-white p-3 rounded-xl shadow-hands mb-2">
+                      <p className="font-medium leading-tight tracking-tight">{name}</p>
+                      {(amount || details) && (
+                        <p className="text-sm text-[#9F9F9F]">
+                          {amount}{details ? ` ${details}` : ""}
+                        </p>
+                      )}
+                    </div>
+                  )
+                })
               ) : (
-                <div className="bg-gray-50 p-4 rounded-xl border-2 border-dashed border-gray-200">
+              <div className="bg-gray-50 p-4 rounded-xl border-2 border-dashed border-gray-200">
                   <p className="text-gray-500 text-center italic">
                     Ingredient details not available for this recipe. Check the full recipe source for complete ingredient information.
                   </p>

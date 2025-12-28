@@ -10,6 +10,7 @@ import { Back } from "@/components/Controls"
 import { sfSparkle, sfMagnifyingglass } from "@bradleyhodges/sfsymbols"
 import { SFIcon } from "@bradleyhodges/sfsymbols-react"
 import { parseAnswerXml } from "@/lib/parseAnswerXml"
+import { useRouter } from 'next/navigation'
 
 type ChatMessage = {
   role: "user" | "assistant"
@@ -27,6 +28,7 @@ type AssistantContent = {
 }
 
 export default function AskPage() {
+  const router = useRouter()
   const [input, setInput] = useState("")
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [assistantCards, setAssistantCards] = useState<AssistantContent | null>(null)
@@ -230,7 +232,12 @@ export default function AskPage() {
 
         {/* MODE 1 → Search */}
         {showSearchView && !isChatStarted && (
-          <SearchView query={input} />
+          <SearchView 
+            query={input} 
+            onSelect={(recipe) => {
+              router.push(`/recipe/${recipe.id}`)
+            }}
+          />
         )}
 
         {/* MODE 2 → Chat */}
@@ -284,7 +291,14 @@ export default function AskPage() {
                   setInput(e.target.value)
                   autoResize(e.target)
                 }}
-                onKeyDown={handleKeyDown}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey && !aiSearchOn) {
+                    e.preventDefault()
+                    router.push(`/search?q=${encodeURIComponent(input.trim())}`)
+                  } else {
+                    handleKeyDown(e)
+                  }
+                }}
                 placeholder="Ask something"
                 rows={1}
                 className="flex-1 bg-transparent outline-none text-black resize-none overflow-hidden"

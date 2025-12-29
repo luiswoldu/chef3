@@ -4,10 +4,11 @@ import { useState } from "react"
 import ChatView from "@/components/ChatView"
 import SearchView from "@/components/SearchView"
 import RecipeCard from "@/components/RecipeCard"
+import ChatHistory from "@/components/ChatHistory"
 import { ArrowUp, Sparkle, Search } from "lucide-react"
 import { motion } from "framer-motion"
 import { Back } from "@/components/Controls"
-import { sfSparkle, sfMagnifyingglass } from "@bradleyhodges/sfsymbols"
+import { sfSparkle, sfMagnifyingglass, sfTextAlignleft } from "@bradleyhodges/sfsymbols"
 import { SFIcon } from "@bradleyhodges/sfsymbols-react"
 import { parseAnswerXml } from "@/lib/parseAnswerXml"
 import { useRouter } from 'next/navigation'
@@ -37,6 +38,7 @@ export default function AskPage() {
   const [aiSearchOn, setAiSearchOn] = useState(true)
   const [showSearchView, setShowSearchView] = useState(false)
   const [isTyping, setIsTyping] = useState(false)
+  const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(false)
 
   const autoResize = (el: HTMLTextAreaElement) => {
     el.style.height = "auto"
@@ -126,6 +128,12 @@ export default function AskPage() {
 
   return (
     <div className="relative flex flex-col h-screen bg-white">
+
+      {/* ChatHistory Sheet */}
+      <ChatHistory 
+        isOpen={isChatHistoryOpen} 
+        onClose={() => setIsChatHistoryOpen(false)} 
+      />
 
       {/* ========== TOP INPUT (only before conversation) ========== */}
       {!isChatStarted && (
@@ -223,6 +231,7 @@ export default function AskPage() {
                 )}
               </div>
             </motion.div>
+
           </div>
         </div>
       )}
@@ -317,6 +326,14 @@ export default function AskPage() {
         </div>
       )}
 
+      {/* ChatHistory Button - Bottom Left Corner */}
+      <button
+        onClick={() => setIsChatHistoryOpen(true)}
+        className="fixed bottom-4 left-4 w-11 h-11 rounded-full bg-white shadow-hands flex items-center justify-center active:scale-95 transition-all z-20"
+        aria-label="Chat History"
+      >
+        <SFIcon icon={sfTextAlignleft}  className="w-5 h-5 text-black" />
+      </button>
     </div>
   )
 }

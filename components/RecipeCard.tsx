@@ -85,71 +85,40 @@ export default function RecipeCard({
         return
       }
 
-      let recipeIngredients: any[] = []
-      let recipeFound = false
+      // Fetch recipe from unified recipes table
+      const recipeId = Number(id)
 
-      // First try to find recipe in user recipes table
-      const { data: userRecipe, error: userRecipeError } = await supabase
+      const { data: recipeData, error: recipeError } = await supabase
         .from('recipes')
-        .select(`
-          *,
-          ingredients (*)
-        `)
-        .eq('id', id)
-        .eq('user_id', user.id)
+        .select('ingredients')
+        .eq('id', recipeId)
         .single()
-      
-      if (!userRecipeError && userRecipe) {
-        recipeIngredients = userRecipe.ingredients || []
-        recipeFound = true
-        console.log('Found user recipe with ingredients:', recipeIngredients.length)
-      } else {
-        // If not found in user recipes, try featured_library
-        // First try by recipe_id, then by id (matching RecipeDetailClient logic)
-        let { data: featuredRecipe, error: featuredRecipeError } = await supabase
-          .from('featured_library')
-          .select('*')
-          .eq('recipe_id', id)
-          .single()
-        
-        // If not found by recipe_id, try by id (in case it's a standalone featured recipe)
-        if (featuredRecipeError && featuredRecipeError.code === 'PGRST116') {
-          const { data: featuredById, error: featuredByIdError } = await supabase
-            .from('featured_library')
-            .select('*')
-            .eq('id', id)
-            .single()
-          
-          if (!featuredByIdError && featuredById) {
-            featuredRecipe = featuredById
-            featuredRecipeError = null
-          }
-        }
-        
-        if (!featuredRecipeError && featuredRecipe) {
-          // For featured recipes, get ingredients from ingredients table
-          // Use the correct recipe_id from the featured recipe data
-          const ingredientRecipeId = featuredRecipe.recipe_id || featuredRecipe.id
-          const { data: ingredientsData, error: ingredientsError } = await supabase
-            .from('ingredients')
-            .select('*')
-            .eq('recipe_id', ingredientRecipeId)
-          
-          if (!ingredientsError && ingredientsData) {
-            recipeIngredients = ingredientsData
-            recipeFound = true
-            console.log('Found featured recipe with ingredients:', recipeIngredients.length)
-          }
-        }
-      }
-      
-      if (!recipeFound) {
-        console.error('Recipe not found')
+
+      if (recipeError || !recipeData) {
+        console.error('Recipe not found:', recipeError)
         showNotification("Recipe not found")
         return
       }
-      
-      if (!recipeIngredients || recipeIngredients.length === 0) {
+
+      let recipeIngredients: any[] = recipeData.ingredients || []
+
+      // Normalize ingredients: support array of strings and array of objects
+      if (Array.isArray(recipeIngredients)) {
+        recipeIngredients = recipeIngredients.map((ing: any) => {
+          if (typeof ing === 'string') {
+            return { name: ing, amount: '', details: '' }
+          }
+          return {
+            name: ing.name || '',
+            amount: ing.amount || '',
+            details: ing.details || ''
+          }
+        })
+      } else {
+        recipeIngredients = []
+      }
+
+      if (!recipeIngredients.length) {
         console.error('No ingredients found for this recipe')
         showNotification("No ingredients found for this recipe")
         return

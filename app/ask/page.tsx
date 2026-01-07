@@ -4,7 +4,7 @@ import { useState } from "react"
 import ChatView from "@/components/ChatView"
 import SearchView from "@/components/SearchView"
 import RecipeCard from "@/components/RecipeCard"
-import ChatHistory from "@/components/ChatHistory"
+import ChatHistorySidebar from "@/components/ChatHistorySidebar"
 import { ArrowUp, Sparkle, Search } from "lucide-react"
 import { motion } from "framer-motion"
 import { Back } from "@/components/Controls"
@@ -12,6 +12,9 @@ import { sfSparkle, sfMagnifyingglass, sfTextAlignleft } from "@bradleyhodges/sf
 import { SFIcon } from "@bradleyhodges/sfsymbols-react"
 import { parseAnswerXml } from "@/lib/parseAnswerXml"
 import { useRouter } from 'next/navigation'
+import { createClient } from '@supabase/supabase-js' 
+import { useEffect } from "react"
+
 
 type ChatMessage = {
   role: "user" | "assistant"
@@ -32,13 +35,19 @@ export default function AskPage() {
   const router = useRouter()
   const [input, setInput] = useState("")
   const [messages, setMessages] = useState<ChatMessage[]>([])
-  const [assistantCards, setAssistantCards] = useState<AssistantContent | null>(null)
+  const [allRecipeCards, setAllRecipeCards] = useState<{ messageIndex: number; recipes: AssistantContent }[]>([])
 
   const [isChatStarted, setIsChatStarted] = useState(false)
   const [aiSearchOn, setAiSearchOn] = useState(true)
   const [showSearchView, setShowSearchView] = useState(false)
   const [isTyping, setIsTyping] = useState(false)
-  const [isChatHistoryOpen, setIsChatHistoryOpen] = useState(false)
+  const [conversationId, setConversationId] = useState<string | null>(null)
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false)
+
+  const supabase = createClient(  
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
 
   const autoResize = (el: HTMLTextAreaElement) => {
     el.style.height = "auto"
@@ -71,7 +80,126 @@ export default function AskPage() {
     }
   }
 
+  const handleSelectConversation = async (convId: string) => {
+    // Load the selected conversation
+    const { data, error } = await supabase
+      .from('conversations')
+      .select('*')
+      .eq('id', convId)
+      .single()
+
+    if (error) {
+      console.error('Error loading conversation:', error)
+      return
+    }
+
+    // Set the conversation as active
+    setConversationId(convId)
+    setMessages(data.content || [])
+    setIsChatStarted(true)
+    
+    // Extract recipe cards from the conversation
+    const loadedRecipeCards: { messageIndex: number; recipes: AssistantContent }[] = []
+    
+    data.content?.forEach((msg: any, index: number) => {
+      if (msg.role === 'assistant' && msg.recipes && msg.recipes.length > 0) {
+        loadedRecipeCards.push({
+          messageIndex: index,
+          recipes: {
+            text: msg.content,
+            items: msg.recipes
+          }
+        })
+      }
+    })
+    
+    setAllRecipeCards(loadedRecipeCards)
+  }
+
+  const handleNewChat = () => {
+    setConversationId(null)
+    setMessages([])
+    setIsChatStarted(false)
+    setInput("")
+    setAllRecipeCards([]) // Clear all recipe cards
+  }
+
+  const [userId, setUserId] = useState<string | null>(null)
+
+  // Add useEffect to get user
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) setUserId(user.id)
+    }
+    getUser()
+  }, [])
+
+  const saveMessage = async (role: 'user' | 'assistant', content: string) => {
+    if (!conversationId) return
+    
+    const { data: conv } = await supabase
+      .from('conversations')
+      .select('content')
+      .eq('id', conversationId)
+      .single()
+    
+    const currentContent = conv?.content || []
+    const newContent = [...currentContent, { role, content: content }]  
+    
+    const { error } = await supabase
+      .from('conversations')
+      .update({ 
+        content: newContent,
+        updated_at: new Date().toISOString()  // 👈 ADD THIS
+      })
+      .eq('id', conversationId)
+    
+    if (error) console.error('Save message error:', error)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      if (aiSearchOn && input.trim()) handleSubmit(e)
+    }
+  }
+
+  const saveMessageWithId = async (
+    convId: string,
+    role: 'user' | 'assistant',
+    content: string,
+    recipes?: AssistantContent  // Add optional recipes parameter
+  ) => {
+    const { data: conv } = await supabase
+      .from('conversations')
+      .select('content')
+      .eq('id', convId)
+      .single()
+
+    const currentContent = conv?.content || []
+    
+    // Create message object with optional recipes
+    const newMessage: any = { role, content }
+    if (recipes && recipes.items.length > 0) {
+      newMessage.recipes = recipes.items
+    }
+    
+    const newContent = [...currentContent, newMessage]
+
+    const { error } = await supabase
+      .from('conversations')
+      .update({
+        content: newContent,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', convId)
+
+    if (error) console.error('Save message error:', error)
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
+    let activeConversationId = conversationId
     e.preventDefault()
     if (!input.trim() || !aiSearchOn) return
 
@@ -79,13 +207,41 @@ export default function AskPage() {
 
     const userText = input
     setInput("")
-    setAssistantCards(null)
+
+    if (!conversationId) {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user?.id) return
+
+      const { data, error } = await supabase
+        .from('conversations')
+        .insert({
+          title: userText.slice(0, 50) + '...',
+          user_id: user.id,
+          content: [{ role: 'user', content: userText }]
+        })
+        .select('id')
+        .single()
+
+      if (error) {
+        console.error('Create conv error:', error)
+        return
+      }
+
+      if (data) {
+        setConversationId(data.id)
+        activeConversationId = data.id   // ⭐ IMPORTANT LINE
+      }
+    } else {
+      await saveMessage('user', userText)
+    }
+
 
     setMessages(prev => [
       ...prev,
       { role: "user", content: userText }
     ])
 
+    // Your existing API/streaming code:
     const response = await fetch("/api/stream", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -105,35 +261,51 @@ export default function AskPage() {
     }
 
     setIsTyping(false)
-
-    const parsed = parseAnswerXml(fullResponse)
     
-    setMessages(prev => [...prev,
-      { role: "assistant", content: "" }])
+    const parsed = parseAnswerXml(fullResponse)
+    setMessages(prev => [...prev, { role: "assistant", content: "" }])
+
+    const aiResponse = parsed ? parsed.text : fullResponse
 
     if (parsed) {
       await typeAssistantText(parsed.text)
-      setAssistantCards(parsed) } 
-    else {
+      // Add recipes to the collection with the message index
+      setAllRecipeCards(prev => [...prev, { 
+        messageIndex: messages.length, // the index of this assistant message
+        recipes: parsed 
+      }])
+    } else {
       await typeAssistantText(fullResponse)
     }
-  }
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault()
-      if (aiSearchOn && input.trim()) handleSubmit(e)
+    if (activeConversationId) {
+      // Save assistant message with recipes if they exist
+      await saveMessageWithId(
+        activeConversationId, 
+        'assistant', 
+        aiResponse,
+        parsed || undefined  // ⭐ ADD THIS LINE - Pass the parsed recipes
+      )
     }
+
   }
 
-  return (
-    <div className="relative flex flex-col h-screen bg-white">
-
-      {/* ChatHistory Sheet */}
-      <ChatHistory 
-        isOpen={isChatHistoryOpen} 
-        onClose={() => setIsChatHistoryOpen(false)} 
+return (
+  <>
+    {/* Chat History Sheet */}
+    {userId && (
+      <ChatHistorySidebar
+        userId={userId}
+        currentConversationId={conversationId}
+        onSelectConversation={handleSelectConversation}
+        onNewChat={handleNewChat}
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
       />
+    )}
+
+    {/* Main Chat Area */}
+    <div className="relative flex flex-col h-screen bg-white">
 
       {/* ========== TOP INPUT (only before conversation) ========== */}
       {!isChatStarted && (
@@ -168,22 +340,22 @@ export default function AskPage() {
                   flex items-center
                 "
               >
-{/* If typing & AI mode → SHOW ONLY THE ARROW BUTTON */}
-{input.trim() && aiSearchOn ? (
-  <button
-    type="button"
-    aria-label="Submit"
-    onClick={handleSubmit}
-    className={`
-      w-8 h-8 rounded-full flex items-center justify-center
-      active:scale-95 transition-all
-      bg-gradient-to-r from-[#6ED308] to-[#A5E765]
-    `}
-    style={{ padding: "6px" }}
-  >
-    <ArrowUp className="w-5 h-5 text-white" />
-  </button>
-) : (
+                {/* If typing & AI mode → SHOW ONLY THE ARROW BUTTON */}
+                {input.trim() && aiSearchOn ? (
+                  <button
+                    type="button"
+                    aria-label="Submit"
+                    onClick={handleSubmit}
+                    className={`
+                      w-8 h-8 rounded-full flex items-center justify-center
+                      active:scale-95 transition-all
+                      bg-gradient-to-r from-[#6ED308] to-[#A5E765]
+                    `}
+                    style={{ padding: "6px" }}
+                  >
+                    <ArrowUp className="w-5 h-5 text-white" />
+                  </button>
+                ) : (
                   <>
                     {/* TWO BUTTONS (default state) */}
                     <div className="flex items-center gap-1.5">
@@ -200,7 +372,6 @@ export default function AskPage() {
                         `}
                         style={{ padding: "6px" }}>
                         <SFIcon icon={sfSparkle}
-
                           className="w-4 h-4 transition-colors"
                           fill={aiSearchOn ? "#6ED308" : "#B2B2B2"}
                           color={aiSearchOn ? "#6ED308" : "#B2B2B2"}
@@ -252,42 +423,11 @@ export default function AskPage() {
         {/* MODE 2 → Chat */}
         {!showSearchView && (
           <>
-            <ChatView messages={messages} isTyping={isTyping} />
-
-            {/* Recipe Cards are Rendered Here - Can change here */}
-            {assistantCards && assistantCards.items.length > 0 && (
-  <div className="relative mt-2">
-    <div
-      className="
-        flex gap-3
-        overflow-x-auto
-        overscroll-x-contain
-        px-4 pb-3
-        snap-x snap-mandatory
-        scrollbar-hide
-      "
-    >
-      {assistantCards.items.map(recipe => (
-        <div
-          key={recipe.id}
-          className="flex-shrink-0 snap-start"
-        >
-          <RecipeCard
-            id={recipe.id}
-            title={recipe.title}
-            image={recipe.image}
-            cardType="thumbnail"
-            showAddButton
-          />
-        </div>
-      ))}
-    </div>
-  </div>
-)}
+            <ChatView messages={messages} isTyping={isTyping} recipeCards={allRecipeCards} />
 
           </>
         )}
-    </div>
+      </div>
 
       {/* ========== BOTTOM INPUT (chat only) ========== */}
       {isChatStarted && (
@@ -326,14 +466,16 @@ export default function AskPage() {
         </div>
       )}
 
-      {/* ChatHistory Button - Bottom Left Corner */}
+      {/* Chat History Button - Bottom Left Corner */}
       <button
-        onClick={() => setIsChatHistoryOpen(true)}
+        onClick={() => setIsHistoryOpen(true)}
         className="fixed bottom-4 left-4 w-11 h-11 rounded-full bg-white shadow-hands flex items-center justify-center active:scale-95 transition-all z-20"
         aria-label="Chat History"
       >
-        <SFIcon icon={sfTextAlignleft}  className="w-5 h-5 text-black" />
+        <SFIcon icon={sfTextAlignleft} className="w-5 h-5 text-black" />
       </button>
+
     </div>
-  )
+  </>
+)
 }

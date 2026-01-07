@@ -329,7 +329,7 @@ return (
                 placeholder={aiSearchOn ? "Ask" : "Search"}
                 autoFocus
                 rows={1}
-                className="flex-1 bg-transparent outline-none text-black placeholder-chef-grey resize-none overflow-hidden pr-10"
+                className="flex-1 bg-transparent outline-none text-black placeholder-chef-grey resize-none overflow-hidden pr-10 pt-0.5 leading-tight"
                 style={{ minHeight: "24px", maxHeight: "200px" }}
               />
 

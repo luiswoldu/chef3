@@ -349,7 +349,7 @@ useEffect(() => {
 
   return (
     <div className="flex flex-col min-h-screen pb-[70px]">
-      <div className="relative w-full h-[56.4vh]">
+      <div className="relative w-full h-[54vh]">
         {heroRecipe ? (
           <RecipeCard
             id={((heroRecipe as any).recipe_id || (heroRecipe as any).id)?.toString() || "0"}

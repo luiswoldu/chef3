@@ -53,7 +53,7 @@ function HomePageContent() {
       // { title: "For You", recipes: getRandomRecipes(9, "for-you") },
       // { title: "Popular", recipes: getRandomRecipes(9, "popular") },
       { title: "Added Recipes", recipes: getRandomRecipes(9, "added") },
-      { title: "Summer Hits", recipes: getRandomRecipes(9, "summer") }
+      // { title: "Summer Hits", recipes: getRandomRecipes(9, "summer") }
     ]
   }, [recipes])
 
@@ -347,26 +347,31 @@ useEffect(() => {
   }
 }, [pathname]);
 
-  return (
-    <div className="flex flex-col min-h-screen pb-[70px]">
-      <div className="relative w-full h-[54vh]">
-        {heroRecipe ? (
-          <RecipeCard
-            id={((heroRecipe as any).recipe_id || (heroRecipe as any).id)?.toString() || "0"}
-            title={heroRecipe.title || "Untitled Recipe"}
-            image={heroRecipe.image || '/placeholder.svg'}
-            isHero={true}
-            showAddButton={true}
-            cardType="hero"
-            rounded="none"
-          />
-        ) : (
-          <div className="w-full h-full bg-gray-700 animate-pulse rounded-md overflow-hidden">
-            <div className="w-2/3 h-8 bg-gray-600 absolute bottom-6 left-6 rounded-md animate-shimmer"></div>
-          </div>
-        )}
+return (
+  <div className="flex flex-col min-h-screen pb-[70px]">
+    {/* Hero */}
+    <div className="relative w-full h-[54vh]">
+      {heroRecipe ? (
+        <RecipeCard
+          id={((heroRecipe as any).recipe_id || (heroRecipe as any).id)?.toString() || "0"}
+          title={heroRecipe.title || "Untitled Recipe"}
+          image={heroRecipe.image || "/placeholder.svg"}
+          isHero
+          showAddButton
+          cardType="hero"
+          rounded="none"
+        />
+      ) : (
+        <div className="w-full h-full bg-gray-700 animate-pulse rounded-md overflow-hidden" />
+      )}
+    </div>
+
+    {/* FLOATING SEARCH BAR */}
+    <div className="fixed inset-x-0 z-50 pointer-events-none">
+      <div className="mx-auto max-w-xl px-4 pointer-events-auto">
+        <SearchBar />
       </div>
-      <SearchBar />
+    </div>
       <div className="flex-1 overflow-y-auto">
         {/* Recents section */}
         <section className="py-4">

@@ -3,19 +3,28 @@ import Link from "next/link"
 import { useEffect, useRef, useState } from "react"
 import { Sparkle, ArrowUp } from "lucide-react"
 import { Back } from "@/components/Controls"
+import RecipeCard from "@/components/RecipeCard"
 
 interface Message {
   role: "user" | "assistant"
   content: string
 }
 
+interface RecipeItem {
+  id: string
+  title: string
+  caption: string
+  image: string
+}
+
 interface ChatViewProps {
   messages: Message[]
   onSendMessage?: (message: string) => void
   isTyping?: boolean
+  recipeCards?: { messageIndex: number; recipes: { items: RecipeItem[] } }[]
 }
 
-export default function ChatView({ messages, onSendMessage, isTyping }: ChatViewProps) {
+export default function ChatView({ messages, onSendMessage, isTyping, recipeCards = [] }: ChatViewProps) {
   const bottomRef = useRef<HTMLDivElement>(null)
   const [inputValue, setInputValue] = useState("")
   const [aiSearchOn, setAiSearchOn] = useState(true)
@@ -46,6 +55,11 @@ export default function ChatView({ messages, onSendMessage, isTyping }: ChatView
     }
   }
 
+  // Helper function to get recipes for a specific message index
+  const getRecipesForMessage = (index: number) => {
+    return recipeCards.find(card => card.messageIndex === index)
+  }
+
   if ((!messages || messages.length === 0) && !isTyping) {
     return (
       <div className="flex items-center justify-center h-72 text-center">
@@ -70,25 +84,62 @@ export default function ChatView({ messages, onSendMessage, isTyping }: ChatView
 
       {/* Messages Container */}
       <div>
-        {messages.map((msg, i) => (
-          <div key={i} className="mb-6">
-            {msg.role === "user" ? (
-              /* USER BUBBLE */
-              <div className="flex justify-end">
-                <div className="max-w-[80%] bg-[#F7F7F7] text-black rounded-full px-4 py-3 text-base leading-snug">
-                  {msg.content}
+        {messages.map((msg, i) => {
+          const recipesForThisMessage = getRecipesForMessage(i)
+          
+          return (
+            <div key={i} className="mb-6">
+              {msg.role === "user" ? (
+                /* USER BUBBLE */
+                <div className="flex justify-end">
+                  <div className="max-w-[80%] bg-[#F7F7F7] text-black rounded-full px-4 py-3 text-base leading-snug">
+                    {msg.content}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              /* ASSISTANT BUBBLE */
-              <div className="flex justify-start">
-                <div className="max-w-[82%] bg-transparent text-black py-3 text-base leading-snug">
-                  {msg.content}
-                </div>
-              </div>
-            )}
-          </div>
-        ))}
+              ) : (
+                /* ASSISTANT BUBBLE + RECIPE CARDS */
+                <>
+                  <div className="flex justify-start">
+                    <div className="max-w-[82%] bg-transparent text-black py-3 text-base leading-snug">
+                      {msg.content}
+                    </div>
+                  </div>
+                  
+                  {/* Recipe Cards Right After Assistant Message */}
+                  {recipesForThisMessage && recipesForThisMessage.recipes.items.length > 0 && (
+                    <div className="mt-2 mb-4">
+                      <div
+                        className="
+                          flex gap-3
+                          overflow-x-auto
+                          overscroll-x-contain
+                          px-4 pb-3
+                          snap-x snap-mandatory
+                          scrollbar-hide
+                        "
+                      >
+                        {recipesForThisMessage.recipes.items.map(recipe => (
+                          <div
+                            key={recipe.id}
+                            className="flex-shrink-0 snap-start"
+                          >
+                            <RecipeCard
+                              id={recipe.id}
+                              title={recipe.title}
+                              image={recipe.image}
+                              cardType="thumbnail"
+                              showAddButton
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )
+        })}
       </div>
 
       <div ref={bottomRef} />

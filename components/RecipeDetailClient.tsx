@@ -249,16 +249,40 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
 
                   const recipeIdNumber = typeof id === 'string' ? Number.parseInt(id) : id
                   
-                   //filtering ingredients by recipe_id just to be safe
-                  const currentIngredients = recipe.ingredients?.filter(
-                  (ing) => ing.recipe_id === recipeIdNumber
-                 )
+                  // Use ALL ingredients directly (no filtering needed)
+                  // Use ALL ingredients directly (no filtering needed)
+                  const rawIngredients = recipe.ingredients || []
+                  let currentIngredients: any[] = []
+
+                  // Normalize: strings → objects (same as RecipeCard & ingredients display)
+                  currentIngredients = rawIngredients.map((ing: any) => {
+                    if (typeof ing === 'string') {
+                      return { name: ing, amount: '', details: '' }
+                    }
+                    return {
+                      name: ing.name || ing || '',
+                      amount: ing.amount || '',
+                      details: ing.details || ''
+                    }
+                  })
+                
+                  // Normalize: strings → objects (same as RecipeCard & ingredients display)
+                  currentIngredients = currentIngredients.map((ing: any) => {
+                    if (typeof ing === 'string') {
+                      return { name: ing, amount: '', details: '' }
+                    }
+                    return {
+                      name: ing.name || ing || '',
+                      amount: ing.amount || '',
+                      details: ing.details || ''
+                    }
+                  })
+
                   if (!currentIngredients || currentIngredients.length === 0) {
                     throw new Error('No ingredients found for this recipe')
                   }
 
-                  // ---- DEBUGGING STEP ----
-                  console.log("Ingredients to add to cart:", recipe.ingredients)
+                  console.log("Ingredients to add to cart:", currentIngredients)
 
                   const groceryItems = currentIngredients.map((ing: any) => ({
                     user_id: user.id,
@@ -266,7 +290,8 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
                     amount: ing.amount,
                     aisle: "Other",
                     purchased: false,
-                    recipe_id: recipeIdNumber 
+                    recipe_id: recipeIdNumber,
+                    details: ing.details || ""
                   }))
                   
                   const { error } = await supabase
@@ -278,14 +303,10 @@ export default function RecipeDetailClient({ id }: RecipeDetailClientProps) {
                   setIsAdded(true)
                   showNotification("Added to cart")
                   
-                  } catch (error: any) {
+                } catch (error: any) {
                   console.error('Error adding to cart:', error?.message || error)
                   showNotification(error?.message || "Failed to add ingredients to cart")
-                  }
-               // } catch (error) {
-               //  console.error('Error adding to cart:', error)
-               //   showNotification("Failed to add ingredients to cart")
-               // }
+                }
               }}
               className="bg-white rounded-full p-2 shadow-md hover:shadow-lg transition-shadow duration-300"
               aria-label={isAdded ? "Added to cart" : "Add to cart"}

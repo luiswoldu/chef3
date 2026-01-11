@@ -330,7 +330,7 @@ export default function AddRecipe() {
       }
 
       // Insert ingredients with recipe_id and user_id
-      if (extractedRecipe.ingredients.length > 0) {
+      if (extractedRecipe.ingredients.length > 0 && recipeData) {
         const ingredientsWithRecipeId = extractedRecipe.ingredients.map(ingredient => ({
           ...ingredient,
           recipe_id: recipeData.id,

@@ -241,6 +241,8 @@ export default function AskPage() {
       { role: "user", content: userText }
     ])
 
+    setIsTyping(true)
+
     // Your existing API/streaming code:
     const response = await fetch("/api/stream", {
       method: "POST",
@@ -252,7 +254,6 @@ export default function AskPage() {
     const decoder = new TextDecoder()
 
     let fullResponse = ""
-    setIsTyping(true)
 
     while (true) {
       const { value, done } = await reader!.read()
@@ -263,7 +264,13 @@ export default function AskPage() {
     setIsTyping(false)
     
     const parsed = parseAnswerXml(fullResponse)
-    setMessages(prev => [...prev, { role: "assistant", content: "" }])
+    let assistantMessageIndex = -1
+    
+    setMessages(prev => {
+      assistantMessageIndex = prev.length
+      return [...prev, { role: "assistant", content: "" }]
+    })
+
 
     const aiResponse = parsed ? parsed.text : fullResponse
 
@@ -271,7 +278,7 @@ export default function AskPage() {
       await typeAssistantText(parsed.text)
       // Add recipes to the collection with the message index
       setAllRecipeCards(prev => [...prev, { 
-        messageIndex: messages.length, // the index of this assistant message
+        messageIndex: assistantMessageIndex, // the index of this assistant message
         recipes: parsed 
       }])
     } else {

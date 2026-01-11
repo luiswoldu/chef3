@@ -1,64 +1,36 @@
-import { createClient } from '@supabase/supabase-js'
-import { VectorStoreIndex, Document, Settings } from "llamaindex"
-import { OpenAIEmbedding } from "@llamaindex/openai"
+import { createClient } from "@supabase/supabase-js"
+import OpenAI from "openai"
 
-let index: VectorStoreIndex | null = null
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://lxueztdlrxoystjehjay.supabase.co';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imx4dWV6dGRscnhveXN0amVoamF5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTY1NDk5MTYsImV4cCI6MjA3MjEyNTkxNn0.5XEG1f0_8vcwkEWvqSBTWcJmMlW_nUxWkC5eNhSzouo';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY!
+})
 
 export async function retrieveRecipes(query: string) {
-  if (!index) {
-    const supabaseAdmin = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    )
-
-    Settings.embedModel = new OpenAIEmbedding({
-        model: "text-embedding-ada-002", })
-
-    const { data: recipes, error } = await supabaseAdmin.from("featured_library").select("*")
-
-    if (error) throw error
-    if (!recipes || recipes.length === 0) return []
-
-    const documents = recipes.map((recipe) => {
-      const tags = Array.isArray(recipe.tags) ? recipe.tags : []
-      const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : []
-
-      return new Document({
-        id_: recipe.id,
-        text: [
-          `Title: ${recipe.title}`,
-          recipe.caption ? `Caption: ${recipe.caption}` : "",
-          tags.length ? `Tags: ${tags.join(", ")}` : "Tags:",
-          recipe.steps
-            ? `Instructions: ${recipe.steps}`
-            : "", ingredients.length ? `Ingredient: ${ingredients.join(", ")}` : ""
-        ]
-          .filter(Boolean)
-          .join("\n"),
-        metadata: {
-          id: recipe.id,
-          title: recipe.title,
-          caption: recipe.caption,
-          tags,
-          image: recipe.image,
-        },
-      })
-    })
-
-    index = await VectorStoreIndex.fromDocuments(documents)
-  }
-
-  const retriever = index.asRetriever({
-    // top 4 most similar vectors are returned 
-    similarityTopK: 4,
+  const embeddingResponse = await openai.embeddings.create({
+    model: "text-embedding-ada-002",
+    input: query,
   })
 
-  const results = await retriever.retrieve(query)
+  const queryEmbedding = embeddingResponse.data[0].embedding
 
-  return results.map((r) => ({   
-    id: r.node.metadata.id,             
-    title: r.node.metadata.title,
-    caption: r.node.metadata.caption,
-    image: r.node.metadata.image
-}))
+  const { data, error } = await supabase.rpc("match_recipes", {
+    query_embedding: queryEmbedding,
+    match_count: 4,
+  })
+
+  if (error) throw error
+  if (!data) return []
+
+  console.log(data);
+
+  return data.map((r: { recipe_id: any; metadata: { title: any; caption: any; image: any } }) => ({
+    id: r.recipe_id,
+    title: r.metadata.title,
+    caption: r.metadata.caption,
+    image: r.metadata.image,
+  }))
 }

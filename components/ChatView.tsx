@@ -142,6 +142,19 @@ export default function ChatView({ messages, onSendMessage, isTyping, recipeCard
         })}
       </div>
 
+      {/* TYPING INDICATOR */}
+      {isTyping && (
+        <div className="flex justify-start mb-6">
+          <div className="max-w-[82%] px-3 py-2 text-chef-grey">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 bg-chef-grey rounded-full animate-bounce" />
+              <span className="w-2 h-2 bg-chef-grey rounded-full animate-bounce delay-150" />
+              <span className="w-2 h-2 bg-chef-grey rounded-full animate-bounce delay-300" />
+            </div>
+          </div>
+        </div>
+      )}
+
       <div ref={bottomRef} />
     </div>
   )

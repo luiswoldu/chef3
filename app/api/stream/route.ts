@@ -16,7 +16,7 @@ export async function POST(req: Request) {
   // Build grounding context for the LLM
   const recipeContext = recipes
     .map(
-      (r, i) =>
+      (r: { id: any; title: any; caption: any; image: any; }, i: number) =>
         `${i + 1}. ${r.id} - ${r.title} — ${r.caption} - ${r.image}`
     )
     .join("\n");

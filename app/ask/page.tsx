@@ -416,7 +416,19 @@ return (
 
       {/* ========== CENTER AREA ========== */}
       <div className="flex-1 overflow-y-auto px-4 pt-4">
-
+      {/* Hero Placeholder */}
+      {!isChatStarted && input.length === 0 && !showSearchView && (
+  <div className="flex items-center justify-center h-72 text-center">
+    <div>
+      <h2 className="text-2xl font-semibold text-black">
+        Make dinner from leftovers
+      </h2>
+      <p className="text-sm text-chef-grey max-w-80 mx-auto">
+        Get recipe ideas, meal plans, substitutions, and budget-friendly tips.
+      </p>
+    </div>
+  </div>
+)}
         {/* MODE 1 → Search */}
         {showSearchView && !isChatStarted && (
           <SearchView 
@@ -431,7 +443,6 @@ return (
         {!showSearchView && (
           <>
             <ChatView messages={messages} isTyping={isTyping} recipeCards={allRecipeCards} />
-
           </>
         )}
       </div>

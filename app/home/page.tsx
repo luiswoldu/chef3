@@ -100,7 +100,7 @@ function HomePageContent() {
       const { data: featured, error } = await supabase
         .from('featured_library')
         .select('*')
-        .limit(50)
+        .limit(500)
       
       if (error) {
         console.error("Error fetching featured recipes:", error)
@@ -152,9 +152,9 @@ function HomePageContent() {
     try {
       // Get random hero recipe from featured_library
       const { data: featured, error } = await supabase
-        .from('featured_library')
+        .from('recipes')
         .select('*')
-        .limit(50)
+        .limit(500)
       
       if (error) {
         console.error("Error fetching featured for hero:", error)

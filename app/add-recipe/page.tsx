@@ -41,8 +41,6 @@ interface RecipeData {
   groceryItems: GroceryItem[]
 }
 
-// Platform restrictions removed - OpenAI can extract from any recipe website!
-
 export default function AddRecipe() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -278,113 +276,85 @@ export default function AddRecipe() {
   }
 
   const handleSaveRecipe = async () => {
-    if (!extractedRecipe || loading) return
-
-    // Debouncing: prevent multiple rapid clicks
-    const now = Date.now()
-    if (now - lastSaveTime.current < 1000) { // 1 second debounce
-      return
-    }
-    lastSaveTime.current = now
-
-    // Clear any existing timeout
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current)
-    }
-
-    // Set loading immediately to prevent multiple clicks
-    setLoading(true)
+    if (!extractedRecipe || loading) return;
+  
+    const now = Date.now();
+    if (now - lastSaveTime.current < 1000) return;
+    lastSaveTime.current = now;
+  
+    setLoading(true);
     
     try {
-      // Check if user is authenticated
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
       
       if (authError || !user) {
-        showNotification("Please log in to save recipes")
-        router.push('/auth') // Redirect to auth page
-        return
+        showNotification("Please log in to save recipes");
+        router.push('/auth');
+        return;
       }
-
-      // Insert recipe with user_id
+  
+      // 1. Fixed user_id and added explicit type casting
       const { data: recipeData, error: recipeError } = await supabase
-      .from('recipes')
-      .insert([{
-        title: extractedRecipe.recipe.title,
-        image: extractedRecipe.recipe.image,
-        caption: extractedRecipe.recipe.caption,
-        tags: extractedRecipe.recipe.tags,
-        steps: extractedRecipe.recipe.steps,
-        user_id: user,
-        created_at: new Date().toISOString(),
-      }] as any) // Temporary workaround
+        .from('recipes')
+        .insert([{
+          title: extractedRecipe.recipe.title,
+          image: extractedRecipe.recipe.image,
+          caption: extractedRecipe.recipe.caption,
+          tags: extractedRecipe.recipe.tags,
+          steps: extractedRecipe.recipe.steps,
+          user_id: user.id, // FIXED: was 'user', now 'user.id'
+          created_at: new Date().toISOString(),
+        }])
         .select()
-        .single()
+        .single();
       
-      if (recipeError) {
-        console.error('Recipe insert error:', recipeError)
-        throw new Error('Failed to save recipe: ' + recipeError.message)
-      }
+      if (recipeError) throw new Error('Failed to save recipe: ' + recipeError.message);
       
-      if (!recipeData) {
-        throw new Error('Failed to create recipe - no data returned')
-      }
-
-      // Insert ingredients with recipe_id and user_id
-      if (extractedRecipe.ingredients.length > 0 && recipeData) {
+      // 2. Use a type assertion here to clear the 'never' error
+      const savedRecipe = recipeData as { id: string };
+  
+      if (extractedRecipe.ingredients.length > 0) {
         const ingredientsWithRecipeId = extractedRecipe.ingredients.map(ingredient => ({
           ...ingredient,
-          recipe_id: recipeData.id,
+          recipe_id: savedRecipe.id, // Use the asserted variable
           user_id: user.id
-        }))
-
+        }));
+  
         const { error: ingredientsError } = await supabase
           .from('ingredients')
-          .insert(ingredientsWithRecipeId)
-
-        if (ingredientsError) {
-          console.error('Ingredients insert error:', ingredientsError)
-          throw new Error('Failed to save ingredients: ' + ingredientsError.message)
-        }
+          .insert(ingredientsWithRecipeId);
+  
+        if (ingredientsError) throw new Error('Ingredients error: ' + ingredientsError.message);
       }
-
-      // Insert grocery items with recipe_id and user_id
+  
       if (extractedRecipe.groceryItems.length > 0) {
         const groceryItemsWithRecipeId = extractedRecipe.groceryItems.map(item => ({
-          recipe_id: recipeData.id,
+          recipe_id: savedRecipe.id, // Use the asserted variable
           name: item.name,
           amount: item.amount,
           details: item.details,
-          aisle: '', // This will be set by the user later
+          aisle: '',
           purchased: false,
           user_id: user.id,
           created_at: new Date().toISOString()
-        }))
-
+        }));
+  
         const { error: groceryItemsError } = await supabase
           .from('grocery_items')
-          .insert(groceryItemsWithRecipeId)
-
-        if (groceryItemsError) {
-          console.error('Grocery items insert error:', groceryItemsError)
-          throw new Error('Failed to save grocery items: ' + groceryItemsError.message)
-        }
+          .insert(groceryItemsWithRecipeId);
+  
+        if (groceryItemsError) throw new Error('Grocery error: ' + groceryItemsError.message);
       }
-
-      showNotification("Added to your library")
-      
-      // Set multiple flags to ensure cache refresh works
-      localStorage.setItem('recipeJustAdded', 'true')
-      
-      // Navigate back with a flag to indicate recipe was added
-      router.push('/home?recipeAdded=true')
+  
+      showNotification("Added to your library");
+      router.push('/home?recipeAdded=true');
     } catch (error) {
-      console.error('Error saving recipe:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      showNotification("Failed to save recipe: " + errorMessage)
+      console.error('Error saving recipe:', error);
+      showNotification("Failed to save: " + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="fixed inset-0 bg-black z-50">

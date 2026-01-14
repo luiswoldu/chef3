@@ -416,7 +416,19 @@ return (
 
       {/* ========== CENTER AREA ========== */}
       <div className="flex-1 overflow-y-auto px-4 pt-4">
-
+      {/* Hero Placeholder */}
+      {!isChatStarted && input.length === 0 && !showSearchView && (
+  <div className="flex items-center justify-center h-72 text-center">
+    <div>
+      <h2 className="text-2xl font-semibold text-black">
+        Make dinner from leftovers
+      </h2>
+      <p className="text-sm text-chef-grey max-w-80 mx-auto">
+        Get recipe ideas, meal plans, substitutions, and budget-friendly tips.
+      </p>
+    </div>
+  </div>
+)}
         {/* MODE 1 → Search */}
         {showSearchView && !isChatStarted && (
           <SearchView 
@@ -431,45 +443,42 @@ return (
         {!showSearchView && (
           <>
             <ChatView messages={messages} isTyping={isTyping} recipeCards={allRecipeCards} />
-
           </>
         )}
       </div>
 
-      {/* ========== BOTTOM INPUT (chat only) ========== */}
-      {isChatStarted && (
-        <div className="p-4 pb-8 bg-white/80 backdrop-blur-sm">
-          <div>
-            <div className="flex items-end bg-chef-grey-calcium rounded-full px-2 py-2.5">
-              <textarea
-                value={input}
-                onChange={(e) => {
-                  setInput(e.target.value)
-                  autoResize(e.target)
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey && !aiSearchOn) {
-                    e.preventDefault()
-                    router.push(`/search?q=${encodeURIComponent(input.trim())}`)
-                  } else {
-                    handleKeyDown(e)
-                  }
-                }}
-                placeholder="Ask something"
-                rows={1}
-                className="flex-1 bg-transparent outline-none text-black resize-none overflow-hidden"
-                style={{ minHeight: "24px", maxHeight: "200px" }}
-              />
+{/* ========== BOTTOM INPUT (chat only) ========== */}
+{isChatStarted && (
+        <div className="p-4 pb-8 bg-white">
+          <motion.div className="relative flex items-center bg-white shadow-hands rounded-full px-4 py-2.5">
+            <textarea
+              value={input}
+              onChange={(e) => {
+                setInput(e.target.value)
+                autoResize(e.target)
+              }}
+              onKeyDown={handleKeyDown}
+              placeholder="Ask something"
+              rows={1}
+              className="flex-1 bg-transparent outline-none text-black placeholder-chef-grey resize-none overflow-hidden pr-10 pt-0.5 leading-tight"
+              style={{ minHeight: "24px", maxHeight: "200px" }}
+            />
 
-              <button
-                type="submit"
-                onClick={handleSubmit}
-                className="w-9 h-9 flex items-center justify-center rounded-full bg-gradient-to-r from-[#6ED308] to-[#A5E765] ml-2 flex-shrink-0"
-              >
-                <ArrowUp className="w-6 h-6 text-white" />
-              </button>
-            </div>
-          </div>
+            {/* Submit button (only shown when typing) */}
+            {input.trim() && (
+              <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+                <button
+                  type="button"
+                  aria-label="Submit"
+                  onClick={handleSubmit}
+                  className="w-8 h-8 rounded-full flex items-center justify-center active:scale-95 transition-all bg-gradient-to-r from-[#6ED308] to-[#A5E765]"
+                  style={{ padding: "6px" }}
+                >
+                  <ArrowUp className="w-5 h-5 text-white" />
+                </button>
+              </div>
+            )}
+          </motion.div>
         </div>
       )}
 

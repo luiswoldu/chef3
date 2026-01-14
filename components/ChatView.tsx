@@ -60,27 +60,8 @@ export default function ChatView({ messages, onSendMessage, isTyping, recipeCard
     return recipeCards.find(card => card.messageIndex === index)
   }
 
-  if ((!messages || messages.length === 0) && !isTyping) {
-    return (
-      <div className="flex items-center justify-center h-72 text-center">
-        <div>
-          <h2 className="text-2xl font-semibold text-black">
-            Make dinner from leftovers
-          </h2>
-          <p className="text-sm text-chef-grey max-w-80">
-            Get recipe ideas, meal plans, substitutions, and budget-friendly tips.
-          </p>
-        </div>
-      </div>
-    )
-  }
-
   return (
     <div className="relative">
-      {/* Sticky Back Button */}
-      <div className="sticky top-0 z-10">
-        <Back />
-      </div>
 
       {/* Messages Container */}
       <div>

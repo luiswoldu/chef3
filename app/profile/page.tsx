@@ -54,9 +54,10 @@ export default function Profile() {
             if (profile.username) {
               setUsername(profile.username)
             }
-            if (profile.avatar_url) {
-              setUserAvatar(profile.avatar_url)
-            }
+            
+            // if (profile.avatar_url) {
+            //    setUserAvatar(profile.avatar_url)
+            // }
           } else {
             console.log('No Users table data found, using auth metadata only')
           }

@@ -55,6 +55,9 @@ export default function AddRecipe() {
     isDragging: boolean;
   }>({ startY: 0, startHeight: 0, isDragging: false })
 
+  // CHANGE AFTER ONLY TO DISABLE FUNCTION
+  const EXTRACTION_ENABLED = false
+
   // Add debouncing refs to prevent multiple rapid clicks
   const extractTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -238,42 +241,46 @@ export default function AddRecipe() {
   }
 
   const handleExtractRecipe = async () => {
-    if (!url || loading) return
+  // If extraction is disabled, just route to the ask page
+    router.push("/app/ask") // Note: Route to the path, not the file extension
 
-    // Debouncing: prevent multiple rapid clicks
-    const now = Date.now()
-    if (now - lastExtractTime.current < 1000) { // 1 second debounce
-      return
-    }
-    lastExtractTime.current = now
+  // const handleExtractRecipe = async () => {
+  //   if (!url || loading) return
 
-    // Clear any existing timeout
-    if (extractTimeoutRef.current) {
-      clearTimeout(extractTimeoutRef.current)
-    }
+  //   // Debouncing: prevent multiple rapid clicks
+  //   const now = Date.now()
+  //   if (now - lastExtractTime.current < 1000) { // 1 second debounce
+  //     return
+  //   }
+  //   lastExtractTime.current = now
 
-    const validationError = validateUrl(url)
-    if (validationError) {
-      showNotification(validationError)
-      return
-    }
+  //   // Clear any existing timeout
+  //   if (extractTimeoutRef.current) {
+  //     clearTimeout(extractTimeoutRef.current)
+  //   }
 
-    // Set loading immediately to prevent multiple clicks
-    setLoading(true)
+  //   const validationError = validateUrl(url)
+  //   if (validationError) {
+  //     showNotification(validationError)
+  //     return
+  //   }
+
+  //   // Set loading immediately to prevent multiple clicks
+  //   setLoading(true)
     
-    try {
-      const data = await extractRecipeFromUrl(url)
-      if (data) {
-        setExtractedRecipe(data)
-        showNotification("Got it!")
-      }
-    } catch (error) {
-      console.error('Error extracting recipe:', error)
-      showNotification("Failed to extract recipe. Please check the URL and try again.")
-    } finally {
-      setLoading(false)
-    }
-  }
+  //   try {
+  //     const data = await extractRecipeFromUrl(url)
+  //     if (data) {
+  //       setExtractedRecipe(data)
+  //       showNotification("Got it!")
+  //     }
+  //   } catch (error) {
+  //     console.error('Error extracting recipe:', error)
+  //     showNotification("Failed to extract recipe. Please check the URL and try again.")
+  //   } finally {
+  //     setLoading(false)
+  //   }
+  // }
 
   const handleSaveRecipe = async () => {
     if (!extractedRecipe || loading) return;
@@ -514,4 +521,5 @@ export default function AddRecipe() {
       </div>
     </div>
   )
+}
 }

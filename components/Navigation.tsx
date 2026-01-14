@@ -34,7 +34,9 @@ export default function Navigation() {
         {/* Import + Recipe Button */}
         <button
             aria-label="Add recipe"
-            onClick={() => setIsSheetOpen(true)}
+            // DISABLED ADD RECIPE FUNCTION HERE
+            // onClick={() => setIsSheetOpen(true)}
+            onClick={() => router.push("/ask")}
             className="w-[42px] h-[42px] rounded-full flex items-center justify-center flex-shrink-0 bg-gradient-to-r"
             style={{ background: "linear-gradient(90deg, #6CD401 0%, #A6E964 100%)" }}
           >

@@ -57,6 +57,9 @@ export default function AddRecipe() {
     isDragging: boolean;
   }>({ startY: 0, startHeight: 0, isDragging: false })
 
+  // CHANGE AFTER ONLY TO DISABLE FUNCTION
+  const EXTRACTION_ENABLED = false
+
   // Add debouncing refs to prevent multiple rapid clicks
   const extractTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -240,151 +243,159 @@ export default function AddRecipe() {
   }
 
   const handleExtractRecipe = async () => {
-    if (!url || loading) return
+  // If extraction is disabled, just route to the ask page
+    router.push("/app/ask") // Note: Route to the path, not the file extension
 
-    // Debouncing: prevent multiple rapid clicks
-    const now = Date.now()
-    if (now - lastExtractTime.current < 1000) { // 1 second debounce
-      return
-    }
-    lastExtractTime.current = now
+  // const handleExtractRecipe = async () => {
+  //   if (!url || loading) return
 
-    // Clear any existing timeout
-    if (extractTimeoutRef.current) {
-      clearTimeout(extractTimeoutRef.current)
-    }
+  //   // Debouncing: prevent multiple rapid clicks
+  //   const now = Date.now()
+  //   if (now - lastExtractTime.current < 1000) { // 1 second debounce
+  //     return
+  //   }
+  //   lastExtractTime.current = now
 
-    const validationError = validateUrl(url)
-    if (validationError) {
-      showNotification(validationError)
-      return
-    }
+  //   // Clear any existing timeout
+  //   if (extractTimeoutRef.current) {
+  //     clearTimeout(extractTimeoutRef.current)
+  //   }
 
-    // Set loading immediately to prevent multiple clicks
-    setLoading(true)
+  //   const validationError = validateUrl(url)
+  //   if (validationError) {
+  //     showNotification(validationError)
+  //     return
+  //   }
+
+  //   // Set loading immediately to prevent multiple clicks
+  //   setLoading(true)
     
-    try {
-      const data = await extractRecipeFromUrl(url)
-      if (data) {
-        setExtractedRecipe(data)
-        showNotification("Got it!")
-      }
-    } catch (error) {
-      console.error('Error extracting recipe:', error)
-      showNotification("Failed to extract recipe. Please check the URL and try again.")
-    } finally {
-      setLoading(false)
-    }
-  }
+  //   try {
+  //     const data = await extractRecipeFromUrl(url)
+  //     if (data) {
+  //       setExtractedRecipe(data)
+  //       showNotification("Got it!")
+  //     }
+  //   } catch (error) {
+  //     console.error('Error extracting recipe:', error)
+  //     showNotification("Failed to extract recipe. Please check the URL and try again.")
+  //   } finally {
+  //     setLoading(false)
+  //   }
+  // }
 
   const handleSaveRecipe = async () => {
-    if (!extractedRecipe || loading) return
-
-    // Debouncing: prevent multiple rapid clicks
-    const now = Date.now()
-    if (now - lastSaveTime.current < 1000) { // 1 second debounce
-      return
-    }
-    lastSaveTime.current = now
-
-    // Clear any existing timeout
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current)
-    }
-
-    // Set loading immediately to prevent multiple clicks
-    setLoading(true)
-    
-    try {
-      // Check if user is authenticated
-      const { data: { user }, error: authError } = await supabase.auth.getUser()
-      
-      if (authError || !user) {
-        showNotification("Please log in to save recipes")
-        router.push('/auth') // Redirect to auth page
-        return
-      }
-
-      // Insert recipe with user_id
-      const { data: recipeData, error: recipeError } = await supabase
-        .from('recipes')
-        .insert([{
-          title: extractedRecipe.recipe.title,
-          image: extractedRecipe.recipe.image,
-          caption: extractedRecipe.recipe.caption,
-          tags: extractedRecipe.recipe.tags,
-          steps: extractedRecipe.recipe.steps,
-          user_id: user.id,
-          created_at: new Date().toISOString()
-        }])
-        .select()
-        .single()
-      
-      if (recipeError) {
-        console.error('Recipe insert error:', recipeError)
-        throw new Error('Failed to save recipe: ' + recipeError.message)
-      }
-      
-      if (!recipeData) {
-        throw new Error('Failed to create recipe - no data returned')
-      }
-
-      // Insert ingredients with recipe_id and user_id
-      if (extractedRecipe.ingredients.length > 0) {
-        const ingredientsWithRecipeId = extractedRecipe.ingredients.map(ingredient => ({
-          ...ingredient,
-          recipe_id: recipeData.id,
-          user_id: user.id
-        }))
-
-        const { error: ingredientsError } = await supabase
-          .from('ingredients')
-          .insert(ingredientsWithRecipeId)
-
-        if (ingredientsError) {
-          console.error('Ingredients insert error:', ingredientsError)
-          throw new Error('Failed to save ingredients: ' + ingredientsError.message)
-        }
-      }
-
-      // Insert grocery items with recipe_id and user_id
-      if (extractedRecipe.groceryItems.length > 0) {
-        const groceryItemsWithRecipeId = extractedRecipe.groceryItems.map(item => ({
-          recipe_id: recipeData.id,
-          name: item.name,
-          amount: item.amount,
-          details: item.details,
-          aisle: '', // This will be set by the user later
-          purchased: false,
-          user_id: user.id,
-          created_at: new Date().toISOString()
-        }))
-
-        const { error: groceryItemsError } = await supabase
-          .from('grocery_items')
-          .insert(groceryItemsWithRecipeId)
-
-        if (groceryItemsError) {
-          console.error('Grocery items insert error:', groceryItemsError)
-          throw new Error('Failed to save grocery items: ' + groceryItemsError.message)
-        }
-      }
-
-      showNotification("Added to your library")
-      
-      // Set multiple flags to ensure cache refresh works
-      localStorage.setItem('recipeJustAdded', 'true')
-      
-      // Navigate back with a flag to indicate recipe was added
-      router.push('/home?recipeAdded=true')
-    } catch (error) {
-      console.error('Error saving recipe:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
-      showNotification("Failed to save recipe: " + errorMessage)
-    } finally {
-      setLoading(false)
-    }
+    router.push("/app/ask") 
   }
+
+  // const handleSaveRecipe = async () => {
+  //   if (!extractedRecipe || loading) return
+
+  //   // Debouncing: prevent multiple rapid clicks
+  //   const now = Date.now()
+  //   if (now - lastSaveTime.current < 1000) { // 1 second debounce
+  //     return
+  //   }
+  //   lastSaveTime.current = now
+
+  //   // Clear any existing timeout
+  //   if (saveTimeoutRef.current) {
+  //     clearTimeout(saveTimeoutRef.current)
+  //   }
+
+  //   // Set loading immediately to prevent multiple clicks
+  //   setLoading(true)
+    
+  //   try {
+  //     // Check if user is authenticated
+  //     const { data: { user }, error: authError } = await supabase.auth.getUser()
+      
+  //     if (authError || !user) {
+  //       showNotification("Please log in to save recipes")
+  //       router.push('/auth') // Redirect to auth page
+  //       return
+  //     }
+
+  //     // Insert recipe with user_id
+  //     const { data: recipeData, error: recipeError } = await supabase
+  //       .from('recipes')
+  //       .insert([{
+  //         title: extractedRecipe.recipe.title,
+  //         image: extractedRecipe.recipe.image,
+  //         caption: extractedRecipe.recipe.caption,
+  //         tags: extractedRecipe.recipe.tags,
+  //         steps: extractedRecipe.recipe.steps,
+  //         user_id: user.id,
+  //         created_at: new Date().toISOString()
+  //       }])
+  //       .select()
+  //       .single()
+      
+  //     if (recipeError) {
+  //       console.error('Recipe insert error:', recipeError)
+  //       throw new Error('Failed to save recipe: ' + recipeError.message)
+  //     }
+      
+  //     if (!recipeData) {
+  //       throw new Error('Failed to create recipe - no data returned')
+  //     }
+
+  //     // Insert ingredients with recipe_id and user_id
+  //     if (extractedRecipe.ingredients.length > 0) {
+  //       const ingredientsWithRecipeId = extractedRecipe.ingredients.map(ingredient => ({
+  //         ...ingredient,
+  //         recipe_id: recipeData.id,
+  //         user_id: user.id
+  //       }))
+
+  //       const { error: ingredientsError } = await supabase
+  //         .from('ingredients')
+  //         .insert(ingredientsWithRecipeId)
+
+  //       if (ingredientsError) {
+  //         console.error('Ingredients insert error:', ingredientsError)
+  //         throw new Error('Failed to save ingredients: ' + ingredientsError.message)
+  //       }
+  //     }
+
+  //     // Insert grocery items with recipe_id and user_id
+  //     if (extractedRecipe.groceryItems.length > 0) {
+  //       const groceryItemsWithRecipeId = extractedRecipe.groceryItems.map(item => ({
+  //         recipe_id: recipeData.id,
+  //         name: item.name,
+  //         amount: item.amount,
+  //         details: item.details,
+  //         aisle: '', // This will be set by the user later
+  //         purchased: false,
+  //         user_id: user.id,
+  //         created_at: new Date().toISOString()
+  //       }))
+
+  //       const { error: groceryItemsError } = await supabase
+  //         .from('grocery_items')
+  //         .insert(groceryItemsWithRecipeId)
+
+  //       if (groceryItemsError) {
+  //         console.error('Grocery items insert error:', groceryItemsError)
+  //         throw new Error('Failed to save grocery items: ' + groceryItemsError.message)
+  //       }
+  //     }
+
+  //     showNotification("Added to your library")
+      
+  //     // Set multiple flags to ensure cache refresh works
+  //     localStorage.setItem('recipeJustAdded', 'true')
+      
+  //     // Navigate back with a flag to indicate recipe was added
+  //     router.push('/home?recipeAdded=true')
+  //   } catch (error) {
+  //     console.error('Error saving recipe:', error)
+  //     const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+  //     showNotification("Failed to save recipe: " + errorMessage)
+  //   } finally {
+  //     setLoading(false)
+  //   }
+  // }
 
   return (
     <div className="fixed inset-0 bg-black z-50">
@@ -544,4 +555,5 @@ export default function AddRecipe() {
       </div>
     </div>
   )
+}
 }
